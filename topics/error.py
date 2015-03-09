@@ -3,6 +3,10 @@ class KrepError(Exception):
     """Root exception for krep"""
 
 
+class DownloadError(KrepError):
+    """Indicate the unsuccessful download."""
+
+
 class OptionMissedError(KrepError):
     """Indicate the missed option."""
 
@@ -18,5 +22,5 @@ class RaiseExceptionIfOptionMissed(object):
             raise OptionMissedError(prompt)
 
 
-TOPIC_ENTRY = 'KrepError, OptionMissedError, ProcessingError, ' \
-              'RaiseExceptionIfOptionMissed'
+TOPIC_ENTRY = 'KrepError, DownloadError, OptionMissedError, ' \
+              'ProcessingError, RaiseExceptionIfOptionMissed'

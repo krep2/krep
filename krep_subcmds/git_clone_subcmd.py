@@ -1,0 +1,143 @@
+
+import os
+import urlparse
+
+from topics import FileUtils, GitProject, SubCommand, DownloadError, \
+    Gerrit, ProcessingError, RaiseExceptionIfOptionMissed
+
+
+class GitCloneSubcmd(SubCommand):
+    COMMAND = 'git-p'
+    help_summary = 'Download and import git repository'
+    help_usage = """\
+%prog [options] ...
+
+Download git project and import to the remote server.
+
+It supports to clone the full git repository outside and import the specified
+branches and tags into the remote gerrit server.
+
+If the remote server hasn't registered the named repository, a new gerrit
+repository will be requested to create with the description.
+
+The default description has the format "Mirror of GIT_URL". If option
+"--no-description" is used, no description will be added. The description
+could has a customized format like "Mirror of %url", which %url would be
+replaced by GIT_URL."""
+
+    def options(self, optparse):
+        SubCommand.options(self, optparse, option_remote=True,
+                           option_import=True, modules=globals())
+
+        options = optparse.get_option_group('--refs') or \
+            optparse.add_option_group('Remote options')
+        options.add_option(
+            '--git', '--git-url',
+            dest='git', action='store', metavar='GIT_URL',
+            help='Set the git repository url to download and import')
+
+        options = optparse.get_option_group('--all') or \
+            optparse.add_option_group('Git options')
+        options.add_option(
+            '-n', '--name', '--project-name',
+            dest='name', action='store', metavar='NAME',
+            help='Set the project name or local url. If it\'s not set, the '
+                 'name will be generated from the git name.')
+        options.add_option(
+            '--bare',
+            dest='bare', action='store_true',
+            help='Clone the bare repository')
+        options.add_option(
+            '-m', '--mirror',
+            dest='mirror', action='store', metavar='LOCATION',
+            help='Set the git repository mirror location')
+
+    def get_name(self, options):
+        # use options.name with a higher priority if it's set
+        if options.name:
+            self.set_name(options.name)  # pylint: disable=E1101
+        else:
+            ulp = urlparse.urlparse(options.git or '')
+            self.set_name(ulp.path.strip('/'))  # pylint: disable=E1101
+
+        return SubCommand.get_name(self, options)
+
+    def execute(self, options, *args, **kws):
+        SubCommand.execute(self, options, *args, **kws)
+
+        RaiseExceptionIfOptionMissed(
+            options.git, 'git url (--git-url) is not set')
+
+        ulp = urlparse.urlparse(options.name or '')
+        RaiseExceptionIfOptionMissed(
+            ulp.scheme or options.remote,
+            'Neither git name (--name) nor remote (--remote) is set')
+
+        logger = self.get_logger()  # pylint: disable=E1101
+        if ulp.scheme:
+            remote = ulp.hostname
+            projectname = ulp.path.strip('/')
+        else:
+            remote = options.remote
+            projectname = self.get_name(options)  # pylint: disable=E1101
+
+        remote = FileUtils.ensure_path(
+            remote, prefix='git://', subdir=projectname, exists=False)
+
+        project = GitProject(
+            options.git,
+            worktree=options.working_dir,
+            gitdir=FileUtils.ensure_path(
+                options.working_dir, subdir=None if options.bare else '.git'),
+            revision=options.branch,
+            remote=remote,
+            bare=options.bare)
+
+        ret = 0
+        if not options.offsite:
+            ret = project.download(
+                options.git, options.mirror, options.bare)
+            if ret != 0:
+                raise DownloadError('%s: failed to fetch project' % project)
+
+        ulp = urlparse.urlparse(remote)
+        # creat the project in the remote
+        if ulp.scheme in ('ssh', 'git'):
+            if not options.tryrun and options.gerrit:
+                gerrit = Gerrit(options.gerrit)
+                gerrit.createProject(
+                    ulp.path.strip('/'),
+                    description=options.description,
+                    url=options.git)
+        else:
+            raise ProcessingError(
+                '%s: unknown scheme for remote "%s"' % (project, remote))
+
+        # push the branches
+        if ret == 0 and self.override_value(  # pylint: disable=E1101
+                options.all, options.branches):
+            ret = project.push_heads(
+                options.branch,
+                options.refs,
+                all_heads=options.all,
+                fullname=options.keep_name,
+                force=options.force,
+                tryrun=options.tryrun)
+
+            if ret:
+                logger.error('Failed to push heads')
+
+        # push the tags
+        if ret == 0 and self.override_value(  # pylint: disable=E1101
+                options.all, options.tags):
+            ret = project.push_tags(
+                None if options.all else options.tag,
+                options.refs,
+                fullname=options.keep_name,
+                force=options.force,
+                tryrun=options.tryrun)
+
+            if ret:
+                logger.error('Failed to push tags')
+
+        return ret
