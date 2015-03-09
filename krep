@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+import logging
+import optparse
+import os
+import sys
+
+from dir_utils import AutoChangedDir
+from krep_subcmds import all_commands
+
+
+def _global_options():
+    global_options = optparse.OptionParser(usage='''\
+%prog [OPTIONS] subcmd ...
+
+Execute the specified sub-commands, which can be listed with the command
+"%prog help"''')
+
+    # File options
+    group = global_options.add_option_group('Global file options')
+    group.add_option(
+        '-w', '--working-dir',
+        dest='working_dir', metavar='WORKING_DIR', default=os.getcwd(),
+        help='Set the working directory, or current directory would be used. '
+             'default: %default')
+
+    # Debug options
+    group = global_options.add_option_group('Global debugging options')
+    group.add_option(
+        '-T', '--tryrun',
+        dest='tryrun', action='store_true', default=False,
+        help='try running the command without actual changes to the local '
+             'repository and the remote server')
+    group.add_option(
+        '-v', '--verbose',
+        dest='verbose', action='store', type='int', default=-1,
+        help='output the debug info with verbose')
+
+    # Other options
+    group = global_options.add_option_group('Global other options')
+    group.add_option(
+        '--force',
+        dest='force', action='store_true', default=False,
+        help='force to execute the operations')
+
+    return global_options
+
+
+def get_command(name):
+    return all_commands.get(name)
+
+
+def run(name, opts, args, ignore_except=False):
+    logger = logging.getLogger()
+
+    try:
+        cmd = all_commands[name]
+        cmd._run = run  # pylint: disable=W0212
+        cmd._cmd = get_command  # pylint: disable=W0212
+
+        with AutoChangedDir(opts.working_dir):
+            if opts.working_dir != os.getcwd():
+                logger.debug('chdir: %s', opts.working_dir)
+
+            cmd.execute(opts, *args)
+    except KeyError:
+        if ignore_except:
+            logger.error('Sub-command is unknown to the program')
+        else:
+            raise
+    except Exception, e:  # pylint: disable=W0703
+        if ignore_except:
+            logger.error('Error: %s', str(e))
+        else:
+            raise
+
+
+def main(argv):
+    name = None
+    for i in range(len(argv)):
+        if not argv[i].startswith('-'):
+            name = argv[i]
+            del argv[i]
+            break
+
+    logger = logging.getLogger()
+
+    if name:
+        try:
+            cmd = all_commands[name]
+            cmd.COMMAND = name
+        except KeyError:
+            logger.error('Error: Sub-command "%s" is unknown to the program',
+                         name)
+            sys.exit(1)
+
+        options = cmd.get_option_parser(_global_options())
+        opts, args = options.parse_args(argv)
+    else:
+        cmd = None
+        opts, args = _global_options().parse_args(argv)
+
+    if opts.verbose > -1:
+        logging.basicConfig(level=opts.verbose)
+
+    if not cmd:
+        print 'Exited without sub-command'
+        sys.exit(1)
+
+    run(name, options, args)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
