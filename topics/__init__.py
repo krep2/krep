@@ -24,7 +24,7 @@ for py in os.listdir(os.path.dirname(__file__)):
         import_name = '%s.%s' % (__name__, name)
         mod = __import__(import_name, globals(), locals(), ['*'])
 
-        topics = getattr(mod, 'TOPIC_ENTRY')
+        topics = getattr(mod, 'TOPIC_ENTRY', '')
         for clazz in topics.split(','):
             clazz = clazz.strip()
             if clazz:
