@@ -1,10 +1,15 @@
 
+from pattern import Pattern
+
+
 class Project(object):
-    def __init__(self, uri, path=None, revision=None, remote=None):
+    def __init__(self, uri, path=None, revision=None, remote=None,
+                 pattern=None):
         self.uri = self._safepath(uri)
         self.path = self._safepath(path)
         self.revision = revision or 'master'
         self.remote = remote
+        self.pattern = pattern or Pattern()
 
     def _safepath(self, path):
         if path:
