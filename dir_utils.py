@@ -4,9 +4,10 @@ import shutil
 
 
 class AutoChangedDir(object):
-    def __init__(self, newdir):
+    def __init__(self, newdir, cleanup=True):
         self.currdir = os.getcwd()
         self.newdir = newdir
+        self.cleanup = cleanup
         self.created = False
 
     def __enter__(self):
@@ -20,5 +21,5 @@ class AutoChangedDir(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.newdir != self.currdir:
             os.chdir(self.currdir)
-            if self.created:
+            if self.created and self.cleanup:
                 shutil.rmtree(self.newdir)

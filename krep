@@ -61,10 +61,10 @@ def run(name, opts, args, ignore_except=False):
         logger = Logger.set(
             verbose=opts.exude('verbose'), name=cmd.get_name(opts))
 
-        with AutoChangedDir(opts.working_dir):
-            if opts.working_dir != os.getcwd():
-                logger.debug('chdir: %s', opts.working_dir)
+        if opts.working_dir != os.getcwd():
+            logger.debug('chdir: %s', opts.working_dir)
 
+        with AutoChangedDir(opts.working_dir, cleanup=False):
             cmd.execute(opts, *args)
     except KeyError:
         if ignore_except:
