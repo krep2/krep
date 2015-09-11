@@ -30,6 +30,19 @@ The argument "all" indicats to list all sub-commands implicitly.'''
 
             lines.append('  %-15s%s' % (name, summary))
 
+        def _sort(linea, lineb):
+            def _is_help_command(line):
+                return line.lstrip().startswith('help')
+
+            if _is_help_command(linea):
+                return -1
+            elif _is_help_command(lineb):
+                return 1
+
+            return cmp(linea, lineb)
+
+        # put help command on the top
+        lines.sort(_sort)
         print '\n'.join(lines)
         print '\nSee more info with "krep help <command>"'
 
