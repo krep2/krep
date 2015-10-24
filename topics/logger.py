@@ -71,7 +71,11 @@ class Logger(object):
         if _level < 0:
             Logger.set()
 
-        return logging.getLogger(name or 'root')
+        logger = logging.getLogger(name or 'root')
+        if logger.getEffectiveLevel() > _level:
+            logger.setLevel(_level)
+
+        return logger
 
 
 TOPIC_ENTRY = 'Logger'
