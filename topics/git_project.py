@@ -18,7 +18,7 @@ def _sha1_equals(sha, shb):
 class GitProject(Project, GitCommand):
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
-                 remote=None, bare=False):
+                 remote=None, pattern=None, bare=False, *args, **kws):
         self.bare = bare
 
         if not worktree:
@@ -31,8 +31,8 @@ class GitProject(Project, GitCommand):
             gitdir = worktree
 
         # gitdir will be secured before executing the command per time
-        GitCommand.__init__(self, gitdir, worktree)
-        Project.__init__(self, uri, worktree, revision, remote)
+        GitCommand.__init__(self, gitdir, worktree, *args, **kws)
+        Project.__init__(self, uri, worktree, revision, remote, pattern)
 
     def init(self, bare=False, *args, **kws):
         cli = list()
@@ -161,11 +161,12 @@ class GitProject(Project, GitCommand):
             if not head:
                 continue
 
-            local_ref = 'refs/heads/%s' % head
             if not self.bare and head.find('remotes') == -1:
                 local_ref = 'refs/remotes/%s' % head
             elif head.find('remotes') > -1:
                 local_ref = 'refs/%s' % head
+            else:
+                local_ref = 'refs/heads/%s' % head
 
             if not self.rev_existed(local_ref):
                 local_ref = 'refs/heads/%s' % head
@@ -174,11 +175,17 @@ class GitProject(Project, GitCommand):
                 logger.error('"%s" has no matched rev', head)
                 continue
 
+            if not self.pattern.match('r,rev,revision', local_ref):
+                logger.debug('"%s" do not match revision pattern' % local_ref)
+                continue
+
             remote_ref = 'refs/heads/'
             if refs:
                 remote_ref += '%s/' % refs
 
-            remote_ref += '%s' % (head if fullname else os.path.basename(head))
+            remote_ref += '%s' % self.pattern.replace(
+                'r,rev,revision', head if fullname else os.path.basename(head))
+
             if not force and _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.debug('%s has been up-to-dated', remote_ref)
                 continue
@@ -214,15 +221,24 @@ class GitProject(Project, GitCommand):
             if not tag:
                 continue
 
-            rtags = '%s/%s' % (refs, tag) if refs else tag
+            ltag = 'refs/tags/%s' % tag
+            if not self.pattern.match('t,tag,revision', ltag):
+                logger.debug('%s: not match tag pattern' % ltag)
+                continue
+
+            rtags = 'refs/tags/'
+            if refs:
+                rtags += '%s/' % refs
+
+            rtags += self.pattern.replace('t,tag,revision', tag)
             if not force and rtags in remote_tags:
                 logger.debug('%s is up-to-date', rtags)
                 continue
 
             ret = self.push(
                 self.remote,
-                '%srefs/tags/%s:refs/tags/%s' % (
-                    '+' if force else '', tag, rtags),
+                '%s%s:%s' % (
+                    '+' if force else '', ltag, rtags),
                 *args, **kws)
 
             if ret != 0:
