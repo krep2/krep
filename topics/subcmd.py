@@ -55,9 +55,9 @@ class SubCommand(object):
                         pass
 
     @staticmethod
-    def get_logger():
+    def get_logger(name=None):
         """Returns the encapusulated logger for subcommands."""
-        return Logger.get_logger()
+        return Logger.get_logger(name)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
@@ -123,7 +123,7 @@ class SubCommandWithThread(SubCommand):
                 thread.join()
 
             if event.isSet():
-                print '\nerror: Exited due to errors.'
+                self.get_logger().error('Exited due to errors')
                 ret = False
         else:
             for task in tasks:
