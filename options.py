@@ -77,4 +77,5 @@ class OptionParser(optparse.OptionParser):
         except AttributeError:
             pass
 
-        return optparse.OptionParser.parse_args(self, args, values)
+        opts, args = optparse.OptionParser.parse_args(self, args, values)
+        return Values(opts.__dict__), args

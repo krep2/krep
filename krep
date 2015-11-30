@@ -6,7 +6,7 @@ import sys
 from dir_utils import AutoChangedDir
 from krep_subcmds import all_commands
 from options import OptionParser, OptionValueError, Values
-from topics import KrepError, Logger
+from topics import ConfigFile, KrepError, Logger
 
 
 def _global_options():
@@ -106,7 +106,13 @@ def _option_parse(argv, logger):
 
 
 def main(argv):
-    Logger.set(level=Logger.ERROR)
+    optv = Values()
+    localconf = os.path.expanduser('~/.krepconfig')
+    if os.path.exists(localconf):
+        conf = ConfigFile(localconf)
+        optv.join(conf.get_default())
+
+    Logger.set(level=Logger.ERROR, verbose=optv.verbose)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
@@ -116,17 +122,17 @@ def main(argv):
         options.error(e)
         sys.exit(1)
 
+    opts.join(optv)
+    # correct the verbose follow the final settings
+    verbose = opts.exude('verbose')
+    if verbose > -1:
+        Logger.set(verbose=verbose)
+
     if not cmd:
         logger.debug('Exited without sub-command')
         sys.exit(1)
 
-    optv = Values(opts.__dict__)
-    # correct the verbose follow the final settings
-    verbose = optv.exude('verbose')
-    if verbose > -1:
-        Logger.set(verbose=verbose)
-
-    run(name, optv, args)
+    run(name, opts, args)
 
 
 if __name__ == '__main__':
