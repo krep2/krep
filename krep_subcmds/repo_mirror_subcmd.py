@@ -3,7 +3,7 @@ import os
 import urlparse
 
 from repo_subcmd import RepoSubcmd
-from topics import GitProject
+from topics import GitProject, Pattern
 
 
 class RepoMirrorSubcmd(RepoSubcmd):
@@ -55,7 +55,8 @@ acutally in platform/manifest.git within a mirror.)
                     gitdir=os.path.join(
                         options.working_dir, '%s.git' % name),
                     revision=options.repo_branch or None,
-                    remote='%s/%s' % (options.remote, name)))
+                    remote='%s/%s' % (options.remote, name),
+                    pattern=Pattern(options.pattern)))
 
         for node in manifest.get_projects():
             path = os.path.join(options.working_dir, '%s.git' % node.name)

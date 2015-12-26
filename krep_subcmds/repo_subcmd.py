@@ -2,7 +2,7 @@
 import os
 import urlparse
 
-from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
+from topics import Command, FileUtils, GitProject, Gerrit, Manifest, Pattern, \
     SubCommandWithThread, DownloadError, RaiseExceptionIfOptionMissed
 
 
@@ -117,7 +117,8 @@ this command.
                     name,
                     worktree=os.path.join(options.working_dir, node.path),
                     revision=node.revision,
-                    remote='%s/%s' % (options.remote, name)))
+                    remote='%s/%s' % (options.remote, name),
+                    pattern=Pattern(options.pattern)))
 
         return projects
 

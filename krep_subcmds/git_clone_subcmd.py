@@ -3,7 +3,7 @@ import os
 import urlparse
 
 from topics import FileUtils, GitProject, SubCommand, DownloadError, \
-    Gerrit, ProcessingError, RaiseExceptionIfOptionMissed
+    Gerrit, Pattern, ProcessingError, RaiseExceptionIfOptionMissed
 
 
 class GitCloneSubcmd(SubCommand):
@@ -91,7 +91,8 @@ replaced by GIT_URL."""
                 options.working_dir, subdir=None if options.bare else '.git'),
             revision=options.branch,
             remote=remote,
-            bare=options.bare)
+            bare=options.bare,
+            pattern=Pattern(options.pattern))
 
         ret = 0
         if not options.offsite:
