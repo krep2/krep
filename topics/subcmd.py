@@ -39,6 +39,14 @@ class SubCommand(object):
         self._options_loaded(optparse, kws.get('modules'))
 
     def options_remote(self, optparse):
+        options = optparse.get_option_group('--force') or \
+            optparse.add_option_group('Other options')
+
+        options.add_option(
+            '--offsite', dest='offsite',
+            action='store_true', default=False,
+            help='not to fetch from the network and work offline')
+
         # Remote options
         options = optparse.add_option_group('Remote options')
         options.add_option(
