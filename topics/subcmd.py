@@ -1,5 +1,6 @@
 
 import threading
+import types
 from logger import Logger
 
 
@@ -28,6 +29,8 @@ class SubCommand(object):
     def options(self, optparse, *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
         self._options_jobs(optparse)
+        # load options from the imported classes
+        self._options_loaded(optparse, kws.get('modules'))
 
     def _options_jobs(self, optparse):
         if self.support_jobs():
@@ -38,6 +41,18 @@ class SubCommand(object):
                 '-j', '--job',
                 dest='job', action='store', type='int',
                 help='jobs to run with specified threads in parallel')
+
+    def _options_loaded(self, optparse, modules):
+        logger = self.get_logger()
+        # search the imported class to load the options
+        for name, clazz in (modules or dict()).items():
+            if isinstance(clazz, (types.ClassType, types.TypeType)):
+                if hasattr(clazz, 'options'):
+                    try:
+                        logger.debug('Load %s', name)
+                        clazz.options(optparse)
+                    except TypeError:
+                        pass
 
     @staticmethod
     def get_logger():
