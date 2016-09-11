@@ -21,5 +21,18 @@ class FileUtils(object):
 
         return None
 
+    @staticmethod
+    def ensure_path(dirname, subdir=None, prefix=None, exists=True):
+        name = dirname
+        if prefix and not name.startswith(prefix):
+            name = prefix + name
+        if subdir and not name.endswith(subdir):
+            name = os.path.join(name, subdir)
+
+        if exists:
+            return name if os.path.exists(name) else None
+        else:
+            return name
+
 
 TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'
