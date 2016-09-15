@@ -175,13 +175,13 @@ class GitProject(Project, GitCommand):
                 logger.error('"%s" has no matched rev', head)
                 continue
 
-            remote_ref = 'refs/heads/'
+            remote_ref = ''
             if refs:
                 remote_ref += '%s/' % refs
 
             remote_ref += '%s' % (head if fullname else os.path.basename(head))
             if not force and _sha1_equals(remote_heads.get(remote_ref), sha1):
-                logger.debug('%s has been up-to-dated', remote_ref)
+                logger.info('%s has been up-to-dated', remote_ref)
                 continue
 
             ret = self.push(
@@ -217,7 +217,7 @@ class GitProject(Project, GitCommand):
 
             rtags = '%s/%s' % (refs, tag) if refs else tag
             if not force and rtags in remote_tags:
-                logger.debug('%s is up-to-date', rtags)
+                logger.info('%s is up-to-date', rtags)
                 continue
 
             ret = self.push(
