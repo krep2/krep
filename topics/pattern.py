@@ -22,11 +22,20 @@ class PatternItem(object):
             self.add(patterns, exclude)
 
     def __len__(self):
-        return len(self.include) + len(self.exclude)
+        return len(self.include) + len(self.exclude) + len(self.replacement)
 
     def __str__(self):
         patterns = self.include[:]
-        patterns.extend(['!%s' % e for e in self.exclude])
+        patterns.extend(['%s%s' % (PatternItem.OPPOSITE_DELIMITER, e)
+                         for e in self.exclude])
+        if self.replacement:
+            patterns.append(
+                '%s%s%s%s%s' % (
+                    PatternItem.REPLACEMENT_DELIMITER,
+                    self.replacement[0],
+                    PatternItem.REPLACEMENT_DELIMITER,
+                    self.replacement[1],
+                    PatternItem.REPLACEMENT_DELIMITER))
 
         return '%s%s%s' % (
             self.category, PatternItem.CATEGORY_DELIMITER,
@@ -39,11 +48,9 @@ class PatternItem(object):
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
             if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER):
-                items = re.split(
-                    PatternItem.REPLACEMENT_DELIMITER,
-                    pattern.strip(PatternItem.REPLACEMENT_DELIMITER))
-                if len(items) == 2:
-                    rep = items
+                items = re.split(PatternItem.REPLACEMENT_DELIMITER, pattern)
+                if len(items) == 4:
+                    rep = items[1:-1]
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
             else:
@@ -81,8 +88,7 @@ class PatternItem(object):
 
     def replace(self, value):
         if self.replacement:
-            pattern = re.compile(self.replacement[0])
-            return pattern.sub(self.replacement[1], value)
+            return re.sub(self.replacement[0], self.replacement[1], value)
         else:
             return value
 
@@ -99,7 +105,7 @@ Each category supports several patterns split with a comma. The exclamation
 mark shows an opposite pattern which means to return the opposite result if
 matching.
 """
-    REPLACEMENT = ('-rp', '-replace', '-replacement')
+    REPLACEMENT = ('rp', 'replace', 'replacement')
 
     def __init__(self, pattern=None):
         self.categories = dict()
@@ -168,10 +174,10 @@ matching.
                     if item:
                         break
 
-        if item:
-            return item.replace(value)
-        else:
-            return value
+            if item:
+                return item.replace(value)
+
+        return value
 
 
 TOPIC_ENTRY = 'Pattern'
