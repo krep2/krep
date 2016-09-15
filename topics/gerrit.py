@@ -38,7 +38,7 @@ implicitly."""
             optparse.add_option_group('Remote options')
         options.add_option(
             '--remote', '--server', '--gerrit-server',
-            dest='server', action='store',
+            dest='remote', action='store',
             help='Set gerrit url for the repository management')
         # Not to set the default for no-option
         options.add_option(
@@ -69,8 +69,9 @@ implicitly."""
         self.new_args(cli)
         return self.wait(**kws)
 
-    def ls_projects(self):
-        if self.dirty and self._execute('ls-projects') == 0:
+    def ls_projects(self, force=False):
+        if (self.dirty or force) and self._execute(
+                'ls-projects', capture_stdout=True) == 0:
             self.dirty = False
             self.projects = list()
 
@@ -83,6 +84,7 @@ implicitly."""
                        source=None):
         logger = Logger.get_logger('Gerrit')
 
+        project = project.strip()
         if project not in self.ls_projects():
             args = list()
             if initial_commit:
@@ -103,16 +105,15 @@ implicitly."""
                     args.append('--description')
                     args.append("'%s'" % description.strip("'\""))
 
+            args.append(project)
             ret = self._execute('create-project', *args)
             if ret:
                 # try fetching the latest project to confirm the result
                 # if gerrit reports the mistake to create the repository
-                self.dirty = True
-
-            if project not in self.ls_projects():
-                raise GerritError(
-                    'Gerrit: cannot create "%s" on remote "%s"'
-                    % (project, self.server))
+                if project not in self.ls_projects(force=True):
+                    raise GerritError(
+                        'Gerrit: cannot create "%s" on remote "%s"'
+                        % (project, self.server))
         else:
             logger.debug('%s existed in the remote', project)
 

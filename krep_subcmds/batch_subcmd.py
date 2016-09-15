@@ -43,7 +43,7 @@ to define the projects in the config file.
             dest='ignore_errors', action='store_true',
             help='Ignore the running error and continue for next command')
 
-    def execute(self, options, *args, **kws):  # pylint: disable=W0613
+    def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 
         logger = self.get_logger()  # pylint: disable=E1101
@@ -51,18 +51,18 @@ to define the projects in the config file.
         def _in_group(limits, groups):
             allminus = True
 
-            for group in groups:
+            for limit in limits:
                 opposite = False
-                if group.startswith('-'):
-                    group = group[1:]
+                if limit.startswith('-'):
+                    limit = limit[1:]
                     opposite = True
                 else:
                     allminus = False
 
-                if group in limits:
+                if limit in groups:
                     return not opposite
 
-            if (allminus or 'all' in limits) and '-all' not in limits:
+            if (allminus or 'all' in limits) and '-all' not in groups:
                 return True
 
             return False
@@ -102,8 +102,9 @@ to define the projects in the config file.
                 # handle projects with the same name
                 for project in projs:
                     # remove the prefix 'project.'
-                    setattr(project, 'name', name[8:])
-                    if _filter_with_group(project, name, options.group):
+                    proj_name = conf.get_subsection_name(name)
+                    setattr(project, 'name', proj_name)
+                    if _filter_with_group(project, proj_name, options.group):
                         project.join(default)
                         projects.append(project)
 

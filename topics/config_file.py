@@ -98,6 +98,22 @@ class _ConfigFile(object):
 
         return name.rstrip('.')
 
+    @staticmethod
+    def get_section_name(name):
+        names = name.split('.')
+        if len(names) > 0:
+            return names[0]
+        else:
+            return None
+
+    @staticmethod
+    def get_subsection_name(name):
+        names = name.split('.')
+        if len(names) > 1:
+            return names[1]
+        else:
+            return None
+
     def get_default(self):
         default = self.get_values(_ConfigFile.DEFAULT_CONFIG)
         if default:
