@@ -119,7 +119,7 @@ replaced by GIT_URL."""
             ret = project.push_heads(
                 options.branch,
                 options.refs,
-                all_heads=options.all,
+                push_all=options.all,
                 fullname=options.keep_name,
                 force=options.force,
                 tryrun=options.tryrun)

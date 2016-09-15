@@ -179,7 +179,7 @@ this command.
                 res = project.push_heads(
                     project.revision,
                     options.refs,
-                    all_heads=options.all,
+                    push_all=options.all,
                     fullname=options.keep_name,
                     force=options.force,
                     tryrun=options.tryrun)
