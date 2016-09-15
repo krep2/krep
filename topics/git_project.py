@@ -73,7 +73,8 @@ class GitProject(Project, GitCommand):
         return GitCommand.clone(self, *cli, **kws)
 
     def download(self, url=None, mirror=False, bare=False, *args, **kws):
-        if self.gitdir and os.path.exists(self.gitdir):
+        if self.gitdir and os.path.isdir(self.gitdir) \
+                and os.listdir(self.gitdir):
             ret, get_url = self.ls_remote('--get-url')
             if ret and url and get_url != url.strip('/'):
                 raise ProcessingError(
