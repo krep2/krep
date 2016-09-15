@@ -111,7 +111,7 @@ class Command(object):  # pylint: disable=R0902
         return self.stdout and self.stdout.strip()
 
     def get_out_lines(self):
-        return (self.get_output or '').split('\n')
+        return (self.get_output() or '').split('\n')
 
     def get_error(self):
         return self.stderr and self.stderr.strip()
