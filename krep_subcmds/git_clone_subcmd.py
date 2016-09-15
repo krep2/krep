@@ -1,5 +1,4 @@
 
-import os
 import urlparse
 
 from topics import FileUtils, GitProject, SubCommand, DownloadError, \
@@ -104,12 +103,12 @@ replaced by GIT_URL."""
         ulp = urlparse.urlparse(remote)
         # creat the project in the remote
         if ulp.scheme in ('ssh', 'git'):
-            if not options.tryrun and options.gerrit:
-                gerrit = Gerrit(options.gerrit)
-                gerrit.createProject(
+            if not options.tryrun and options.remote:
+                gerrit = Gerrit(options.remote)
+                gerrit.create_project(
                     ulp.path.strip('/'),
                     description=options.description,
-                    url=options.git)
+                    source=options.git)
         else:
             raise ProcessingError(
                 '%s: unknown scheme for remote "%s"' % (project, remote))

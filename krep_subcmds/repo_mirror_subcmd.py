@@ -61,7 +61,7 @@ acutally in platform/manifest.git within a mirror.)
         for node in manifest.get_projects():
             path = os.path.join(options.working_dir, '%s.git' % node.name)
             if not os.path.exists(path):
-                logger.warning('%s not existed, ignored' % path)
+                logger.warning('%s not existed, ignored', path)
                 continue
 
             projects.append(

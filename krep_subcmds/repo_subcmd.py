@@ -108,7 +108,7 @@ this command.
         logger = self.get_logger()  # pylint: disable=E1101
         for node in manifest.get_projects():
             if not os.path.exists(node.path):
-                logger.warning('%s not existed, ignored' % node.path)
+                logger.warning('%s not existed, ignored', node.path)
                 continue
 
             name = '%s%s' % (options.prefix or '', node.name)
@@ -165,9 +165,13 @@ this command.
                 name=project_name)
 
             logger.info('Start processing ...')
-            if not options.tryrun and options.gerrit:
-                gerrit = Gerrit(options.gerrit)
-                gerrit.createProject(project.name)
+            if not options.tryrun and options.remote:
+                remote = options.remote
+                ulp = urlparse.urlparse(options.remote)
+                if ulp.scheme:
+                    remote = ulp.netloc.strip('/')
+                gerrit = Gerrit(remote)
+                gerrit.create_project(project.uri)
 
             res = 0
             # push the branches
