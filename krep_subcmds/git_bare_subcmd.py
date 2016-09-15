@@ -4,8 +4,8 @@ from git_clone_subcmd import GitCloneSubcmd
 
 class GitBareSubcmd(GitCloneSubcmd):
     COMMAND = 'git-b'
-    helpSummary = 'Download and import git bare repository'
-    helpUsage = """\
+    help_summary = 'Download and import git bare repository'
+    help_usage = """\
 %prog [options] ...
 
 Download git project with the option "--bare" and import to the local server.
