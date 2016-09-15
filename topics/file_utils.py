@@ -27,7 +27,7 @@ class FileUtils(object):
         name = dirname
         if prefix and not name.startswith(prefix):
             name = prefix + name
-        if subdir and not name.endswith(subdir):
+        if subdir and os.path.basename(dirname) != subdir:
             name = os.path.join(name, subdir)
 
         if exists:
