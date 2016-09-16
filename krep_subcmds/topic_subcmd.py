@@ -76,7 +76,10 @@ is the official way to use by the implemented sub-commands."""
             else:
                 topics.append(aliases[topic])
 
-        TopicSubcmd._print_formatted_topic(topics, print_name=len(topics) > 1)
+        if len(topics) > 1:
+            TopicSubcmd._print_formatted_topic(topics)
+        else:
+            print all_topics[topics[0]]
 
     def execute(self, options, *args):  # pylint: disable=W0613
         if len(args) == 0 or 'all' in args:
