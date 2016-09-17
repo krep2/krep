@@ -104,7 +104,7 @@ to define the projects in the config file.
                     proj_name = conf.get_subsection_name(name)
                     setattr(project, 'name', proj_name)
                     if _filter_with_group(project, proj_name, options.group):
-                        project.join(default)
+                        project.join(default, override=False)
                         projects.append(project)
 
             projs, nprojs = list(), list()
@@ -122,7 +122,7 @@ to define the projects in the config file.
                     setattr(
                         project, 'working_dir', os.path.abspath(working_dir))
 
-                project.join(options)
+                project.join(options, override=False)
                 if multiple:
                     projs.append(project)
                 else:
