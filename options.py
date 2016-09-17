@@ -10,10 +10,30 @@ OptionValueError = optparse.OptionValueError
 
 class Values(optparse.Values):
     """Extends to enable the values like numbers, boolean values, etc."""
-    def join(self, values):
+    def join(self, values, option=None, override=True):
+        def _getopt(option_, attr):
+            nattr = attr.replace('_', '-')
+            sattr = '-%s' % nattr
+            lattr = '--%s' % nattr
+            if lattr in option_._long_opt:  # pylint: disable=W0212
+                opt = option_._long_opt[lattr]  # pylint: disable=W0212
+            elif sattr in option_._short_opt:  # pylint: disable=W0212
+                opt = option_._short_opt[sattr]  # pylint: disable=W0212
+            else:
+                opt = None
+
+            return opt
+
         if values is not None:
             for attr in values.__dict__:
-                self.ensure_value(attr, getattr(values, attr))
+                if override:
+                    opt = option and _getopt(option, attr)
+                    if opt and opt.default == getattr(values, attr):
+                        continue
+
+                    setattr(self, attr, getattr(values, attr))
+                else:
+                    self.ensure_value(attr, getattr(values, attr))
 
     def __getattr__(self, attr):
         try:

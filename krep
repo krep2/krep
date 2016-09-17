@@ -106,18 +106,18 @@ def _option_parse(argv, logger):
 
 
 def main(argv):
-    optv = Values()
+    opts = Values()
     localconf = os.path.expanduser('~/.krepconfig')
     if os.path.exists(localconf):
         conf = ConfigFile(localconf)
-        optv.join(conf.get_default())
+        opts.join(conf.get_default())
 
-    Logger.set(level=Logger.ERROR, verbose=optv.verbose)
+    Logger.set(level=Logger.ERROR, verbose=opts.verbose)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
     try:
-        opts, args = options.parse_args(argv)
+        optv, args = options.parse_args(argv)
     except OptionValueError, e:
         options.error(e)
         sys.exit(1)
