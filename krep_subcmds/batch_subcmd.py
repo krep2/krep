@@ -7,7 +7,6 @@ from topics import ConfigFile, SubCommandWithThread, \
 
 
 class BatchSubcmd(SubCommandWithThread):
-    REMOTE = ''
     COMMAND = 'batch'
 
     help_summary = 'Load and executes projects from specified files'

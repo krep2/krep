@@ -7,7 +7,6 @@ from topics import GitProject, Pattern
 
 
 class RepoMirrorSubcmd(RepoSubcmd):
-    REMOTE = ''
     COMMAND = 'repo-mirror'
 
     help_summary = 'Download and import git-repo mirror project'

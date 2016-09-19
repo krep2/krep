@@ -30,7 +30,6 @@ class RepoCommand(Command):
 
 
 class RepoSubcmd(SubCommandWithThread):
-    REMOTE = 'refs/remotes/'
     COMMAND = 'repo'
 
     help_summary = 'Download and import git-repo manifest project'
