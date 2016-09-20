@@ -1,6 +1,6 @@
 
 from command import Command
-from file_utils import FileUtils
+from files.file_utils import FileUtils
 
 
 class GitCommand(Command):
