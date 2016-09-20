@@ -84,6 +84,11 @@ class PatternItem(object):
                 if re.search(e, pattern) is not None:
                     return opposite
 
+            if len(self.include) > 0:
+                return opposite
+            elif len(self.exclude) > 0:
+                return not opposite
+
         return True
 
     def replace(self, value):
