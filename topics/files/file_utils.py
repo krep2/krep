@@ -3,8 +3,10 @@ import os
 import re
 import shutil
 
+from topics.error import KrepError
 
-class ExecutableNotFoundError(Exception):
+
+class ExecutableNotFoundError(KrepError):
     """Indicate the executable not found."""
 
 
