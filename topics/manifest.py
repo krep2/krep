@@ -237,6 +237,12 @@ be saved in XML file again with limited attributes.
 
         return projects
 
+    def get_default(self):
+        return self._default
+
+    def get_remote(self, remote):
+        return self._remote.get(remote)
+
     def get_projects(self, raw=False):
         projects = [
             project for project in self._projects if not project.removed]
