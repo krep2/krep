@@ -86,7 +86,7 @@ to define the projects in the config file.
             self._run(project.schema,  # pylint: disable=E1101
                       project,
                       largs,
-                      ignore_error)
+                      ignore_except=ignore_error)
 
         def _batch(batch):
             conf = ConfigFile(batch)
