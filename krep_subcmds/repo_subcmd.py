@@ -177,7 +177,8 @@ this command.
                     options.branches, options.all):
                 res = project.push_heads(
                     project.revision,
-                    options.refs,
+                    self.override_value(  # pylint: disable=E1101
+                        options.refs, options.head_refs),
                     push_all=options.all,
                     fullname=options.keep_name,
                     force=options.force,
@@ -189,7 +190,8 @@ this command.
             if self.override_value(  # pylint: disable=E1101
                     options.tags, options.all):
                 res = project.push_tags(
-                    None, options.refs,
+                    None, self.override_value(  # pylint: disable=E1101
+                        options.refs, options.tag_refs),
                     fullname=options.keep_name,
                     force=options.force,
                     tryrun=options.tryrun)

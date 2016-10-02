@@ -54,6 +54,16 @@ class SubCommand(object):
             dest='refs', action='store', metavar='REF',
             help='the reference prefix of the remote server')
         options.add_option(
+            '--head-refs',
+            dest='head_refs', action='store', metavar='HEAD_REF',
+            help='the reference prefix of the heads. it will override the one '
+                 'of "refs"')
+        options.add_option(
+            '--tag-refs',
+            dest='tag_refs', action='store', metavar='TAG_REF',
+            help='the reference prefix of the tags. it will override the one '
+                 'of "refs"')
+        options.add_option(
             '-k', '--keep-name',
             dest='keep_name', action='store_true', default=False,
             help='keep current head or tag name without new refs as the '

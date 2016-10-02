@@ -118,7 +118,8 @@ replaced by GIT_URL."""
                 options.all, options.branches):
             res = project.push_heads(
                 options.branch,
-                options.refs,
+                self.override_value(  # pylint: disable=E1101
+                    options.refs, options.head_refs),
                 push_all=options.all,
                 fullname=options.keep_name,
                 force=options.force,
@@ -133,7 +134,8 @@ replaced by GIT_URL."""
                 options.all, options.tags):
             res = project.push_tags(
                 None if options.all else options.tag,
-                options.refs,
+                self.override_value(  # pylint: disable=E1101
+                    options.refs, options.tag_refs),
                 fullname=options.keep_name,
                 force=options.force,
                 tryrun=options.tryrun)
