@@ -28,7 +28,7 @@ acutally in platform/manifest.git within a mirror.)
 
     def options(self, optparse):
         RepoSubcmd.options(self, optparse)
-        optparse.remove_option('--mirror')
+        optparse.suppress_opt('--mirror', True)
 
     def fetch_projects_in_manifest(self, options):
         manifest = self.get_manifest(options)
@@ -61,7 +61,3 @@ acutally in platform/manifest.git within a mirror.)
                     pattern=pattern))
 
         return projects
-
-    def execute(self, options, *args, **kws):
-        options.mirror = True
-        RepoSubcmd.execute(self, options, *args, **kws)

@@ -18,10 +18,4 @@ cloning the git.
 
     def options(self, optparse):
         GitCloneSubcmd.options(self, optparse)
-        option = optparse.get_option_group('--bare')
-        if option:
-            option.remove_option('--bare')
-
-    def execute(self, options, *args, **kws):
-        options.bare = True
-        GitCloneSubcmd.execute(self, options, args)
+        optparse.suppress_opt('--bare', True)
