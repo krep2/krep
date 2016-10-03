@@ -71,7 +71,7 @@ to define the projects in the config file.
             limits = re.split(r'\s*,\s*', limit or 'all')
 
             groups = re.split(r'\s*,\s*', project.exude('group', ''))
-            groups.append(os.path.basename(name))
+            groups.extend([name, os.path.basename(name)])
             if _in_group(limits, groups):
                 return True
             else:
