@@ -176,7 +176,7 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match('r,rev,revision', local_ref):
-                logger.debug('"%s" do not match revision pattern' % local_ref)
+                logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
 
             remote_ref = 'refs/heads/'
@@ -223,7 +223,7 @@ class GitProject(Project, GitCommand):
 
             ltag = 'refs/tags/%s' % tag
             if not self.pattern.match('t,tag,revision', ltag):
-                logger.debug('%s: not match tag pattern' % ltag)
+                logger.debug('%s: not match tag pattern', ltag)
                 continue
 
             rtags = 'refs/tags/'
