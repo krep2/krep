@@ -202,7 +202,7 @@ be saved in XML file again with limited attributes.
         for node in nodes:
             if node.nodeName == 'remove-project':
                 name = _attr(node, 'name')
-                if name in self._projects:
+                if name not in self._projects:
                     raise ManifestException(
                         'remove-project project %s is not existent' % name)
                 else:
@@ -236,6 +236,12 @@ be saved in XML file again with limited attributes.
                     revision=project.revision))
 
         return projects
+
+    def get_default(self):
+        return self._default
+
+    def get_remote(self, remote):
+        return self._remote.get(remote)
 
     def get_projects(self, raw=False):
         projects = [
