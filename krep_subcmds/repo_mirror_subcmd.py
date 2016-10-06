@@ -35,6 +35,8 @@ acutally in platform/manifest.git within a mirror.)
 
         projects = list()
         logger = self.get_logger()  # pylint: disable=E1101
+        pattern = Pattern(options.pattern)
+
         manp = manifest.get_projects()
         ManifestProject = namedtuple('ManifestProject', 'name revision')
         manp.append(ManifestProject('git-repo', None))
@@ -44,6 +46,9 @@ acutally in platform/manifest.git within a mirror.)
             if not os.path.exists(path):
                 logger.warning('%s not existed, ignored', path)
                 continue
+            elif not pattern.match('p,project', node.name):
+                logger.debug('%s ignored by the pattern', node.name)
+                continue
 
             projects.append(
                 GitProject(
@@ -52,7 +57,8 @@ acutally in platform/manifest.git within a mirror.)
                     gitdir=path,
                     revision=node.revision,
                     remote='%s/%s' % (options.remote, node.name),
-                    bare=True))
+                    bare=True,
+                    pattern=pattern))
 
         return projects
 

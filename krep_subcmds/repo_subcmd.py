@@ -105,9 +105,14 @@ this command.
 
         projects = list()
         logger = self.get_logger()  # pylint: disable=E1101
+        pattern = Pattern(options.pattern)
+
         for node in manifest.get_projects():
             if not os.path.exists(node.path):
                 logger.warning('%s not existed, ignored', node.path)
+                continue
+            elif not pattern.match('p,project', node.name):
+                logger.debug('%s ignored by the pattern', node.name)
                 continue
 
             name = '%s%s' % (options.prefix or '', node.name)
@@ -117,7 +122,7 @@ this command.
                     worktree=os.path.join(options.working_dir, node.path),
                     revision=node.revision,
                     remote='%s/%s' % (options.remote, name),
-                    pattern=Pattern(options.pattern)))
+                    pattern=pattern))
 
         return projects
 
