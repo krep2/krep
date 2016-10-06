@@ -1,6 +1,5 @@
 
 import os
-import urlparse
 
 from repo_subcmd import RepoSubcmd
 from topics import GitProject, Pattern
@@ -35,27 +34,6 @@ acutally in platform/manifest.git within a mirror.)
 
         projects = list()
         logger = self.get_logger()  # pylint: disable=E1101
-
-        # add the manifest, which isn't inside the xml file
-        manp = GitProject(
-            '.repo/manifests',
-            worktree=os.path.join(options.working_dir, '.repo/manifests'),
-            gitdir=os.path.join(options.working_dir, '.repo/manifests.git'))
-
-        ret, url = manp.config('--get', 'remote.origin.url')
-        if ret == 0:
-            ulp = urlparse.urlparse(url)
-            name = ulp.path.strip('/')
-            projects.append(
-                GitProject(
-                    '%s%s' % (options.prefix or '', name),
-                    worktree=os.path.join(
-                        options.working_dir, '%s.git' % name),
-                    gitdir=os.path.join(
-                        options.working_dir, '%s.git' % name),
-                    revision=options.repo_branch or None,
-                    remote='%s/%s' % (options.remote, name),
-                    pattern=Pattern(options.pattern)))
 
         for node in manifest.get_projects():
             path = os.path.join(options.working_dir, '%s.git' % node.name)
