@@ -1,6 +1,7 @@
 
 import os
 
+from collections import namedtuple
 from repo_subcmd import RepoSubcmd
 from topics import GitProject, Pattern
 
@@ -34,8 +35,11 @@ acutally in platform/manifest.git within a mirror.)
 
         projects = list()
         logger = self.get_logger()  # pylint: disable=E1101
+        manp = manifest.get_projects()
+        ManifestProject = namedtuple('ManifestProject', 'name revision')
+        manp.append(ManifestProject('git-repo', None))
 
-        for node in manifest.get_projects():
+        for node in manp:
             path = os.path.join(options.working_dir, '%s.git' % node.name)
             if not os.path.exists(path):
                 logger.warning('%s not existed, ignored', path)
