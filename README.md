@@ -1,15 +1,15 @@
 krep: Tool framework for extension
 ==================================
 
-The `krep` project on the branch contains the elemental construction to build
-an extensible tool.
+The `krep` project on the branch contains the stuffs on the `base` branch and
+adds the supports of the prorject idea, [gerrit][], `git` commands,
+[git-repo][] manifest, etc. One extra sub-command `batch` is implemented to run
+other sub-commands with a batch file in the `config` format.
 
-The main idea for the loaded sub-command refers to Google tool [git-repo][].
-
-It relies on the dynamic language Python to load the component named `topic` in
-the directory `topics`, and the sub-commands in the directory `krep_subcmd`.
-The implemented sub-commands can only use the standard Python libraries and the
-exported `class` from the exported `topic` classes.
+Though the main idea comes from [git-repo][], it extends to load the component
+named `topic` in the directory `topics`, and the sub-commands in the directory
+`krep_subcmds`. The implemented sub-commands can only use the standard Python
+libraries and the exported `class` from the exported `topic` classes.
 
 Topic
 -----
@@ -38,9 +38,9 @@ with different purpose.
 Development
 -----------
 
-With the framework, it's quite easy to implement the owned toolkit.
+With the framework, it's not hard to extend it as a `Configuration Management`
+tookit with specific sub-commands to run over `git` repositories, or even use
+[git-repo][] manifest to operate with the large project in one time.
 
-The basic sense is to implement the common API classes as `topic`s and write
-the singleton sub-commands using the `topic`s.
-
+[gerrit]: (https://www.gerritcodereview.com)
 [git-repo]: https://gerrit.googlesource.com/git-repo
