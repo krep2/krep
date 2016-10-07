@@ -172,9 +172,8 @@ this command.
                 gerrit = Gerrit(remote)
                 gerrit.create_project(project.uri)
 
-            res = 0
             # push the branches
-            if not res and self.override_value(  # pylint: disable=E1101
+            if self.override_value(  # pylint: disable=E1101
                     options.branches, options.all):
                 res = project.push_heads(
                     project.revision,
@@ -187,7 +186,7 @@ this command.
                     logger.error('failed to push heads')
 
             # push the tags
-            if not res and self.override_value(  # pylint: disable=E1101
+            if self.override_value(  # pylint: disable=E1101
                     options.tags, options.all):
                 res = project.push_tags(
                     None, options.refs,

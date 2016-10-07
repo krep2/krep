@@ -114,9 +114,9 @@ replaced by GIT_URL."""
                 '%s: unknown scheme for remote "%s"' % (project, remote))
 
         # push the branches
-        if ret == 0 and self.override_value(  # pylint: disable=E1101
+        if self.override_value(  # pylint: disable=E1101
                 options.all, options.branches):
-            ret = project.push_heads(
+            res = project.push_heads(
                 options.branch,
                 options.refs,
                 push_all=options.all,
@@ -124,20 +124,22 @@ replaced by GIT_URL."""
                 force=options.force,
                 tryrun=options.tryrun)
 
-            if ret:
+            ret |= res
+            if res:
                 logger.error('Failed to push heads')
 
         # push the tags
-        if ret == 0 and self.override_value(  # pylint: disable=E1101
+        if self.override_value(  # pylint: disable=E1101
                 options.all, options.tags):
-            ret = project.push_tags(
+            res = project.push_tags(
                 None if options.all else options.tag,
                 options.refs,
                 fullname=options.keep_name,
                 force=options.force,
                 tryrun=options.tryrun)
 
-            if ret:
+            ret |= res
+            if res:
                 logger.error('Failed to push tags')
 
         return ret
