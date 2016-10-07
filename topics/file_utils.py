@@ -10,8 +10,9 @@ class FileUtils(object):
     """Utility to handle file operations."""
     @staticmethod
     def find_execute(program, exception=True):
-        dirs = os.environ.get('PATH', '~/bin:/usr/bin:/bin/')
-        for dname in dirs.split(':'):
+        dirs = os.environ.get(
+            'PATH', os.pathsep.join(('~/bin', '/usr/bin', '/bin/')))
+        for dname in dirs.split(os.pathsep):
             name = os.path.expanduser(os.path.join(dname, program))
             if os.path.exists(name):
                 return name
@@ -26,7 +27,7 @@ class FileUtils(object):
         name = dirname
         if prefix and not name.startswith(prefix):
             name = prefix + name
-        if subdir and not name.endswith(subdir):
+        if subdir and os.path.basename(dirname) != subdir:
             name = os.path.join(name, subdir)
 
         if exists:
