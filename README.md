@@ -1,5 +1,5 @@
-krep: Tool framework for extension
-==================================
+krep: Tool to manage git repository importing
+==============================================
 
 The `krep` project on the branch contains the stuffs on the `base` branch and
 adds the supports of the prorject idea, [gerrit][], `git` commands,
@@ -11,36 +11,64 @@ named `topic` in the directory `topics`, and the sub-commands in the directory
 `krep_subcmds`. The implemented sub-commands can only use the standard Python
 libraries and the exported `class` from the exported `topic` classes.
 
-Topic
------
+`krep` project is a toolkit containing several tools to handle git repository
+and/or [git-repo][] projects to import owned [gerrit][] or git server.
 
-The directory `topics` can contain any of Python files with implemented classes.
-Only the class listed in the string `TOPIC_ENTRY` will be loaded and exported
-to the run-time system under the module `topic`.
+The toolkit based on the tool framework on branch `cm` of this repository, which
+provides most of the basic `git` functions.
 
-For example, `SubCommand` is the parent class for all sub-commands. It can be
-imported like:
+Currently, the toolkit supports the commands:
 
-```python
-from topics import SubCommand
+```bash
+$ krep help
+Usage: krep subcmd [args] ...
+The commands of krep are:
+
+  help           Print the command summaries
+  batch          Load and executes projects from specified files
+  git-b          Download and import git bare repository
+  git-p          Download and import git repository
+  repo           Download and import git-repo manifest project
+  repo-mirror    Download and import git-repo mirror project
+  topic          Print the topic summaries
+
+See more info with "krep help <command>"
 ```
 
-Sub-command
------------
+Sub-command `batch` supports to run with `batch` files, which hold other sub-
+commands and parameters. `git-b` downloads a git bare repository but `git-p`
+downloads a normal one. `repo` is the sub-command to work with a [git-repo][]
+project while `repo-mirror` works with a mirror [git-repo][] project.
 
-Sub-command is implemented to support specified activities, which can use the
-common functions provided by Python libraries and extra functions by `topics`.
+Sub-command `topic` lists the supported functions provided by the Python file
+in the `topics` directory. At the time, the output of the sub-command is:
 
-As all commands are dynamically loaded, the framework can be easily implemented
-with different purpose.
+```bash
+$ ./krep topic
+The topics of krep are:
 
+ Command                       Executes a local executable command
+ ConfigFile                    No description
+ DownloadError                 Indicate the unsuccessful download
+ ExecutableNotFoundError       Indicate the executable not found
+ FileUtils                     Utility to handle file operations
+ Gerrit                        Provides Gerrit access
+ GerritError                   Indicate the unsuccessful gerrit processing
+ GitProject                    Manages the git repository as a project
+ KrepError                     Root exception for krep
+ Logger                        Provides the logging methods
+ Manifest                      No description
+ ManifestException             No description
+ OptionMissedError             Indicate the missed option
+ Pattern                       Contains pattern categories with the format...
+ ProcessingError               Indicate the unsuccessful processing
+ RaiseExceptionIfOptionMissed  Raise OptionMissedError if the option or options are missed
+ SubCommand                    Supports to run as the tool running command
+ SubCommandNotDetectedError    Indicate the sub-command of a command cannot be found
+ SubCommandWithThread          Commands with threading method to run with multiple jobs
 
-Development
------------
-
-With the framework, it's not hard to extend it as a `Configuration Management`
-tookit with specific sub-commands to run over `git` repositories, or even use
-[git-repo][] manifest to operate with the large project in one time.
+See more info with "krep topic <topic>"
+```
 
 [gerrit]: (https://www.gerritcodereview.com)
 [git-repo]: https://gerrit.googlesource.com/git-repo
