@@ -15,16 +15,12 @@ def _register_topic(topic, doc):
     all_topics[topic] = doc
 
 
-def _load_python_files(pyname):
-    if os.path.basename(pyname) == '__init__.py':
-        return
-
+def _load_python_file(pyname):
     blen = len(os.path.dirname(__file__)) + 1
     if pyname.endswith('.py'):
         name = pyname[blen:-3].replace('/', '.')
         import_name = '%s.%s' % (__name__, name)
         mod = __import__(import_name, globals(), locals(), ['*'])
-
         topics = getattr(mod, 'TOPIC_ENTRY', '')
         for clazz in topics.split(','):
             clazz = clazz.strip()
@@ -49,13 +45,17 @@ def _load_python_files(pyname):
                         '%s/%s does not define %s' % (__name__, pyname, clazz))
 
 
-def _load_python_recursive(dirname, level=0):
-    for name in os.listdir(dirname):
-        filename = os.path.join(dirname, name)
-        if os.path.isfile(filename):
-            _load_python_files(filename)
-        elif os.path.isdir(filename) and level < 1:
-            _load_python_recursive(filename, level + 1)
+def _load_python_recursive(dirname, level=1):
+    if os.path.isdir(dirname):
+        for name in os.listdir(dirname):
+            if name == '__init__.py':
+                continue
+
+            filename = os.path.join(dirname, name)
+            if os.path.isfile(filename):
+                _load_python_file(filename)
+            elif os.path.isdir(filename) and level > 0:
+                _load_python_recursive(filename, level - 1)
 
 
 _load_python_recursive(os.path.dirname(__file__))

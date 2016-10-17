@@ -50,7 +50,7 @@ def get_command(name):
     return all_commands.get(name)
 
 
-def run(name, opts, args, ignore_except=False):
+def run(name, opts, args, optparse=None, ignore_except=False):
     logger = Logger.get_logger(name)
 
     try:
@@ -60,6 +60,10 @@ def run(name, opts, args, ignore_except=False):
 
         logger = Logger.set(
             verbose=opts.exude('verbose'), name=cmd.get_name(opts))
+
+        if optparse is None:
+            _, _, _, optparse = _option_parse([name], logger)
+            optparse.join(opts)
 
         if opts.working_dir != os.getcwd():
             logger.debug('chdir: %s', opts.working_dir)
@@ -106,18 +110,18 @@ def _option_parse(argv, logger):
 
 
 def main(argv):
-    optv = Values()
+    opts = Values()
     localconf = os.path.expanduser('~/.krepconfig')
     if os.path.exists(localconf):
         conf = ConfigFile(localconf)
-        optv.join(conf.get_default())
+        opts.join(conf.get_default())
 
-    Logger.set(level=Logger.ERROR, verbose=optv.verbose)
+    Logger.set(level=Logger.ERROR, verbose=opts.verbose)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
     try:
-        opts, args = options.parse_args(argv)
+        optv, args = options.parse_args(argv)
     except OptionValueError, e:
         options.error(e)
         sys.exit(1)
@@ -132,7 +136,7 @@ def main(argv):
         logger.debug('Exited without sub-command')
         sys.exit(1)
 
-    run(name, opts, args)
+    run(name, opts, args, options)
 
 
 if __name__ == '__main__':

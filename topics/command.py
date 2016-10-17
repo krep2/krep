@@ -11,8 +11,9 @@ class SubCommandNotDetectedError(Exception):
 
 class Command(object):  # pylint: disable=R0902
     """Executes a local executable command."""
-    def __init__(self, cwd=None, provide_stdin=False, capture_stdout=False,
-                 capture_stderr=True, tryrun=False, *args, **kws):
+    def __init__(self, cwd=None, provide_stdin=False,  # pylint: disable=R0913
+                 capture_stdout=False, capture_stderr=True,
+                 tryrun=False, *args, **kws):
         self.cwd = cwd
         self.stdout = ''
         self.stderr = ''

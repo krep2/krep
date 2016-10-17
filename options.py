@@ -10,10 +10,30 @@ OptionValueError = optparse.OptionValueError
 
 class Values(optparse.Values):
     """Extends to enable the values like numbers, boolean values, etc."""
-    def join(self, values):
+    def join(self, values, option=None, override=True):
+        def _getopt(option_, attr):
+            nattr = attr.replace('_', '-')
+            sattr = '-%s' % nattr
+            lattr = '--%s' % nattr
+            if lattr in option_._long_opt:  # pylint: disable=W0212
+                opt = option_._long_opt[lattr]  # pylint: disable=W0212
+            elif sattr in option_._short_opt:  # pylint: disable=W0212
+                opt = option_._short_opt[sattr]  # pylint: disable=W0212
+            else:
+                opt = None
+
+            return opt
+
         if values is not None:
             for attr in values.__dict__:
-                self.ensure_value(attr, getattr(values, attr))
+                if override:
+                    opt = option and _getopt(option, attr)
+                    if opt and opt.default == getattr(values, attr):
+                        continue
+
+                    setattr(self, attr, getattr(values, attr))
+                else:
+                    self.ensure_value(attr, getattr(values, attr))
 
     def __getattr__(self, attr):
         try:
@@ -50,8 +70,33 @@ class Values(optparse.Values):
 
 
 class OptionParser(optparse.OptionParser):
-    """Extends to handle the oppsite options."""
+    def __init__(self,  # pylint: disable=R0913
+                 usage=None,
+                 option_list=None,
+                 option_class=None,
+                 version=None,
+                 conflict_handler="error",
+                 description=None,
+                 formatter=None,
+                 add_help_option=True,
+                 prog=None,
+                 epilog=None):
+        optparse.OptionParser.__init__(
+            self, usage=usage,
+            option_list=option_list,
+            option_class=option_class or optparse.Option,
+            version=version,
+            conflict_handler=conflict_handler,
+            description=description,
+            formatter=formatter,
+            add_help_option=add_help_option,
+            prog=prog,
+            epilog=epilog)
+
+        self.sup_values = Values()
+
     def _handle_opposite(self, args):
+        """Extends to handle the oppsite options."""
         group = None
 
         for arg in args or sys.argv[1:]:
@@ -70,6 +115,16 @@ class OptionParser(optparse.OptionParser):
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
+    def suppress_opt(self, opt, default=None):
+        option = self.get_option_group(opt)
+        if option:
+            option.remove_option(opt)
+        if default:
+            setattr(self.sup_values, opt.lstrip('-'), default)
+
+    def join(self, opt):
+        opt.join(self.sup_values)
+
     def parse_args(self, args=None, values=None):
         """ Creates a pseduo group to hold the --no- options. """
         try:
@@ -78,4 +133,7 @@ class OptionParser(optparse.OptionParser):
             pass
 
         opts, args = optparse.OptionParser.parse_args(self, args, values)
-        return Values(opts.__dict__), args
+        optv = Values(opts.__dict__)
+        optv.join(self.sup_values)
+
+        return optv, args
