@@ -201,7 +201,14 @@ class GitProject(Project, GitCommand):
                 logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
 
-            remote_ref = '%s' % self.pattern.replace(
+            if fullname:
+                heads = head.split('/')
+                while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
+                    heads = heads[1:]
+
+                head = '/'.join(heads)
+
+            remote_ref = 'refs/heads/%s' % self.pattern.replace(
                 'r,rev,revision', '%s%s' % (refs or '', head),
                 name=self.uri)
 
@@ -212,7 +219,7 @@ class GitProject(Project, GitCommand):
 
             ret = self.push(
                 self.remote,
-                '%s%s:refs/heads/%s' % (
+                '%s%s:%s' % (
                     '+' if force else '', local_ref, remote_ref),
                 *args, **kws)
 
