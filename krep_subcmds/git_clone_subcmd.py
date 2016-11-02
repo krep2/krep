@@ -34,7 +34,10 @@ replaced by GIT_URL."""
             '--git', '--git-url',
             dest='git', action='store', metavar='GIT_URL',
             help='Set the git repository url to download and import')
-
+        options.add_option(
+            '--rev', '--reversion', '--branch',
+            dest='branch', action='store',
+            help='Set the initial revisions to download')
         options = optparse.get_option_group('--all') or \
             optparse.add_option_group('Git options')
         options.add_option(

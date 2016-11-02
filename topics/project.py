@@ -7,7 +7,7 @@ class Project(object):
                  pattern=None):
         self.uri = self._safepath(uri)
         self.path = self._safepath(path)
-        self.revision = revision or 'master'
+        self.revision = revision
         self.remote = remote
         self.pattern = pattern or Pattern()
 
