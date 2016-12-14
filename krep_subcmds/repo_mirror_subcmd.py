@@ -50,13 +50,14 @@ acutally in platform/manifest.git within a mirror.)
                 logger.debug('%s ignored by the pattern', node.name)
                 continue
 
+            name = '%s%s' % (options.prefix or '', node.name)
             projects.append(
                 GitProject(
                     '%s%s' % (options.prefix or '', node.name),
                     worktree=path,
                     gitdir=path,
                     revision=node.revision,
-                    remote='%s/%s' % (options.remote, node.name),
+                    remote='%s/%s' % (options.remote, name),
                     bare=True,
                     pattern=pattern))
 
