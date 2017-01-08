@@ -16,19 +16,32 @@ def _register_topic(topic, doc):
 
 
 def _load_python_file(pyname):
-    blen = len(os.path.dirname(__file__)) + 1
     if pyname.endswith('.py'):
-        name = pyname[blen:-3].replace('/', '.')
-        import_name = '%s.%s' % (__name__, name)
-        mod = __import__(import_name, globals(), locals(), ['*'])
+        dirname = os.path.dirname(pyname)
+        topicdir = os.path.dirname(__file__)
+
+        if pyname.startswith(topicdir + os.sep):
+            mname = os.path.join(os.path.basename(topicdir),
+                                 pyname[len(topicdir) + 1:])
+        else:
+            mname = os.path.basename(pyname)
+
+        name = os.path.splitext(mname)[0].replace(os.sep, '.')
+
+        sys.path.append(dirname)
+        mod = __import__(os.path.basename(pyname)[:-3], globals())
+        sys.path.pop(-1)
+
         topics = getattr(mod, 'TOPIC_ENTRY', '')
         for clazz in topics.split(','):
             clazz = clazz.strip()
             if clazz:
+                if name not in sys.modules and name.find('.') > -1:
+                    name = name.split('.')[-1]
+
                 members = inspect.getmembers(
-                    sys.modules[import_name],
-                    lambda member: inspect.isclass(member) and
-                    member.__module__.startswith(__name__))
+                    sys.modules[name],
+                    lambda member: inspect.isclass(member))
 
                 for m in members or list():
                     globals().update({m[0]: m[1]})
@@ -57,5 +70,15 @@ def _load_python_recursive(dirname, level=1):
             elif os.path.isdir(filename) and level > 0:
                 _load_python_recursive(filename, level - 1)
 
-
+# load the default topics
 _load_python_recursive(os.path.dirname(__file__))
+
+# load the ones specified in KREP_EXTRA_PATH
+for dname in os.environ.get('KREP_EXTRA_PATH', '').split(os.pathsep):
+    if os.path.isdir(dname):
+        _load_python_recursive(os.path.join(dname, 'topics'))
+
+# load the ones specified in KREP_TOPIC_PATH
+for dname in os.environ.get('KREP_TOPIC_PATH', '').split(os.pathsep):
+    if os.path.isdir(dname):
+        _load_python_recursive(dname, 0)
