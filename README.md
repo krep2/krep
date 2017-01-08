@@ -43,8 +43,9 @@ With the framework, it's quite easy to implement the owned toolkit.
 The basic sense is to implement the common API classes as `topic`s and write
 the singleton sub-commands using the `topic`s.
 
-*NOTE:* The project uses *GPLv2* as the license. It's appreciated to contribute
-the fixes and the ideas to improve the tool.
+*NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
+contribute the fixes and the ideas to improve the tool but it's not mandatory to
+open source of the plug-ins.
 
 The framework provides to load the `topics` and subcommands with specified
 environment variables, which works like the environment variable `PATH`:
