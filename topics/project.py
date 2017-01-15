@@ -4,11 +4,12 @@ from pattern import Pattern
 
 class Project(object):
     def __init__(self, uri, path=None, revision=None, remote=None,
-                 pattern=None, *args, **kws):
+                 pattern=None, *args, **kws):  # pylint: disable=W0613
         self.uri = self._safepath(uri)
         self.path = self._safepath(path)
-        self.revision = revision or 'master'
+        self.revision = revision
         self.remote = remote
+        self.source = kws.get('source') or remote
         self.pattern = pattern or Pattern()
 
     def _safepath(self, path):
