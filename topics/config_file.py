@@ -51,6 +51,7 @@ import xml.dom.minidom
 from error import ProcessingError
 from logger import Logger
 from options import Values
+from pattern import PatternFile
 
 
 def _setattr(obj, name, value):
@@ -225,13 +226,15 @@ class _XmlConfigFile(_ConfigFile):
                         name = _getattr(child, 'name')
                         value = _getattr(child, 'value')
                         _setattr(cfg, name, value)
-                    elif child.nodeName in ('pattern', 'exclude-pattern'):
-                        name = _getattr(child, 'name')
-                        value = _getattr(child, 'value')
-                        pattern = '%s:%s%s' % (
-                            name, '!' if child.nodeName != 'pattern' else '',
-                            value)
-
+                    elif child.nodeName in (
+                            'patterns', 'exclude-patterns', 'replace-patterns'):
+                        patterns = PatternFile.parse_patterns_str(child)
+                        for pattern in patterns:
+                            _setattr(cfg, 'pattern', pattern)
+                    elif child.nodeName in (
+                            'pattern', 'exclude-pattern', 'rp-pattern',
+                            'replace-pattern'):
+                        pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
 
             for node in proj.childNodes:
