@@ -18,7 +18,7 @@ def _sha1_equals(sha, shb):
 class GitProject(Project, GitCommand):
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
-                 remote=None, bare=False):
+                 remote=None, pattern=None, bare=False, *args, **kws):
         self.bare = bare
 
         if not worktree:
@@ -31,8 +31,9 @@ class GitProject(Project, GitCommand):
             gitdir = worktree
 
         # gitdir will be secured before executing the command per time
-        GitCommand.__init__(self, gitdir, worktree)
-        Project.__init__(self, uri, worktree, revision, remote)
+        GitCommand.__init__(self, gitdir, worktree, *args, **kws)
+        Project.__init__(
+            self, uri, worktree, revision, remote, pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
         cli = list()

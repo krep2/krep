@@ -4,7 +4,7 @@ from pattern import Pattern
 
 class Project(object):
     def __init__(self, uri, path=None, revision=None, remote=None,
-                 pattern=None):
+                 pattern=None, *args, **kws):
         self.uri = self._safepath(uri)
         self.path = self._safepath(path)
         self.revision = revision or 'master'
