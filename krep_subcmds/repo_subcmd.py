@@ -47,7 +47,8 @@ this command.
 """
 
     def options(self, optparse):
-        SubCommandWithThread.options(self, optparse, modules=globals())
+        SubCommandWithThread.options(self, optparse, option_remote=True,
+                                     option_import=True, modules=globals())
 
         options = optparse.add_option_group('Repo tool options')
         options.add_option(
