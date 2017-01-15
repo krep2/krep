@@ -116,7 +116,8 @@ this command.
                 logger.debug('%s ignored by the pattern', node.name)
                 continue
 
-            name = '%s%s' % (options.prefix or '', node.name)
+            name = '%s%s' % (options.prefix or '',
+                    pattern.replace('p,project', node.name, name=node.name))
             projects.append(
                 GitProject(
                     name,
