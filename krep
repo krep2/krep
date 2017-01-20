@@ -42,6 +42,10 @@ Execute the specified sub-commands, which can be listed with the command
         '--force',
         dest='force', action='store_true', default=False,
         help='force to execute the operations')
+    group.add_option(
+        '--inject-option',
+        dest='inject_option', action='append',
+        help='inject implict sub-command options')
 
     return global_options
 
@@ -53,23 +57,32 @@ def get_command(name):
 def run(name, opts, args, optparse=None, ignore_except=False):
     logger = Logger.get_logger(name)
 
+    lopts = Values(opts)
     try:
         cmd = all_commands[name]
         cmd._run = run  # pylint: disable=W0212
         cmd._cmd = get_command  # pylint: disable=W0212
 
         logger = Logger.set(
-            verbose=opts.exude('verbose'), name=cmd.get_name(opts))
+            verbose=lopts.exude('verbose'), name=cmd.get_name(lopts))
 
         if optparse is None:
             _, _, _, optparse = _option_parse([name], logger)
-            optparse.join(opts)
+            optparse.join(lopts)
 
-        if opts.working_dir != os.getcwd():
-            logger.debug('chdir: %s', opts.working_dir)
+            # inject options
+            for opt in lopts.inject_option or list():
+                try:
+                    ops, _ = optparse.parse_args([opt])
+                    lopts.join(ops, override=False)
+                except TypeError, e:
+                    pass
 
-        with AutoChangedDir(opts.working_dir, cleanup=False):
-            cmd.execute(opts, *args)
+        if lopts.working_dir != os.getcwd():
+            logger.debug('chdir: %s', lopts.working_dir)
+
+        with AutoChangedDir(lopts.working_dir, cleanup=False):
+            cmd.execute(lopts, *args)
     except KeyError:
         if ignore_except:
             logger.error('Sub-command is unknown to the program')

@@ -152,48 +152,74 @@ class GitProject(Project, GitCommand):
                    fullname=False, force=False, *args, **kws):
         logger = Logger.get_logger()
 
+        refs = refs and '%s/' % refs.rstrip('/')
         ret, local_heads = self.get_local_heads()
         ret, remote_heads = self.get_remote_heads()
 
         if not push_all:
             local_heads = {branch or '': local_heads.get(branch)}
 
-        for head, sha1 in local_heads.items():
+        # put 'master' to end of the list
+        def rev_sort(rev1, rev2):
+            if rev1 == 'master':
+                return 1
+            elif rev2 == 'master':
+                return -1
+            else:
+                return cmp(rev1, rev2)
+
+        for origin in sorted(local_heads, rev_sort):
+            head = origin
+            if not fullname:
+                head = os.path.basename(head)
             if not head:
                 continue
 
-            if not self.bare and head.find('remotes') == -1:
-                local_ref = 'refs/remotes/%s' % head
-            elif head.find('remotes') > -1:
-                local_ref = 'refs/%s' % head
-            else:
-                local_ref = 'refs/heads/%s' % head
-
-            if not self.rev_existed(local_ref):
-                local_ref = 'refs/heads/%s' % head
-
-            if not self.rev_existed(local_ref):
-                logger.error('"%s" has no matched rev', head)
+            if not self.pattern.match(
+                    'r,rev,revision', origin, name=self.uri):
+                logger.debug('"%s" do not match revision pattern', origin)
+                continue
+            elif not self.pattern.match('r,rev,revision', head, name=self.uri):
+                logger.debug('"%s" do not match revision pattern', head)
                 continue
 
-            if not self.pattern.match('r,rev,revision', local_ref):
+            if not self.bare and not origin.startswith('remotes/'):
+                local_ref = 'refs/remotes/%s' % origin
+            elif origin.startswith('remotes/'):
+                local_ref = 'refs/%s' % origin
+            else:
+                local_ref = 'refs/heads/%s' % origin
+
+            if not self.rev_existed(local_ref):
+                local_ref = 'refs/heads/%s' % origin
+                if not self.rev_existed(local_ref):
+                    logger.error('"%s" has no matched rev', origin)
+                    continue
+
+            if not self.pattern.match(
+                    'r,rev,revision', local_ref, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
 
-            remote_ref = ''
-            if refs:
-                remote_ref += '%s/' % refs
+            if fullname:
+                heads = head.split('/')
+                while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
+                    heads = heads[1:]
 
-            remote_ref += '%s' % self.pattern.replace(
-                'r,rev,revision', head if fullname else os.path.basename(head))
+                head = '/'.join(heads)
 
+            remote_ref = 'refs/heads/%s' % self.pattern.replace(
+                'r,rev,revision', '%s%s' % (refs or '', head),
+                name=self.uri)
+
+            sha1 = local_heads[origin]
             if not force and _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
                 continue
 
             ret = self.push(
                 self.remote,
-                '%s%s:refs/heads/%s' % (
+                '%s%s:%s' % (
                     '+' if force else '', local_ref, remote_ref),
                 *args, **kws)
 
@@ -206,6 +232,7 @@ class GitProject(Project, GitCommand):
                   *args, **kws):
         logger = Logger.get_logger()
 
+        refs = refs and '%s/' % refs.rstrip('/')
         ret, remote_tags = self.get_remote_tags()
 
         local_tags = list()
@@ -216,30 +243,31 @@ class GitProject(Project, GitCommand):
         else:
             local_tags.append(tags)
 
-        for tag in local_tags:
+        for origin in local_tags:
+            tag = origin
             if not fullname:
                 tag = os.path.basename(tag)
             if not tag:
                 continue
 
-            ltag = 'refs/tags/%s' % tag
-            if not self.pattern.match('t,tag,revision', ltag):
-                logger.debug('%s: not match tag pattern', ltag)
+            if not self.pattern.match('t,tag,revision', origin, name=self.uri):
+                logger.debug('%s: "%s" not match tag pattern', origin, origin)
+                continue
+            elif not self.pattern.match('t,tag,revision', tag, name=self.uri):
+                logger.debug('%s: "%s" not match tag pattern', origin, tag)
                 continue
 
-            rtags = 'refs/tags/'
-            if refs:
-                rtags += '%s/' % refs
+            rtags = 'refs/tags/%s' % self.pattern.replace(
+                't,tag,revision', '%s%s' % (refs or '', tag), name=self.uri)
 
-            rtags += self.pattern.replace('t,tag,revision', tag)
             if not force and rtags in remote_tags:
                 logger.info('%s is up-to-date', rtags)
                 continue
 
             ret = self.push(
                 self.remote,
-                '%s%s:%s' % (
-                    '+' if force else '', ltag, rtags),
+                '%srefs/tags/%s:%s' % (
+                    '+' if force else '', origin, rtags),
                 *args, **kws)
 
             if ret != 0:
