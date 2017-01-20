@@ -9,6 +9,14 @@ OptionValueError = optparse.OptionValueError
 
 
 class Values(optparse.Values):
+    def __init__(self, defaults=None):
+        if isinstance(defaults, Values):
+            optparse.Values.__init__(self, defaults.__dict__)
+        elif isinstance(defaults, dict):
+            optparse.Values.__init__(self, defaults)
+        else:
+            optparse.Values.__init__(self)
+
     """Extends to enable the values like numbers, boolean values, etc."""
     def join(self, values, option=None, override=True):
         def _getopt(option_, attr):
