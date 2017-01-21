@@ -136,37 +136,39 @@ be saved in XML file again with limited attributes.
             groups=_attr2(node, 'groups'),
             rebase=_attr2(node, 'rebase'))
 
-    def _parse_manifest_xml(self, manifest, path=None):
+    def _parse_manifest_xml(self, filename, path=None):
         try:
-            root = xml.dom.minidom.parse(manifest)
+            root = xml.dom.minidom.parse(filename)
         except (OSError, xml.parsers.expat.ExpatError):
-            raise ManifestException('error to parse manifest %s' % manifest)
+            raise ManifestException('error to parse manifest %s' % filename)
 
         if not root or not root.childNodes:
             raise ManifestException('manifest has no root')
 
+        nodes = list()
         for manifest in root.childNodes:
             if manifest.nodeName == 'manifest':
+                for node in manifest.childNodes:
+                    if node.nodeName == 'include':
+                        name = _attr(node, 'name')
+                        fname = os.path.join(
+                            path or os.path.dirname(
+                                os.path.realpath(filename)), name)
+                        if not os.path.exists(fname):
+                            raise ManifestException(
+                                'include %s is not existent' % fname)
+
+                        try:
+                            nodes.extend(self._parse_manifest_xml(fname, path))
+                        except Exception:
+                            raise ManifestException(
+                                'failed to parse included manifest %s' % fname)
+                    else:
+                        nodes.append(node)
                 break
         else:
             raise ManifestException('no <manifest> in the file')
 
-        nodes = list()
-        for node in manifest.childNodes:
-            if node.nodeName == 'include':
-                name = _attr(node, 'name')
-                fname = os.path.join(path or os.path.dirname(manifest), name)
-                if not os.path.exists(fname):
-                    raise ManifestException(
-                        'include %s is not existent' % fname)
-
-                try:
-                    nodes.extend(self._parse_manifest_xml(fname, path))
-                except Exception:
-                    raise ManifestException(
-                        'failed to parse included manifest %s' % fname)
-            else:
-                nodes.append(node)
 
         return nodes
 
