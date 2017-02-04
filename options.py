@@ -17,7 +17,6 @@ class Values(optparse.Values):
         else:
             optparse.Values.__init__(self)
 
-    """Extends to enable the values like numbers, boolean values, etc."""
     def join(self, values, option=None, override=True):
         def _getopt(option_, attr):
             nattr = attr.replace('_', '-')
@@ -49,6 +48,22 @@ class Values(optparse.Values):
         except KeyError:
             return None
 
+    def diff(self, values):
+        diffs = Values()
+        if isinstance(values, optparse.Values):
+            for attr in self.__dict__:
+                if attr in values.__dict__:
+                    if self.__dict__[attr] != values.__dict__[attr]:
+                        diffs.ensure_value(attr, values.__dict__[attr])
+                else:
+                    diffs.ensure_value(attr, values.__dict__[attr])
+
+            for attr in values.__dict__:
+                if attr not in self.__dict__:
+                    diffs.ensure_value(attr, values.__dict__[attr])
+
+        return diffs
+
     def exude(self, attr, default=None):
         ret = default
         if attr in self.__dict__:
@@ -58,6 +73,7 @@ class Values(optparse.Values):
         return ret
 
     def ensure_value(self, attr, value):
+        """Extends to enable the values like numbers, boolean values, etc."""
         def _handle_value(val):
             sval = str(val).lower()
             if sval in ('true', 't', 'yes', 'y', '1'):
@@ -133,15 +149,20 @@ class OptionParser(optparse.OptionParser):
     def join(self, opt):
         opt.join(self.sup_values)
 
-    def parse_args(self, args=None, values=None):
+    def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
         try:
             self._handle_opposite(args)
         except AttributeError:
             pass
 
-        opts, args = optparse.OptionParser.parse_args(self, args, values)
+        opts, argv = optparse.OptionParser.parse_args(self, args)
+        if inject:
+            opti, _ = optparse.OptionParser.parse_args(self, [])
+            optd = Values(opti.__dict__).diff(opts)
+            return optd, _
+
         optv = Values(opts.__dict__)
         optv.join(self.sup_values)
 
-        return optv, args
+        return optv, argv

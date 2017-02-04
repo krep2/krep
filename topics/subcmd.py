@@ -117,6 +117,10 @@ class SubCommand(object):
         """Indicates if the command can run with threading."""
         return False
 
+    def support_inject(self):  # pylint: disable=W0613
+        """Indicates if the command supports the injection option."""
+        return False
+
     @staticmethod
     def override_value(va, vb=None):
         """Overrides the late values if it's not a boolean value."""
