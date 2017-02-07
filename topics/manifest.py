@@ -11,6 +11,8 @@ fetch the supported attributes.
 import os
 import xml.dom.minidom
 
+from collections import namedtuple
+
 
 def _attr(node, attribute, default=None):
     attr = node.getAttribute(attribute)
@@ -55,10 +57,7 @@ class _XmlRemote(object):
 
 
 class _XmlProject(object):  # pylint: disable=R0902
-    class File(object):
-        def __init_(self, src, dest):
-            self.src = src  # pylint: disable=W0201
-            self.dest = dest  # pylint: disable=W0201
+    File = namedtuple('File', 'src,dest')
 
     def __init__(self, name, path=None, revision=None, groups=None,
                  remote=None, upstream=None, rebase=None):
@@ -216,6 +215,19 @@ be saved in XML file again with limited attributes.
         self._parse_manifest(nodes)
 
     def _build_projects(self, project_list):
+        def _relpath(path, start):
+            names = path.replace('\\', '/').split('/')
+
+            for k, name in enumerate(names):
+                if name == '.':
+                    continue
+                elif name == '..':
+                    start = os.path.dirname(start)
+                else:
+                    start = os.path.join(start, names[k])
+
+            return start
+
         def _build_fetch_url(relative, project):
             if not relative:
                 return project.name
@@ -226,14 +238,18 @@ be saved in XML file again with limited attributes.
                 remote = self._default.remote
 
             remotep = self._remote[remote]
-            return os.path.relpath(
-                os.path.join(relative, remotep.fetch, project.name))
+            if remotep.fetch and remotep.fetch.find('://') > 0:
+                return os.path.join(remotep.fetch, project.name)
+            else:
+                return os.path.join(
+                    _relpath(remotep.fetch, relative), project.name)
 
         projects = list()
         for project in project_list or list():
             projects.append(
                 _XmlProject(
-                    name=_build_fetch_url(self.refspath, project),
+                    name=project.name,
+                    remote=_build_fetch_url(self.refspath, project),
                     path=None if self.mirror else project.path,
                     revision=project.revision))
 
