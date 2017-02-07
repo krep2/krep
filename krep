@@ -151,7 +151,7 @@ def main(argv):
         options.error(e)
         sys.exit(1)
 
-    opts.join(optv)
+    opts.join(optv, option=options)
     # correct the verbose follow the final settings
     verbose = opts.exude('verbose')
     if verbose > -1:

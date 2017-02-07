@@ -35,7 +35,9 @@ class Values(optparse.Values):
             for attr in values.__dict__:
                 if override:
                     opt = option and _getopt(option, attr)
-                    if opt and opt.default == getattr(values, attr):
+                    # handle the extra equaling without the default value
+                    if opt and opt.default == ('NO', 'DEFAULT') and \
+                            getattr(values, attr) is None:
                         continue
 
                     setattr(self, attr, getattr(values, attr))
