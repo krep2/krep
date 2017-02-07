@@ -93,13 +93,14 @@ this command.
 
     @staticmethod
     def get_manifest(options):
-        refsp = None
-        if options.manifest:
-            ulp = urlparse.urlparse(options.manifest)
-            if ulp.path:
-                refsp = os.path.dirname(ulp.path).lstrip('/')
+        refsp = options.manifest
+        if not options.manifest:
+            repo = GitProject(
+                'repo-manifest',
+                worktree=os.path.join(options.working_dir, '.repo/manifests'))
+            _, refsp = repo.ls_remote('--get-url')
 
-        return Manifest(refspath=refsp, mirror=options.mirror)
+        return Manifest(refspath=os.path.dirname(refsp), mirror=options.mirror)
 
     def fetch_projects_in_manifest(self, options):
         manifest = self.get_manifest(options)
@@ -135,22 +136,20 @@ this command.
             options.prefix += '/'
 
         if not options.offsite:
-            RaiseExceptionIfOptionMissed(
-                options.manifest, 'manifest (--manifest) is not set')
-
-            repo = RepoCommand()
-            # pylint: disable=E1101
-            repo.add_args(options.manifest, before='-u')
-            repo.add_args(options.manifest_branch, before='-b')
-            repo.add_args(options.manifest_name, before='-m')
-            repo.add_args('--mirror', condition=options.mirror)
-            repo.add_args(options.reference, before='--reference')
-            repo.add_args(options.repo_url, before='--repo-url')
-            repo.add_args(options.repo_branch, before='--repo-branch')
-            # pylint: enable=E1101
-
             res = 0
             if not os.path.exists('.repo'):
+                RaiseExceptionIfOptionMissed(
+                    options.manifest, 'manifest (--manifest) is not set')
+                repo = RepoCommand()
+                # pylint: disable=E1101
+                repo.add_args(options.manifest, before='-u')
+                repo.add_args(options.manifest_branch, before='-b')
+                repo.add_args(options.manifest_name, before='-m')
+                repo.add_args('--mirror', condition=options.mirror)
+                repo.add_args(options.reference, before='--reference')
+                repo.add_args(options.repo_url, before='--repo-url')
+                repo.add_args(options.repo_branch, before='--repo-branch')
+                # pylint: enable=E1101
                 res = repo.init(**kws)
 
             if res:
