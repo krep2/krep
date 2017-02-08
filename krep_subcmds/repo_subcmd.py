@@ -89,7 +89,23 @@ this command.
         options.add_option(
             '--prefix',
             dest='prefix', metavar='PREFIX',
-            help='prefix on the remote location.')
+            help='prefix on the remote location')
+        options.add_option(
+            '--stop-new-repo', '--stop-with-new-repository',
+            dest='stop_new_repo', action='store_true',
+            help='Stop the execution if an new repository unregistered in '
+                 'the manifest. It likes option "--repo-create" to create '
+                 'the repository if specified')
+
+        options = optparse.add_option_group('Debug options')
+        options.add_option(
+            '--dump-project',
+            dest='dump_project', action='store_true',
+            help='Print the info of imported project')
+        options.add_option(
+            '--print-new-project',
+            dest='print_new_project', action='store_true',
+            help='Print the new projects which isn\'t managed by Gerrit')
 
     @staticmethod
     def get_manifest(options):
@@ -117,15 +133,17 @@ this command.
                 logger.debug('%s ignored by the pattern', node.name)
                 continue
 
-            name = '%s%s' % (options.prefix or '',
-                    pattern.replace('p,project', node.name, name=node.name))
+            name = '%s%s' % (
+                options.prefix or '',
+                pattern.replace('p,project', node.name, name=node.name))
             projects.append(
                 GitProject(
                     name,
                     worktree=os.path.join(options.working_dir, node.path),
                     revision=node.revision,
                     remote='%s/%s' % (options.remote, name),
-                    pattern=pattern))
+                    pattern=pattern,
+                    source=node.name))
 
         return projects
 
@@ -164,17 +182,13 @@ this command.
                     raise DownloadError(
                         'Failed to sync "%s' % options.manifest)
 
-        def _run(project):
+        def _run(project, remote):
             project_name = str(project)
             logger = self.get_logger(  # pylint: disable=E1101
                 name=project_name)
 
             logger.info('Start processing ...')
             if not options.tryrun and options.remote and options.repo_create:
-                remote = options.remote
-                ulp = urlparse.urlparse(options.remote)
-                if ulp.scheme:
-                    remote = ulp.netloc.strip('/')
                 gerrit = Gerrit(remote)
                 gerrit.create_project(project.uri)
 
@@ -207,8 +221,41 @@ this command.
         # handle the schema of the remote
         ulp = urlparse.urlparse(options.remote)
         if not ulp.scheme:
+            remote = options.remote
             options.remote = 'git://%s' % options.remote
+        else:
+            remote = ulp.netloc.strip('/')
 
         projects = self.fetch_projects_in_manifest(options)
+
+        new_projects, existed_projects = list(), list()
+        if options.print_new_project or options.print_new_project or \
+                options.stop_new_repo:
+            gerrit = Gerrit(remote)
+            existed_projects = gerrit.ls_projects()
+            for p in projects:
+                if p.uri not in existed_projects:
+                    new_projects.append(p)
+
+            if options.dump_project:
+                print 'IMPORTED PROJECTS'
+                print '====================='
+                for project in projects:
+                    print ' %s -> %s%s' % (
+                        project.source, project.uri,
+                        ' [NEW]' if options.print_new_project and
+                        project in new_projects else '')
+            elif options.print_new_project:
+                print 'NEW PROJECTS'
+                print '================'
+                for project in new_projects:
+                    print ' %s -> %s [NEW]' % (project.source, project.uri)
+            elif options.stop_new_repo and len(new_projects) > 0:
+                print 'Exit with following new projects:'
+                for project in projects:
+                    print ' %s' % project.uri
+
+            return
+
         return self.run_with_thread(  # pylint: disable=E1101
-            options.job, projects, _run)
+            options.job, projects, _run, remote)

@@ -9,6 +9,7 @@ class Project(object):
         self.path = self._safepath(path)
         self.revision = revision
         self.remote = remote
+        self.source = kws.get('source') or remote
         self.pattern = pattern or Pattern()
 
     def _safepath(self, path):
