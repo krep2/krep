@@ -171,7 +171,7 @@ this command.
                 name=project_name)
 
             logger.info('Start processing ...')
-            if not options.tryrun and options.remote:
+            if not options.tryrun and options.remote and options.repo_create:
                 remote = options.remote
                 ulp = urlparse.urlparse(options.remote)
                 if ulp.scheme:

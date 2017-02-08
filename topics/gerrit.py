@@ -40,6 +40,10 @@ implicitly."""
             '--remote', '--server', '--gerrit-server',
             dest='remote', action='store',
             help='Set gerrit url for the repository management')
+        options.add_option(
+            '--repo-create',
+            dest='repo_create', action='store_true', default=True,
+            help='Create the repository by default: %default')
         # Not to set the default for no-option
         options.add_option(
             '--description', '--repo-description',
