@@ -42,6 +42,9 @@ to define the projects in the config file.
             dest='ignore_errors', action='store_true',
             help='Ignore the running error and continue for next command')
 
+    def support_inject(self):  # pylint: disable=W0613
+        return True
+
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 

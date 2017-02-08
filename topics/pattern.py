@@ -1,11 +1,17 @@
 
 import re
+import xml.dom.minidom
 
 from collections import namedtuple
+from error import KrepError
 from logger import Logger
 
 
 PatternReplaceItem = namedtuple('PatternReplaceItem', 'pattern,subst')
+
+
+class XmlError(KrepError):
+    pass
 
 
 class PatternItem(object):
@@ -40,31 +46,33 @@ class PatternItem(object):
                 'p': rp.pattern,
                 'r': rp.subst} for rp in self.subst])
 
-        return '%s%s%s%s' % (
-            '%s%s' % (self.name, PatternItem.ITEM_NAME_DELIMITER)
-            if self.name else '',
-            self.category, PatternItem.CATEGORY_DELIMITER,
+        return '%s%s%s' % (
+            ('%s%s' % (self.category, PatternItem.CATEGORY_DELIMITER)
+             if self.category else ''),
+            ('%s%s' % (self.name, PatternItem.ITEM_NAME_DELIMITER)
+             if self.name else ''),
             PatternItem.PATTERN_DELIMITER.join(patterns))
 
-    @staticmethod
-    def split(patterns):
+    def split(self, patterns):
         inc, exc, rep = list(), list(), list()
+        patterns = patterns.strip()
 
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
             if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER):
                 items = re.split(PatternItem.REPLACEMENT_DELIMITER, pattern)
                 if len(items) == 4:
-                    rep.append(PatternReplaceItem(items[1], items[2]))
+                    rep.append(
+                        PatternReplaceItem(items[1], items[2]))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
-            else:
+            elif pattern:
                 inc.append(pattern)
 
         return inc, exc, rep
 
-    def add(self, patterns, exclude=False):
-        inc, exc, rep = PatternItem.split(patterns)
+    def add(self, patterns='', exclude=False, subst=None):
+        inc, exc, rep = self.split(patterns)
         if exclude:
             inc, exc = exc, inc
 
@@ -74,6 +82,8 @@ class PatternItem(object):
             self.exclude.extend(exc)
         if rep:
             self.subst.extend(rep)
+        if isinstance(subst, PatternReplaceItem):
+            self.subst.append(subst)
 
     def match(self, patterns):
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
@@ -104,6 +114,101 @@ class PatternItem(object):
         return value
 
 
+def _attr(node, attribute, default=None):
+    return node.getAttribute(attribute) or default
+
+
+class PatternFile(object):  # pylint: disable=R0903
+    _XmlPattern = namedtuple('_XmlPattern', 'category,name,value,replacement')
+
+    @staticmethod
+    def parse_pattern(node, patterns=None, exclude=False, replacement=False):
+        if node.nodeName not in (
+                'pattern', 'exclude-pattern', 'rp-pattern', 'replace-pattern'):
+            return None
+
+        p = PatternFile._XmlPattern(
+            name=_attr(node, 'name', patterns and patterns.name),
+            category=_attr(node, 'category', patterns and patterns.category),
+            value=_attr(node, 'value'),
+            replacement=_attr(node, 'replace')
+            if node.nodeName != 'exclude-pattern' or replacement else '')
+
+        if p.replacement:
+            pi = PatternItem(category=p.category, name=p.name)
+            pi.add(subst=PatternReplaceItem(p.value, p.replacement))
+        else:
+            pi = PatternItem(
+                category=p.category, patterns=p.value,
+                name=p.name,
+                exclude=exclude or node.nodeName == 'exclude-pattern')
+
+        return pi
+
+    @staticmethod
+    def parse_pattern_str(node, patterns=None):
+        p = PatternFile.parse_pattern(node, patterns)
+        return str(p) if p else ''
+
+    @staticmethod
+    def parse_patterns(node):
+        patterns = list()
+
+        if node.nodeName in (
+                'patterns', 'exclude-patterns', 'rp-patterns',
+                'replace-patterns'):
+            parent = PatternFile._XmlPattern(
+                name=_attr(node, 'name'), category=_attr(node, 'category'),
+                value=None, replacement=None)
+
+            for child in node.childNodes:
+                pi = PatternFile.parse_pattern(
+                    child, parent,
+                    exclude=node.nodeName == 'exclude-patterns',
+                    replacement=node.nodeName in (
+                        'rp-patterns', 'replace-patterns'))
+                if pi:
+                    patterns.append(pi)
+
+        return patterns
+
+    @staticmethod
+    def parse_patterns_str(node):
+        lists = list()
+        patterns = PatternFile.parse_patterns(node)
+
+        for pi in patterns:
+            lists.append(str(pi))
+
+        return lists
+
+    @staticmethod
+    def load(filename):
+        patterns = dict()
+
+        logger = Logger.get_logger('PATTERN')
+
+        try:
+            root = xml.dom.minidom.parse(filename)
+        except (OSError, xml.parsers.expat.ExpatError):
+            logger.error('error to parse pattern file %s', filename)
+            return
+
+        if not root or not root.childNodes:
+            logger.error('manifest has no root')
+            return
+
+        for node in root.childNodes:
+            if node.nodeName in (
+                    'patterns', 'exclude-patterns', 'replace-patterns'):
+                for pi in PatternFile.parse_patterns(node):
+                    if pi.category not in patterns:
+                        patterns[pi.category] = list()
+
+                    patterns[pi.category].append(pi)
+
+        return patterns
+
 
 class Pattern(object):
     """\
@@ -119,10 +224,11 @@ matching.
 """
     REPLACEMENT = ('rp', 'replace', 'replacement')
 
-    def __init__(self, pattern=None):
+    def __init__(self, pattern=None, pattern_file=None):
         self.orders = dict()
         self.categories = dict()
         self.add(pattern)
+        self.load(pattern_file)
 
     def __nozero__(self):
         return len(self.categories) > 0
@@ -138,6 +244,10 @@ matching.
             '-p', '--pattern',
             dest='pattern', action='append',
             help='Set the patterns for the command')
+        options.add_option(
+            '--pattern-file',
+            dest='pattern-file', action='store',
+            help='Set the pattern file in XML format for patterns')
 
     def _ensure_item(self, category, name):
         if category in self.categories:
@@ -185,7 +295,7 @@ matching.
                 else:
                     logger.error('unknown pattern string "%s"', pattern)
         elif isinstance(patterns, dict):
-            for category, pattern in patterns:
+            for category, pattern in patterns.items():  # pylint: disable=E1103
                 if category not in self.categories:
                     self.orders[category] = list()
                     self.categories[category] = dict()
@@ -195,6 +305,10 @@ matching.
                     self.categories[category][item.name] = item
         elif patterns is not None:
             logger.error('unknown option "%s"', str(patterns))
+
+    def load(self, pattern_file):
+        if pattern_file:
+            self.add(PatternFile.load(pattern_file))
 
     def get(self):
         return self.categories

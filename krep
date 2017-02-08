@@ -9,7 +9,7 @@ from options import OptionParser, OptionValueError, Values
 from topics import ConfigFile, KrepError, Logger
 
 
-def _global_options():
+def _global_options(cmd=None):
     global_options = OptionParser(usage='''\
 %prog [OPTIONS] subcmd ...
 
@@ -42,10 +42,12 @@ Execute the specified sub-commands, which can be listed with the command
         '--force',
         dest='force', action='store_true', default=False,
         help='force to execute the operations')
-    group.add_option(
-        '--inject-option',
-        dest='inject_option', action='append',
-        help='inject implict sub-command options')
+    if cmd is None or cmd.support_inject():
+        group.add_option(
+            '--inject-option',
+            dest='inject_option', action='append',
+            help='inject implict sub-command options. The format could be '
+                 '[cmd:][--]inject-option')
 
     return global_options
 
@@ -71,11 +73,21 @@ def run(name, opts, args, optparse=None, ignore_except=False):
             optparse.join(lopts)
 
             # inject options
-            for opt in lopts.inject_option or list():
+            for opt in lopts.exude('inject_option') or list():
+                if opt.find(':') > 0:
+                    oname = opt[:opt.find(':')]
+                    if oname in all_commands and oname != name:
+                        continue
+
+                if opt.startswith('%s:' % name):
+                    opt = opt[len(name) + 1:]
+                if not opt.startswith('-'):
+                    opt = '--%s' % opt
+
                 try:
-                    ops, _ = optparse.parse_args([opt])
-                    lopts.join(ops, override=False)
-                except TypeError, e:
+                    ops, _ = optparse.parse_args([opt], inject=True)
+                    lopts.join(ops)
+                except TypeError:
                     pass
 
         if lopts.working_dir != os.getcwd():
@@ -115,7 +127,7 @@ def _option_parse(argv, logger):
                          name)
             sys.exit(1)
 
-        options = cmd.get_option_parser(_global_options())
+        options = cmd.get_option_parser(_global_options(cmd))
     else:
         options = _global_options()
 
@@ -139,7 +151,7 @@ def main(argv):
         options.error(e)
         sys.exit(1)
 
-    opts.join(optv)
+    opts.join(optv, option=options)
     # correct the verbose follow the final settings
     verbose = opts.exude('verbose')
     if verbose > -1:

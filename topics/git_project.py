@@ -33,6 +33,8 @@ class GitProject(Project, GitCommand):
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
         Project.__init__(self, uri, worktree, revision, remote, pattern)
+        Project.__init__(
+            self, uri, worktree, revision, remote, pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
         cli = list()
