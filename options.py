@@ -17,6 +17,23 @@ class Values(optparse.Values):
         else:
             optparse.Values.__init__(self)
 
+    @staticmethod
+    def _handle_value(val):
+        sval = str(val).lower()
+        if sval in ('true', 't', 'yes', 'y', '1'):
+            return True
+        elif sval in ('false', 'f', 'no', 'n', '0'):
+            return False
+        elif re.match(r'^(0x|0X)?[A-Fa-f\d+]$', sval):
+            if sval.startswith('0x'):
+                return int(sval, 16)
+            elif sval.startswith('0'):
+                return int(sval, 8)
+            else:
+                return int(sval)
+        else:
+            return val
+
     def join(self, values, option=None, override=True):
         def _getopt(option_, attr):
             nattr = attr.replace('_', '-')
@@ -40,7 +57,8 @@ class Values(optparse.Values):
                             getattr(values, attr) is None:
                         continue
 
-                    setattr(self, attr, getattr(values, attr))
+                    setattr(self, attr,
+                            Values._handle_value(getattr(values, attr)))
                 else:
                     self.ensure_value(attr, getattr(values, attr))
 
@@ -75,24 +93,8 @@ class Values(optparse.Values):
         return ret
 
     def ensure_value(self, attr, value):
-        """Extends to enable the values like numbers, boolean values, etc."""
-        def _handle_value(val):
-            sval = str(val).lower()
-            if sval in ('true', 't', 'yes', 'y', '1'):
-                return True
-            elif sval in ('false', 'f', 'no', 'n', '0'):
-                return False
-            elif re.match(r'^(0x|0X)?[A-Fa-f\d+]$', sval):
-                if sval.startswith('0x'):
-                    return int(sval, 16)
-                elif sval.startswith('0'):
-                    return int(sval, 8)
-                else:
-                    return int(sval)
-            else:
-                return val
-
-        return optparse.Values.ensure_value(self, attr, _handle_value(value))
+        return optparse.Values.ensure_value(
+            self, attr, Values._handle_value(value))
 
 
 class OptionParser(optparse.OptionParser):
