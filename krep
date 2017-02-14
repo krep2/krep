@@ -68,8 +68,11 @@ def run(name, opts, args, optparse=None, ignore_except=False):
         logger = Logger.set(
             verbose=lopts.exude('verbose'), name=cmd.get_name(lopts))
 
+        # sub-command
         if optparse is None:
             _, _, _, optparse = _option_parse([name], logger)
+            ops, _ = optparse.parse_args([])
+            lopts.join(ops, option=optparse)
             optparse.join(lopts)
 
             # inject options
@@ -135,11 +138,15 @@ def _option_parse(argv, logger):
 
 
 def main(argv):
+    def _loadconf(confname):
+        if os.path.exists(confname):
+            return ConfigFile(confname).get_default()
+        else:
+            return Values()
+
     opts = Values()
-    localconf = os.path.expanduser('~/.krepconfig')
-    if os.path.exists(localconf):
-        conf = ConfigFile(localconf)
-        opts.join(conf.get_default())
+    opts.join(_loadconf('/etc/default/krepconfig'))
+    opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
 
     Logger.set(level=Logger.ERROR, verbose=opts.verbose)
 

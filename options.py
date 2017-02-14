@@ -18,11 +18,11 @@ class Values(optparse.Values):
             optparse.Values.__init__(self)
 
     @staticmethod
-    def _handle_value(val):
+    def _handle_value(val, boolean=False):
         sval = str(val).lower()
-        if sval in ('true', 't', 'yes', 'y', '1'):
+        if boolean and sval in ('true', 't', 'yes', 'y', '1'):
             return True
-        elif sval in ('false', 'f', 'no', 'n', '0'):
+        elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
             return False
         elif re.match(r'^(0x|0X)?[A-Fa-f\d+]$', sval):
             if sval.startswith('0x'):
@@ -52,13 +52,19 @@ class Values(optparse.Values):
             for attr in values.__dict__:
                 if override:
                     opt = option and _getopt(option, attr)
+                    st_b = opt and opt.action in ('store_true', 'store_false')
                     # handle the extra equaling without the default value
-                    if opt and opt.default == ('NO', 'DEFAULT') and \
+                    if opt and opt.default == optparse.NO_DEFAULT and \
                             getattr(values, attr) is None:
                         continue
+                    elif opt and opt.default == getattr(values, attr) and \
+                            getattr(self, attr) is not None:
+                        continue
 
-                    setattr(self, attr,
-                            Values._handle_value(getattr(values, attr)))
+                    setattr(
+                        self, attr,
+                        Values._handle_value(
+                            getattr(values, attr), boolean=st_b),)
                 else:
                     self.ensure_value(attr, getattr(values, attr))
 
