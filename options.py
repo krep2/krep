@@ -57,6 +57,9 @@ class Values(optparse.Values):
                     if opt and opt.default == optparse.NO_DEFAULT and \
                             getattr(values, attr) is None:
                         continue
+                    elif opt and opt.default == getattr(values, attr) and \
+                            getattr(self, attr) is not None:
+                        continue
 
                     setattr(
                         self, attr,
