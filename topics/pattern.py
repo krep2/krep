@@ -132,9 +132,9 @@ class PatternFile(object):  # pylint: disable=R0903
             category=_attr(node, 'category', patterns and patterns.category),
             value=_attr(node, 'value'),
             replacement=_attr(node, 'replace')
-            if node.nodeName != 'exclude-pattern' or replacement else '')
+            if node.nodeName != 'exclude-pattern' or replacement else None)
 
-        if p.replacement:
+        if p.replacement is not None:
             pi = PatternItem(category=p.category, name=p.name)
             pi.add(subst=PatternReplaceItem(p.value, p.replacement))
         else:
