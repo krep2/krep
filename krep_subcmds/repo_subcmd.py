@@ -108,15 +108,22 @@ this command.
             help='Print the new projects which isn\'t managed by Gerrit')
 
     @staticmethod
-    def get_manifest(options):
-        refsp = options.manifest
-        if not options.manifest:
+    def get_manifest(options, manifest=None, mirror=False):
+        refsp = manifest or (options and options.manifest)
+        if not refsp:
             repo = GitProject(
                 'repo-manifest',
                 worktree=os.path.join(options.working_dir, '.repo/manifests'))
             _, refsp = repo.ls_remote('--get-url')
 
-        return Manifest(refspath=os.path.dirname(refsp), mirror=options.mirror)
+        if not manifest:
+            manifest = os.path.realpath(
+                options.working_dir, '.repo/manifest.xml')
+
+        return Manifest(
+            filename=manifest,
+            refspath=os.path.dirname(refsp),
+            mirror=mirror or (options and options.mirror))
 
     def fetch_projects_in_manifest(self, options):
         manifest = self.get_manifest(options)
