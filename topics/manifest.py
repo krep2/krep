@@ -250,8 +250,10 @@ be saved in XML file again with limited attributes.
                 _XmlProject(
                     name=project.name,
                     remote=_build_fetch_url(self.refspath, project),
-                    path=None if self.mirror else project.path,
-                    revision=project.revision))
+                    path=None if self.mirror else (
+                        project.path or project.name),
+                    revision=project.revision or (
+                        self._default and self._default.revision)))
 
         return projects
 
