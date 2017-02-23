@@ -40,12 +40,22 @@ class ManifestException(Exception):
 
 
 class _XmlDefault(object):
-    revision = None
-    remote = None
-    sync_j = 1
-    sync_c = False
-    sync_s = False
+    def __init__(self):
+        self.revision = None
+        self.remote = None
+        self.sync_j = 1
+        self.sync_c = False
+        self.sync_s = False
 
+    def xml(self, doc):
+        e = doc.createElement('default')
+        _setattr(e, 'remote', self.remote)
+        _setattr(e, 'revision', self.revision)
+        _setattr(e, 'sync_j', self.sync_j)
+        _setattr(e, 'snyc_c', self.sync_c)
+        _setattr(e, 'sync_s', self.sync_s)
+
+        return e
 
 class _XmlRemote(object):
     def __init__(self, name, alias, fetch, review, revision):
@@ -55,6 +65,15 @@ class _XmlRemote(object):
         self.review = review
         self.revision = revision
 
+    def xml(self, doc):
+        e = doc.createElement('remote')
+        _setattr(e, 'name', self.name)
+        _setattr(e, 'fetch', self.fetch)
+        _setattr(e, 'alias', self.alias)
+        _setattr(e, 'review', self.review)
+        _setattr(e, 'revision', self.revision)
+
+        return e
 
 class _XmlProject(object):  # pylint: disable=R0902
     File = namedtuple('File', 'src,dest')
@@ -65,12 +84,44 @@ class _XmlProject(object):  # pylint: disable=R0902
         self.path = path
         self.revision = revision
         self.groups = groups
+        self.groups = groups
         self.remote = remote
         self.rebase = rebase
         self.upstream = upstream
         self.removed = False
         self.copyfile = list()
         self.linkfile = list()
+
+    def xml(self, doc, default, remotes, rootdir, mirror):
+        e = doc.createElement('project')
+        _setattr(e, 'name', self.name)
+        if (rootdir is not None or not mirror) and self.path:
+            _setattr(e, 'path', self.path.replace(rootdir or '', ''))
+        _setattr(e, 'remote', self.remote)
+
+        remote = None
+        if self.remote and remotes:
+            remote = remotes.get(self.remote)
+        if not remote:
+            remote = default
+        revision = None if remote is None else remote.revision
+        if revision != self.revision:
+            _setattr(e, 'revision', self.revision)
+        _setattr(e, 'upstream', self.upstream)
+        _setattr(e, 'groups', self.groups)
+        for item in self.copyfile:
+            xce = doc.createElement('copyfile')
+            _setattr(xce, 'src', item.src)
+            _setattr(xce, 'dest', item.dest)
+            e.appendChild(xce)
+
+        for item in self.linkfile:
+            xle = doc.createElement('linkfile')
+            _setattr(xle, 'src', item.src)
+            _setattr(xle, 'dest', item.dest)
+            e.appendChild(xle)
+
+        return e
 
     def set_removed(self, removed):
         self.removed = removed
@@ -250,10 +301,10 @@ be saved in XML file again with limited attributes.
                 _XmlProject(
                     name=project.name,
                     remote=_build_fetch_url(self.refspath, project),
-                    path=None if self.mirror else (
-                        project.path or project.name),
+                    path=project.path or project.name,
                     revision=project.revision or (
-                        self._default and self._default.revision)))
+                        self._default and self._default.revision),
+                    groups=project.groups))
 
         return projects
 
@@ -279,4 +330,77 @@ be saved in XML file again with limited attributes.
             return self._build_projects(self._projects)
 
 
-TOPIC_ENTRY = 'Manifest, ManifestException'
+class ManifestBuilder(object):
+    """
+Supports to build up git-repo manifest and store.
+
+It works oppositely like Manifest to work with git-repo manifest but to
+store the live manifest nodes into files.
+    """
+
+    def __init__(self, filename, rootdir, mirror=False):
+        self.list = list()
+        self.mirror = mirror
+        self.rootdir = rootdir and '%s/' % rootdir.rstrip('/')
+        self.filename = filename
+
+    def append(self, item):
+        self.list.append(item)
+
+    def default(self, revision=None, remote=None, sync_j=None):
+        default = _XmlDefault()
+        default.revision = revision
+        default.remote = remote
+        default.sync_j = sync_j
+
+        self.append(default)
+
+    def remote(self, name, alias=None, fetch=None, review=None, revision=None):
+        remote = _XmlRemote(name, alias, fetch, review, revision)
+        self.append(remote)
+
+    def project(self, name, path=None, revision=None, groups=None,
+                remote=None, rebase=None):
+        project = _XmlProject(name, path, revision, groups, remote, rebase)
+        self.append(project)
+
+        return project
+
+    def xml(self):
+        doc = xml.dom.minidom.Document()
+        root = doc.createElement('manifest')
+        doc.appendChild(root)
+
+        default = None
+        for node in self.list:
+            if isinstance(node, _XmlDefault):
+                if default is not None:
+                    raise ManifestException(
+                        'element "deault" has been defined')
+                else:
+                    default = node
+                    root.appendChild(node.xml(doc))
+                    root.appendChild(doc.createTextNode(''))
+
+        remotes = list()
+        for node in self.list:
+            if isinstance(node, _XmlRemote):
+                remotes.append(node)
+                root.appendChild(node.xml(doc))
+
+        root.appendChild(doc.createTextNode(''))
+
+        for node in self.list:
+            if isinstance(node, _XmlProject):
+                root.appendChild(
+                    node.xml(doc, default, remotes, self.rootdir, self.mirror))
+
+        return doc
+
+    def save(self):
+        with open(self.filename, 'w') as filep:
+            doc = self.xml()
+            doc.writexml(filep, '', '  ', '\n', 'utf-8')
+
+
+TOPIC_ENTRY = 'Manifest, ManifestBuilder'
