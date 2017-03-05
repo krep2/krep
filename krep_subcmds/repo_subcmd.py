@@ -109,7 +109,10 @@ this command.
 
     @staticmethod
     def get_manifest(options, manifest=None, mirror=False):
-        refsp = manifest or (options and options.manifest)
+        refsp = manifest
+        if not refsp and options is not None:
+            refsp = options.manifest
+
         if not refsp:
             repo = GitProject(
                 'repo-manifest',
@@ -118,12 +121,12 @@ this command.
 
         if not manifest:
             manifest = os.path.realpath(
-                options.working_dir, '.repo/manifest.xml')
+                os.path.join(options.working_dir, '.repo/manifest.xml'))
 
         return Manifest(
             filename=manifest,
             refspath=os.path.dirname(refsp),
-            mirror=mirror or (options and options.mirror))
+            mirror=mirror or (options is not None and options.mirror))
 
     def fetch_projects_in_manifest(self, options):
         manifest = self.get_manifest(options)
