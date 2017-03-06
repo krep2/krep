@@ -198,7 +198,7 @@ this command.
                 name=project_name)
 
             logger.info('Start processing ...')
-            if not options.tryrun and options.remote and options.repo_create:
+            if not options.tryrun and remote and options.repo_create:
                 gerrit = Gerrit(remote)
                 gerrit.create_project(project.uri)
 
@@ -238,31 +238,43 @@ this command.
 
         projects = self.fetch_projects_in_manifest(options)
 
-        new_projects, existed_projects = list(), list()
-        if options.print_new_project or options.print_new_project or \
+        if options.print_new_project or options.dump_project or \
                 options.stop_new_repo:
+            lsrc, luri = 0, 0
             gerrit = Gerrit(remote)
             existed_projects = gerrit.ls_projects()
+            new_projects, existed_projects = list(), list()
             for p in projects:
+                if len(p.source) > lsrc:
+                    lsrc = len(p.source)
+                if len(p.uri) > luri:
+                    luri = len(p.uri)
                 if p.uri not in existed_projects:
                     new_projects.append(p)
+
+            def _cmp(prja, prjb):
+                return cmp(prja.source, prjb.source)
 
             if options.dump_project:
                 print 'IMPORTED PROJECTS'
                 print '====================='
-                for project in projects:
-                    print ' %s -> %s%s' % (
+
+                sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
+                for project in sorted(projects, _cmp):
+                    print sfmt % (
                         project.source, project.uri,
                         ' [NEW]' if options.print_new_project and
                         project in new_projects else '')
             elif options.print_new_project:
                 print 'NEW PROJECTS'
                 print '================'
-                for project in new_projects:
-                    print ' %s -> %s [NEW]' % (project.source, project.uri)
+
+                sfmt = ' %%-%ds -> %%-%ds [NEW]' % (lsrc, luri)
+                for project in sorted(new_projects, _cmp):
+                    print sfmt % (project.source, project.uri)
             elif options.stop_new_repo and len(new_projects) > 0:
                 print 'Exit with following new projects:'
-                for project in projects:
+                for project in sorted(projects, _cmp):
                     print ' %s' % project.uri
 
             return
