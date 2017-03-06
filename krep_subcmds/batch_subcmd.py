@@ -4,6 +4,7 @@ import re
 
 from topics import ConfigFile, SubCommandWithThread, \
     RaiseExceptionIfOptionMissed
+from options import Values
 
 
 class BatchSubcmd(SubCommandWithThread):
@@ -102,12 +103,16 @@ to define the projects in the config file.
                     projs = [projs]
 
                 # handle projects with the same name
-                for project in projs:
+                for proj in projs:
+                    project = Values()
                     # remove the prefix 'project.'
                     proj_name = conf.get_subsection_name(name)
                     setattr(project, 'name', proj_name)
                     if _filter_with_group(project, proj_name, options.group):
-                        project.join(default, override=False)
+                        optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
+                        # recalculate the attribute types
+                        project.join(proj, option=optparse)
+                        project.join(default, option=optparse, override=False)
                         projects.append(project)
 
             projs, nprojs = list(), list()
