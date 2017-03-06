@@ -52,18 +52,24 @@ Execute the specified sub-commands, which can be listed with the command
     return global_options
 
 
-def get_command(name):
+def _get_named_command(name):
     return all_commands.get(name)
 
 
-def run(name, opts, args, optparse=None, ignore_except=False):
+def _get_named_options(name):
+    _, _, _, optparse = _option_parse([name], Logger.get_logger(name))
+    return optparse
+
+
+def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # pylint: disable=R0913
     logger = Logger.get_logger(name)
 
     lopts = Values(opts)
     try:
         cmd = all_commands[name]
         cmd._run = run  # pylint: disable=W0212
-        cmd._cmd = get_command  # pylint: disable=W0212
+        cmd._cmd = _get_named_command  # pylint: disable=W0212
+        cmd._cmdopt = _get_named_options  # pylint: disable=W0212
 
         logger = Logger.set(
             verbose=lopts.exude('verbose'), name=cmd.get_name(lopts))
@@ -89,10 +95,11 @@ def run(name, opts, args, optparse=None, ignore_except=False):
 
                 try:
                     ops, _ = optparse.parse_args([opt], inject=True)
-                    lopts.join(ops)
+                    lopts.join(ops, optparse)
                 except TypeError:
                     pass
 
+        lopts.join(defopts, optparse, override=False)
         if lopts.working_dir != os.getcwd():
             logger.debug('chdir: %s', lopts.working_dir)
 
@@ -144,21 +151,20 @@ def main(argv):
         else:
             return Values()
 
-    opts = Values()
-    opts.join(_loadconf('/etc/default/krepconfig'))
-    opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
+    dopts = Values()
+    dopts.join(_loadconf('/etc/default/krepconfig'))
+    dopts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
 
-    Logger.set(level=Logger.ERROR, verbose=opts.verbose)
+    Logger.set(level=Logger.ERROR, verbose=dopts.verbose)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
     try:
-        optv, args = options.parse_args(argv)
+        opts, args = options.parse_args(argv)
     except OptionValueError, e:
         options.error(e)
         sys.exit(1)
 
-    opts.join(optv, option=options)
     # correct the verbose follow the final settings
     verbose = opts.exude('verbose')
     if verbose > -1:
@@ -168,7 +174,7 @@ def main(argv):
         logger.debug('Exited without sub-command')
         sys.exit(1)
 
-    run(name, opts, args, options)
+    run(name, opts, args, options, dopts)
 
 
 if __name__ == '__main__':

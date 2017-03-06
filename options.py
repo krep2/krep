@@ -50,9 +50,9 @@ class Values(optparse.Values):
 
         if values is not None:
             for attr in values.__dict__:
+                opt = option and _getopt(option, attr)
+                st_b = opt and opt.action in ('store_true', 'store_false')
                 if override:
-                    opt = option and _getopt(option, attr)
-                    st_b = opt and opt.action in ('store_true', 'store_false')
                     # handle the extra equaling without the default value
                     if opt and opt.default == optparse.NO_DEFAULT and \
                             getattr(values, attr) is None:
@@ -64,9 +64,11 @@ class Values(optparse.Values):
                     setattr(
                         self, attr,
                         Values._handle_value(
-                            getattr(values, attr), boolean=st_b),)
+                            getattr(values, attr), boolean=st_b))
                 else:
-                    self.ensure_value(attr, getattr(values, attr))
+                    self.ensure_value(
+                        attr, Values._handle_value(
+                            getattr(values, attr), boolean=st_b))
 
     def __getattr__(self, attr):
         try:
