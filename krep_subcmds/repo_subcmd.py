@@ -90,12 +90,6 @@ this command.
             '--prefix',
             dest='prefix', metavar='PREFIX',
             help='prefix on the remote location')
-        options.add_option(
-            '--stop-new-repo', '--stop-with-new-repository',
-            dest='stop_new_repo', action='store_true',
-            help='Stop the execution if an new repository unregistered in '
-                 'the manifest. It likes option "--repo-create" to create '
-                 'the repository if specified')
 
         options = optparse.add_option_group('Debug options')
         options.add_option(
@@ -198,7 +192,7 @@ this command.
                 name=project_name)
 
             logger.info('Start processing ...')
-            if not options.tryrun and remote and options.repo_create:
+            if not options.tryrun and remote:
                 gerrit = Gerrit(remote)
                 gerrit.create_project(project.uri)
 
@@ -239,16 +233,11 @@ this command.
         projects = self.fetch_projects_in_manifest(options)
 
         if options.print_new_project or options.dump_project or \
-                options.stop_new_repo:
-            lsrc, luri = 0, 0
+                not options.repo_create:
+            lsrc, luri, new_projects = 0, 0, list()
             gerrit = Gerrit(remote)
             existed_projects = gerrit.ls_projects()
-            new_projects, existed_projects = list(), list()
             for p in projects:
-                if len(p.source) > lsrc:
-                    lsrc = len(p.source)
-                if len(p.uri) > luri:
-                    luri = len(p.uri)
                 if p.uri not in existed_projects:
                     new_projects.append(p)
 
@@ -258,6 +247,11 @@ this command.
             if options.dump_project:
                 print 'IMPORTED PROJECTS'
                 print '====================='
+                for p in projects:
+                    if len(p.source) > lsrc:
+                        lsrc = len(p.source)
+                    if len(p.uri) > luri:
+                        luri = len(p.uri)
 
                 sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
                 for project in sorted(projects, _cmp):
@@ -265,19 +259,28 @@ this command.
                         project.source, project.uri,
                         ' [NEW]' if options.print_new_project and
                         project in new_projects else '')
+
+                return
             elif options.print_new_project:
                 print 'NEW PROJECTS'
                 print '================'
+                for p in new_projects:
+                    if len(p.source) > lsrc:
+                        lsrc = len(p.source)
+                    if len(p.uri) > luri:
+                        luri = len(p.uri)
 
-                sfmt = ' %%-%ds -> %%-%ds [NEW]' % (lsrc, luri)
+                sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
                 for project in sorted(new_projects, _cmp):
                     print sfmt % (project.source, project.uri)
-            elif options.stop_new_repo and len(new_projects) > 0:
+
+                return
+            elif not options.repo_create and len(new_projects) > 0:
                 print 'Exit with following new projects:'
-                for project in sorted(projects, _cmp):
+                for project in sorted(new_projects, _cmp):
                     print ' %s' % project.uri
 
-            return
+                return
 
         return self.run_with_thread(  # pylint: disable=E1101
             options.job, projects, _run, remote)
