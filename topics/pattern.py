@@ -43,8 +43,8 @@ class PatternItem(object):
         patterns.extend(
             ['%(d)s%(p)s%(d)s%(r)s%(d)s' % {
                 'd': PatternItem.REPLACEMENT_DELIMITER,
-                'p': rp.pattern,
-                'r': rp.subst} for rp in self.subst])
+                'p': rp.pattern or '',
+                'r': rp.subst or ''} for rp in self.subst])
 
         return '%s%s%s' % (
             ('%s%s' % (self.category, PatternItem.CATEGORY_DELIMITER)
@@ -63,7 +63,7 @@ class PatternItem(object):
                 items = re.split(PatternItem.REPLACEMENT_DELIMITER, pattern)
                 if len(items) == 4:
                     rep.append(
-                        PatternReplaceItem(items[1], items[2]))
+                        PatternReplaceItem(items[1] or self.name, items[2]))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
             elif pattern:
