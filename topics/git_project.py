@@ -92,11 +92,12 @@ class GitProject(Project, GitCommand):
         return ret
 
     def get_remote_tags(self):
-        tags = list()
+        tags = dict()
         ret, result = self.ls_remote('--tags', self.remote)
         if ret == 0 and result:
-            for e in result.split('\n'):
-                tags.append(e.split()[1])
+            for line in result.split('\n'):
+                sha1, tag = re.split(r'\s+', line, maxsplit=1)
+                tags[tag] = sha1
 
         return ret, tags
 
@@ -214,7 +215,7 @@ class GitProject(Project, GitCommand):
                 name=self.uri)
 
             sha1 = local_heads[origin]
-            if not force and _sha1_equals(remote_heads.get(remote_ref), sha1):
+            if _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
                 continue
 
@@ -261,9 +262,16 @@ class GitProject(Project, GitCommand):
             rtags = 'refs/tags/%s' % self.pattern.replace(
                 't,tag,revision', '%s%s' % (refs or '', tag), name=self.uri)
 
-            if not force and rtags in remote_tags:
-                logger.info('%s is up-to-date', rtags)
-                continue
+            if rtags in remote_tags:
+                equals = True
+                if force:
+                    sha1 = remote_tags[rtags]
+                    ret, lsha1 = self.rev_parse(origin)
+                    equals = _sha1_equals(sha1, lsha1)
+
+                if equals:
+                    logger.info('%s is up-to-date', rtags)
+                    continue
 
             ret = self.push(
                 self.remote,
