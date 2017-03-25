@@ -2,10 +2,11 @@
 import os
 import subprocess
 
+from error import KrepError
 from logger import Logger
 
 
-class SubCommandNotDetectedError(Exception):
+class CommandNotDetectedError(KrepError):
     """Indicate the sub-command of a command cannot be found."""
 
 
@@ -32,7 +33,7 @@ class Command(object):  # pylint: disable=R0902
             if not hasattr(self, command):
                 return getattr(self, command, *args[1:], **kws)
             else:
-                raise SubCommandNotDetectedError('%s cannot found' % command)
+                raise CommandNotDetectedError('%s cannot found' % command)
 
         return None
 
@@ -118,4 +119,4 @@ class Command(object):  # pylint: disable=R0902
         return self.stderr and self.stderr.strip()
 
 
-TOPIC_ENTRY = "Command, SubCommandNotDetectedError"
+TOPIC_ENTRY = "Command, CommandNotDetectedError"
