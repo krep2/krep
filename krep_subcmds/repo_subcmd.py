@@ -2,8 +2,9 @@
 import os
 import urlparse
 
-from topics import Command, FileUtils, GitProject, Gerrit, Manifest, Pattern, \
-    SubCommandWithThread, DownloadError, RaiseExceptionIfOptionMissed
+from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
+    ManifestBuilder, Pattern, SubCommandWithThread, DownloadError, \
+    RaiseExceptionIfOptionMissed
 
 
 class RepoCommand(Command):
@@ -100,6 +101,13 @@ this command.
             '--print-new-project',
             dest='print_new_project', action='store_true',
             help='Print the new projects which isn\'t managed by Gerrit')
+
+        options = optparse.get_option_group('--force') or \
+            optparse.add_option_group('Other options')
+        options.add_option(
+            '--output-xml-file',
+            dest='output_xml_file', action='store', metavar='FILE',
+            help='Set the output XML filename')
 
     @staticmethod
     def get_manifest(options, manifest=None, mirror=False):
@@ -281,6 +289,31 @@ this command.
                     print ' %s' % project.uri
 
                 return
+
+        if options.output_xml_file:
+            projv = dict()
+            manifest = self.get_manifest(options)
+            for project in manifest.get_projects():
+                projv['%s"%s' % (project.name, project.revision)] = (
+                    project.path, project.groups)
+
+            builder = ManifestBuilder(
+                options.output_xml_file, options.working_dir, options.mirror)
+
+            default = manifest.get_default()
+            default.remote = options.remote
+            builder.append(default)
+
+            for project in projects:
+                path, groups = project.path, None
+
+                key = '%s"%s' % (project.source, project.revision)
+                if key in projv:
+                    path, groups = projv[key]
+
+                builder.project(project.uri, path, project.revision, groups)
+
+            builder.save()
 
         return self.run_with_thread(  # pylint: disable=E1101
             options.job, projects, _run, remote)
