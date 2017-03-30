@@ -304,6 +304,9 @@ this command.
             default.remote = options.remote
             builder.append(default)
 
+            for remote in manifest.get_remotes():
+                builder.append(remote)
+
             for project in projects:
                 path, groups = project.path, None
 
