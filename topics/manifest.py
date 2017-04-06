@@ -102,11 +102,18 @@ class _XmlProject(object):  # pylint: disable=R0902
         remote = None
         if self.remote and remotes:
             remote = remotes.get(self.remote)
+        if not remote and self.revision:
+            for item in remotes:
+                if item.revision == self.revision:
+                    remote = item
+                    break
         if not remote:
             remote = default
         revision = None if remote is None else remote.revision
         if revision != self.revision:
             _setattr(e, 'revision', self.revision)
+        elif remote != default and not self.remote:
+            _setattr(e, 'remote', remote.name)
         _setattr(e, 'upstream', self.upstream)
         _setattr(e, 'groups', self.groups)
         for item in self.copyfile:
@@ -167,7 +174,7 @@ be saved in XML file again with limited attributes.
         default.remote = _attr(node, 'remote')
         if default.remote not in self._remote:
             raise ManifestException(
-                'no %s in support remotes' % default.remote)
+                'no %s in the supported remotes' % default.remote)
 
         default.revision = _attr2(node, 'revision')
         default.sync_j = _attr2(node, 'sync_j')
@@ -295,6 +302,23 @@ be saved in XML file again with limited attributes.
                 return os.path.join(
                     _relpath(remotep.fetch, relative), project.name)
 
+        def _get_revision(project):
+            revision = project.revision
+
+            if not revision and project.remote:
+                remote = self.get_remote(project.remote)
+                if remote:
+                    revision = remote.revision
+
+            if not revision:
+                revision = self._default.revision
+                if not revision:
+                    remote = self.get_remote(self._default.remote)
+                    if remote:
+                        revision = remote.revision
+
+            return revision
+
         projects = list()
         for project in project_list or list():
             projects.append(
@@ -302,8 +326,7 @@ be saved in XML file again with limited attributes.
                     name=project.name,
                     remote=_build_fetch_url(self.refspath, project),
                     path=project.path or project.name,
-                    revision=project.revision or (
-                        self._default and self._default.revision),
+                    revision=_get_revision(project),
                     groups=project.groups))
 
         return projects
@@ -313,6 +336,9 @@ be saved in XML file again with limited attributes.
 
     def get_remote(self, remote):
         return self._remote.get(remote)
+
+    def get_remotes(self):
+        return self._remote.values()
 
     def get_projects(self, raw=False):
         projects = [
@@ -371,6 +397,14 @@ store the live manifest nodes into files.
         root = doc.createElement('manifest')
         doc.appendChild(root)
 
+        remotes = list()
+        for node in self.list:
+            if isinstance(node, _XmlRemote):
+                remotes.append(node)
+                root.appendChild(node.xml(doc))
+
+        root.appendChild(doc.createTextNode(''))
+
         default = None
         for node in self.list:
             if isinstance(node, _XmlDefault):
@@ -381,14 +415,6 @@ store the live manifest nodes into files.
                     default = node
                     root.appendChild(node.xml(doc))
                     root.appendChild(doc.createTextNode(''))
-
-        remotes = list()
-        for node in self.list:
-            if isinstance(node, _XmlRemote):
-                remotes.append(node)
-                root.appendChild(node.xml(doc))
-
-        root.appendChild(doc.createTextNode(''))
 
         for node in self.list:
             if isinstance(node, _XmlProject):
