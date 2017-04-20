@@ -115,15 +115,17 @@ this command.
         if not refsp and options is not None:
             refsp = options.manifest
 
+        working_dir = FileUtils.ensure_path(
+            options.working_dir, options.relative_dir)
         if not refsp:
             repo = GitProject(
                 'repo-manifest',
-                worktree=os.path.join(options.working_dir, '.repo/manifests'))
+                worktree=os.path.join(working_dir, '.repo/manifests'))
             _, refsp = repo.ls_remote('--get-url')
 
         if not manifest:
             manifest = os.path.realpath(
-                os.path.join(options.working_dir, '.repo/manifest.xml'))
+                os.path.join(working_dir, '.repo/manifest.xml'))
 
         return Manifest(
             filename=manifest,
@@ -137,6 +139,8 @@ this command.
         logger = self.get_logger()  # pylint: disable=E1101
         pattern = Pattern(options.pattern)
 
+        working_dir = FileUtils.ensure_path(
+            options.working_dir, options.relative_dir)
         for node in manifest.get_projects():
             if not os.path.exists(node.path):
                 logger.warning('%s not existed, ignored', node.path)
@@ -151,7 +155,7 @@ this command.
             projects.append(
                 GitProject(
                     name,
-                    worktree=os.path.join(options.working_dir, node.path),
+                    worktree=os.path.join(working_dir, node.path),
                     revision=node.revision,
                     remote='%s/%s' % (options.remote, name),
                     pattern=pattern,
@@ -298,7 +302,10 @@ this command.
                     project.path, project.groups)
 
             builder = ManifestBuilder(
-                options.output_xml_file, options.working_dir, options.mirror)
+                options.output_xml_file,
+                FileUtils.ensure_path(
+                    options.working_dir, options.relative_dir),
+                options.mirror)
 
             default = manifest.get_default()
             default.remote = options.remote

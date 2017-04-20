@@ -86,11 +86,13 @@ replaced by GIT_URL."""
         remote = FileUtils.ensure_path(
             remote, prefix='git://', subdir=projectname, exists=False)
 
+        working_dir = FileUtils.ensure_path(
+            options.working_dir, options.relative_dir)
         project = GitProject(
             options.git,
-            worktree=options.working_dir,
+            worktree=working_dir,
             gitdir=FileUtils.ensure_path(
-                options.working_dir, subdir=None if options.bare else '.git'),
+                working_dir, subdir=None if options.bare else '.git'),
             revision=options.branch,
             remote=remote,
             bare=options.bare,
