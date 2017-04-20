@@ -96,7 +96,6 @@ to define the projects in the config file.
             conf = ConfigFile(batch)
 
             projects = list()
-            default = conf.get_default()
             for name in conf.get_names('project') or list():
                 projs = conf.get_value(name)
                 if not isinstance(projs, list):
@@ -112,7 +111,6 @@ to define the projects in the config file.
                         optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
                         project.join(proj, option=optparse)
-                        project.join(default, option=optparse, override=False)
                         projects.append(project)
 
             projs, nprojs = list(), list()
