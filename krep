@@ -6,7 +6,7 @@ import sys
 from dir_utils import AutoChangedDir
 from krep_subcmds import all_commands
 from options import OptionParser, OptionValueError, Values
-from topics import ConfigFile, KrepError, Logger
+from topics import ConfigFile, FileUtils, KrepError, Logger
 
 
 def _global_options(cmd=None):
@@ -23,6 +23,10 @@ Execute the specified sub-commands, which can be listed with the command
         dest='working_dir', metavar='WORKING_DIR', default=os.getcwd(),
         help='Set the working directory, or current directory would be used. '
              'default: %default')
+    group.add_option(
+        '--relative-dir',
+        dest='relative_dir', metavar='RELATIVE_DIR',
+        help='Set the relative directory following working_dir if specified')
 
     # Debug options
     group = global_options.add_option_group('Global debugging options')
@@ -100,10 +104,9 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
                     pass
 
         lopts.join(defopts, optparse, override=False)
-        if lopts.working_dir != os.getcwd():
-            logger.debug('chdir: %s', lopts.working_dir)
-
-        with AutoChangedDir(lopts.working_dir, cleanup=False):
+        with AutoChangedDir(
+            FileUtils.ensure_path(lopts.working_dir, lopts.relative_dir),
+            cleanup=False):
             cmd.execute(lopts, *args)
     except KeyError:
         if ignore_except:
