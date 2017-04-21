@@ -1,5 +1,7 @@
 
 import os
+import shutil
+import stat
 
 
 class ExecutableNotFoundError(Exception):
@@ -34,6 +36,24 @@ class FileUtils(object):
             return name if os.path.exists(name) else None
         else:
             return name
+
+    @staticmethod
+    def copy_file(src, dest):
+        if os.path.islink(src):
+            linkto = os.readlink(src)
+            if os.path.isdir(dest):
+                shutil.rmtree(dest)
+            elif os.path.lexists(dest):
+                os.unlink(dest)
+
+            os.symlink(linkto, dest)
+        else:
+            if os.path.lexists(dest):
+                mode = os.lstat(dest)[stat.ST_MODE]
+                mode |= stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+                os.chmod(dest, mode)
+
+            shutil.copy2(src, dest)
 
 
 TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'

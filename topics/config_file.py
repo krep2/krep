@@ -44,7 +44,7 @@ bar = blabla2
 bar = blabla3
 """
 
-
+import os
 import re
 import xml.dom.minidom
 
@@ -73,12 +73,15 @@ def _setattr(obj, name, value):
 
 class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
+    PROJECT_PREFIX = 'project'
+    FILE_PREFIX = 'file'
 
-    def __init__(self, content):  # pylint: disable=W0613
+    def __init__(self, filename=None):
         self.vals = dict()
+        self.filename = filename
 
-    def _new_value(self, name):
-        val = Values()
+    def _new_value(self, name, vals=None):
+        val = vals or Values()
         if name not in self.vals:
             self.vals[name] = val
         else:
@@ -115,6 +118,18 @@ class _ConfigFile(object):
         else:
             return None
 
+    def join(self, vals):
+        for key, val in vals.items():
+            if key not in self.vals:
+                self.vals[key] = val
+
+    def read(self):
+        content = ''
+        with open(self.filename, 'r') as fp:
+            content = '\n'.join(fp.readlines())
+
+        return content
+
     def get_default(self):
         default = self.get_values(_ConfigFile.DEFAULT_CONFIG)
         if default:
@@ -126,8 +141,11 @@ class _ConfigFile(object):
         vals = list()
         sname = self._build_name(section, subsection)
         if sname:
-            for key in self.vals.keys():
-                if key.startswith(sname):
+            for key, value in self.vals.items():
+                if section != _ConfigFile.FILE_PREFIX and \
+                        isinstance(value, _ConfigFile):
+                    vals.extend(value.get_names(section, subsection))
+                elif key.startswith(sname):
                     vals.append(key)
         else:
             vals.extend(self.vals.keys())
@@ -143,6 +161,9 @@ class _ConfigFile(object):
         elif section:
             proposed = list()
             for key, value in self.vals.items():
+                if section != _ConfigFile.FILE_PREFIX and \
+                        isinstance(value, _ConfigFile):
+                    proposed.extend(value.get_values(section, subsection))
                 if key.startswith(sname):
                     proposed.append(value)
         else:
@@ -151,6 +172,9 @@ class _ConfigFile(object):
         for value in proposed or list():
             if isinstance(value, list):
                 vals.extend(value)
+            elif section != _ConfigFile.FILE_PREFIX and \
+                    isinstance(value, _ConfigFile):
+                vals.extend(value.get_values())
             else:
                 vals.append(value)
 
@@ -158,10 +182,10 @@ class _ConfigFile(object):
 
 
 class _IniConfigFile(_ConfigFile):
-    def __init__(self, content):
-        _ConfigFile.__init__(self, content)
+    def __init__(self, filename):
+        _ConfigFile.__init__(self, filename)
 
-        self._parse_ini(content)
+        self._parse_ini(self.read())
 
     def _parse_ini(self, content):
         logger = Logger.get_logger()
@@ -206,13 +230,13 @@ class _IniConfigFile(_ConfigFile):
 
 
 class _XmlConfigFile(_ConfigFile):
-    def __init__(self, content):
-        _ConfigFile.__init__(self, content)
+    def __init__(self, filename, pi=None):
+        _ConfigFile.__init__(self, filename)
 
-        self._parse_xml(content)
+        self._parse_xml(filename, pi)
 
-    def _parse_xml(self, content):
-        root = xml.dom.minidom.parseString(content)
+    def _parse_xml(self, content, pi=None):
+        root = xml.dom.minidom.parse(content)
 
         default = self._new_value(_ConfigFile.DEFAULT_CONFIG)
 
@@ -228,9 +252,18 @@ class _XmlConfigFile(_ConfigFile):
                 _setattr(default, _getattr(node, 'name'),
                          _getattr(node, 'value'))
 
+            def _parse_include(node):
+                name = _getattr(node, 'name')
+                if name and not name.startswith('/'):
+                    name = os.path.join(os.path.dirname(self.filename), name)
+
+                xvals = _XmlConfigFile(name, self.get_default())
+                return name, xvals
+
             def _parse_project(node):
                 name = _getattr(node, 'name')
-                cfg = self._new_value('project.%s' % name)
+                cfg = self._new_value(
+                    '%s.%s' % (_ConfigFile.PROJECT_PREFIX, name))
                 group = _getattr(node, 'group')
                 if group:
                     _setattr(cfg, 'group', group)
@@ -253,24 +286,30 @@ class _XmlConfigFile(_ConfigFile):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
 
+                cfg.join(self.get_default(), override=False)
+                if pi is not None:
+                    cfg.join(pi, override=False)
+
             for node in proj.childNodes:
                 if node.nodeName == 'global_option':
                     _parse_global(node)
                 elif node.nodeName == 'project':
                     _parse_project(node)
+                elif node.nodeName == 'include':
+                    name, xvals = _parse_include(node)
+                    self._new_value(
+                        '%s.%s' % (_ConfigFile.FILE_PREFIX, name), xvals)
 
 
 class ConfigFile(_ConfigFile):
     def __init__(self, filename):
-        _ConfigFile.__init__(self, None)
+        _ConfigFile.__init__(self, filename)
 
-        with open(filename, 'r') as fp:
-            content = '\n'.join(fp.readlines())
-
+        content = self.read()
         if content[:6].lower().startswith('<?xml'):
-            self.inst = _XmlConfigFile(content)
+            self.inst = _XmlConfigFile(filename)
         else:
-            self.inst = _IniConfigFile(content)
+            self.inst = _IniConfigFile(filename)
 
     def get_default(self):
         return self.inst.get_default()
