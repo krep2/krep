@@ -105,7 +105,8 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
         lopts.join(defopts, optparse, override=False)
         with AutoChangedDir(
-            FileUtils.ensure_path(lopts.working_dir, lopts.relative_dir),
+            FileUtils.ensure_path(
+                lopts.working_dir, lopts.relative_dir, exists=False),
             cleanup=False):
             cmd.execute(lopts, *args)
     except KeyError:
