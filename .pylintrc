@@ -80,7 +80,7 @@ required-attributes=
 bad-functions=map,filter,apply,input,file
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=a,b,i,j,k,e,ex,fp,m,p,pi,va,vb,Run,_
+good-names=a,b,c,i,j,k,e,ex,fp,m,p,pi,va,vb,Run,_
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
