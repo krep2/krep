@@ -1,11 +1,56 @@
 
 import os
+import tempfile
 import shutil
 import stat
 
+from command import Command
+from dir_utils import AutoChangedDir
+from error import KrepError
 
-class ExecutableNotFoundError(Exception):
+
+class ExecutableNotFoundError(KrepError):
     """Indicate the executable not found."""
+
+
+class FileDecompressor(Command):
+    COMMAND_FOR_EXTENSION = {
+        '.tar.gz': {'p': ('tar', 'xzf')},
+        '.tar.bz2': {'p': ('tar', 'xjf')},
+        '.tgz': {'p': ('tar', 'xzf')},
+        '.gz': {'p': ('gunzip', '--keep')},
+        '.gzip': {'p': ('gunzip', '--keep')},
+        '.bz2': {'p': ('bzip',)},
+        '.zip': {'p': ('unzip',)},
+        '.7z': {'p': ('p7zip', '-d'), 'duplicated': True},
+    }
+
+    def execute(self, filename):
+        args = list()
+        for ext, vals in FileDecompressor.COMMAND_FOR_EXTENSION.items():
+            if filename.endswith(ext):
+                args.extend(vals['p'])
+                if 'duplicated' in vals:
+                    tempname = tempfile.mktemp()
+                    os.symlink(filename, tempname)
+                    args.append(tempname)
+                else:
+                    args.append(filename)
+                break
+        else:
+            raise ExecutableNotFoundError(
+                '%s: Unknown extension "%s"' % (
+                    filename, (os.path.split(filename))[1]))
+
+        self.new_args(args)  # pylint: disable=E1101
+        return self.wait()
+
+    @staticmethod
+    def extract(filename, output):
+        decompressor = FileDecompressor()
+
+        with AutoChangedDir(output, cleanup=False):
+            decompressor.execute(filename)
 
 
 class FileUtils(object):
@@ -54,6 +99,11 @@ class FileUtils(object):
                 os.chmod(dest, mode)
 
             shutil.copy2(src, dest)
+
+
+    @staticmethod
+    def extract_file(src, dest):
+        FileDecompressor.extract(src, dest)
 
 
 TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'

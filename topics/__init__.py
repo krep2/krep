@@ -41,7 +41,7 @@ def _load_python_file(pyname):
 
                 members = inspect.getmembers(
                     sys.modules[name],
-                    lambda member: inspect.isclass(member))
+                    lambda member: inspect.isclass(member))  # pylint: disable=W0108
 
                 for m in members or list():
                     globals().update({m[0]: m[1]})
@@ -60,6 +60,7 @@ def _load_python_file(pyname):
 
 def _load_python_recursive(dirname, level=1):
     if os.path.isdir(dirname):
+        dirsname = list()
         for name in os.listdir(dirname):
             if name == '__init__.py':
                 continue
@@ -68,7 +69,10 @@ def _load_python_recursive(dirname, level=1):
             if os.path.isfile(filename):
                 _load_python_file(filename)
             elif os.path.isdir(filename) and level > 0:
-                _load_python_recursive(filename, level - 1)
+                dirsname.append(filename)
+
+        for name in dirsname:
+            _load_python_recursive(name, level - 1)
 
 # load the default topics
 _load_python_recursive(os.path.dirname(__file__))

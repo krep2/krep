@@ -3,8 +3,8 @@ from pattern import Pattern
 
 
 class Project(object):
-    def __init__(self, uri, path=None, revision=None, remote=None,
-                 pattern=None, *args, **kws):  # pylint: disable=W0613
+    def __init__(self, uri, path=None, revision=None, remote=None,  # pylint: disable=W0613
+                 pattern=None, *args, **kws):
         self.uri = self._safepath(uri)
         self.path = self._safepath(path)
         self.revision = revision

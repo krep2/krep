@@ -34,31 +34,30 @@ class Values(optparse.Values):
         else:
             return val
 
+    @staticmethod
+    def _getopt(option, attr):
+        nattr = attr.replace('_', '-').strip('-')
+        sattr = '-%s' % nattr
+        lattr = '--%s' % nattr
+        if lattr in option._long_opt:  # pylint: disable=W0212
+            opt = option._long_opt[lattr]  # pylint: disable=W0212
+        elif sattr in option._short_opt:  # pylint: disable=W0212
+            opt = option._short_opt[sattr]  # pylint: disable=W0212
+        else:
+            opt = None
+
+        return opt
+
     def join(self, values, option=None, override=True):
-        def _getopt(option_, attr):
-            nattr = attr.replace('_', '-')
-            sattr = '-%s' % nattr
-            lattr = '--%s' % nattr
-            if lattr in option_._long_opt:  # pylint: disable=W0212
-                opt = option_._long_opt[lattr]  # pylint: disable=W0212
-            elif sattr in option_._short_opt:  # pylint: disable=W0212
-                opt = option_._short_opt[sattr]  # pylint: disable=W0212
-            else:
-                opt = None
-
-            return opt
-
         if values is not None:
             for attr in values.__dict__:
-                opt = option and _getopt(option, attr)
+                opt = option and Values._getopt(option, attr)
                 st_b = opt and opt.action in ('store_true', 'store_false')
+
                 if override:
-                    # handle the extra equaling without the default value
-                    if opt and opt.default == optparse.NO_DEFAULT and \
-                            getattr(values, attr) is None:
-                        continue
-                    elif opt and opt.default == getattr(values, attr) and \
-                            getattr(self, attr) is not None:
+                    if getattr(values, attr) is None:
+                        if attr in self.__dict__:
+                            del self.__dict__[attr]
                         continue
 
                     setattr(
@@ -66,6 +65,9 @@ class Values(optparse.Values):
                         Values._handle_value(
                             getattr(values, attr), boolean=st_b))
                 else:
+                    if getattr(values, attr) is None:
+                        continue
+
                     self.ensure_value(
                         attr, Values._handle_value(
                             getattr(values, attr), boolean=st_b))
@@ -76,14 +78,21 @@ class Values(optparse.Values):
         except KeyError:
             return None
 
-    def diff(self, values):
+    def diff(self, values, option=None, args=None):
         diffs = Values()
         if isinstance(values, optparse.Values):
+            dests = list()
+            if args is not None:
+                for arg in args:
+                    opt = Values._getopt(
+                        option, OptionParser.split_argument(arg)[0])
+                    if opt:
+                        dests.append(opt.dest)
+
             for attr in self.__dict__:
-                if attr in values.__dict__:
-                    if self.__dict__[attr] != values.__dict__[attr]:
-                        diffs.ensure_value(attr, values.__dict__[attr])
-                else:
+                if attr in values.__dict__ and (
+                        self.__dict__[attr] != values.__dict__[attr] or
+                        attr in dests):
                     diffs.ensure_value(attr, values.__dict__[attr])
 
             for attr in values.__dict__:
@@ -131,6 +140,14 @@ class OptionParser(optparse.OptionParser):
 
         self.sup_values = Values()
 
+    @staticmethod
+    def split_argument(arg):
+        for k, c in enumerate(arg):
+            if c == ' ' or c == '=':
+                return [arg[:k], arg[k:]]
+
+        return [arg]
+
     def _handle_opposite(self, args):
         """Extends to handle the oppsite options."""
         group = None
@@ -159,7 +176,7 @@ class OptionParser(optparse.OptionParser):
             setattr(self.sup_values, opt.lstrip('-'), default)
 
     def join(self, opt):
-        opt.join(self.sup_values)
+        opt.join(self.sup_values, override=True)
 
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
@@ -171,7 +188,7 @@ class OptionParser(optparse.OptionParser):
         opts, argv = optparse.OptionParser.parse_args(self, args)
         if inject:
             opti, _ = optparse.OptionParser.parse_args(self, [])
-            optd = Values(opti.__dict__).diff(opts)
+            optd = Values(opti.__dict__).diff(opts, self, args)
             return optd, _
 
         optv = Values(opts.__dict__)
