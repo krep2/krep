@@ -97,7 +97,7 @@ to define the projects in the config file.
 
             projects = list()
             for name in conf.get_names('project') or list():
-                projs = conf.get_value(name)
+                projs = conf.get_values(name)
                 if not isinstance(projs, list):
                     projs = [projs]
 
@@ -107,11 +107,15 @@ to define the projects in the config file.
                     # remove the prefix 'project.'
                     proj_name = conf.get_subsection_name(name)
                     setattr(project, 'name', proj_name)
-                    if _filter_with_group(project, proj_name, options.group):
+                    if _filter_with_group(proj, proj_name, options.group):
                         optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
                         project.join(proj, option=optparse)
-                        projects.append(project)
+                        # if a name has more than one project, run them in parallel
+                        if len(projs) == 1:
+                            projs.append(project)
+                        else:
+                            projects.append(project)
 
             projs, nprojs = list(), list()
             for project in projects:
