@@ -84,6 +84,10 @@ this command.
             '--no-repo-verify',
             dest='no_repo_verify', action='store_true',
             help='Do not verify repo source code')
+        options.add_option(
+            '--no-clone-bundle',
+            dest='repo_bundle', action='store_true',
+            help='repo no-bundle option')
 
         options = optparse.get_option_group('--remote') or \
             optparse.add_option_group('Remote options')
@@ -183,6 +187,8 @@ this command.
                 repo.add_args(options.reference, before='--reference')
                 repo.add_args(options.repo_url, before='--repo-url')
                 repo.add_args(options.repo_branch, before='--repo-branch')
+                if not options.repo_bundle:
+                    repo.add_args('--no-clone-bundle')
                 # pylint: enable=E1101
                 res = repo.init(**kws)
 
@@ -191,12 +197,21 @@ this command.
                     'Failed to init "%s"' % options.manifest)
             else:
                 repo = RepoCommand()
-                repo.add_args(options.job,  # pylint: disable=E1101
+                # pylint: disable=E1101
+                repo.add_args(options.job,
                               before='-j')
+                if options.force:
+                    repo.add_args('--force-broken')
+                if not options.repo_bundle:
+                    repo.add_args('--no-clone-bundle')
+                # pylint: enable=E1101
                 res = repo.sync(**kws)
                 if res:
-                    raise DownloadError(
-                        'Failed to sync "%s' % options.manifest)
+                    if options.force:
+                        print 'Failed to sync "%s"' % options.manifest
+                    else:
+                        raise DownloadError(
+                            'Failed to sync "%s"' % options.manifest)
 
         def _run(project, remote):
             project_name = str(project)
