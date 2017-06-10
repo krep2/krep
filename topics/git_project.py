@@ -293,8 +293,7 @@ class GitProject(Project, GitCommand):
         if offsite:
             ret = self.init()
             ret &= self.commit(
-                ['--allow-empty', '--no-edit', '-m',
-                 'Init the empty repository'])
+                '--allow-empty', '--no-edit', '-m', 'Init the empty repository')
         elif self.remote:
             logger.info('Clone %s', self)
             ret = self.download(self.remote)
