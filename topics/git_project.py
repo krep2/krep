@@ -62,7 +62,6 @@ class GitProject(Project, GitCommand):
         if mirror:
             cli.append('--reference=%s' % mirror)
 
-        # FIXME: check if the snippet below can be removed
         if bare:
             cli.append(self.gitdir)
         else:
@@ -71,7 +70,7 @@ class GitProject(Project, GitCommand):
         if len(args):
             cli.extend(args)
 
-        return GitCommand.clone(self, *cli, **kws)
+        return GitCommand.clone(self, nopath=True, *cli, **kws)
 
     def download(self, url=None, mirror=False, bare=False, *args, **kws):
         if self.gitdir and os.path.isdir(self.gitdir) \
@@ -293,8 +292,7 @@ class GitProject(Project, GitCommand):
         if offsite:
             ret = self.init()
             ret &= self.commit(
-                ['--allow-empty', '--no-edit', '-m',
-                 'Init the empty repository'])
+                '--allow-empty', '--no-edit', '-m', 'Init the empty repository')
         elif self.remote:
             logger.info('Clone %s', self)
             ret = self.download(self.remote)

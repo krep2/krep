@@ -67,6 +67,8 @@ class Command(object):  # pylint: disable=R0902
         cli.extend([str(a) for a in self.args])
 
         cwd = kws.get('cwd', self.cwd or os.getcwd())
+        if not os.path.exists(cwd):
+            cwd = os.getcwd()
         tryrun = kws.get('tryrun', self.tryrun)
         # the config for the std device may be duplicated
         provide_stdin = kws.get('provide_stdin', self.provide_stdin)
