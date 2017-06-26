@@ -4,9 +4,9 @@ import tempfile
 import shutil
 import stat
 
-from command import Command
 from dir_utils import AutoChangedDir
-from error import KrepError
+from topics.command import Command
+from topics.error import KrepError
 
 
 class ExecutableNotFoundError(KrepError):

@@ -6,7 +6,7 @@ import stat
 
 
 try:
-    import magic
+    import magic  # pylint: disable=F0401
 
     def _get_magic(filename):
         msc = magic.open(magic.NONE)
