@@ -10,18 +10,18 @@ from options import Values
 class BatchSubcmd(SubCommandWithThread):
     COMMAND = 'batch'
 
-    help_summary = 'Load and executes projects from specified files'
+    help_summary = 'Load and execute projects from specified files'
     help_usage = """\
 %prog [options] ...
 
-Read the project configures from files and executes per project configuration.
+Read project configurations from files and executes per project configuration.
 
-The project is implemented to read configs from file and execute. With the
-support, "%prog" would extend as the batch method to run as a single
-command to accomplish multiple commands.
+The project is implemented to read configations from the config file and
+execute. With the support, "%prog" would extend as the batch method to run as
+a single command to accomplish multiple commands.
 
-The plain-text file format can refer to the topic "config_file", which is used
-to define the projects in the config file.
+The format of the plain-text configuration file can refer to the topic
+"config_file", which is used to define the projects in the file.
 """
 
     def options(self, optparse):
@@ -95,30 +95,28 @@ to define the projects in the config file.
         def _batch(batch):
             conf = ConfigFile(batch)
 
-            projects = list()
+            projs, nprojs, tprojs = list(), list(), list()
             for name in conf.get_names('project') or list():
-                projs = conf.get_values(name)
-                if not isinstance(projs, list):
-                    projs = [projs]
+                projects = conf.get_values(name)
+                if not isinstance(projects, list):
+                    projects = [projects]
 
                 # handle projects with the same name
-                for proj in projs:
-                    project = Values()
+                for project in projects:
+                    proj = Values()
                     # remove the prefix 'project.'
                     proj_name = conf.get_subsection_name(name)
-                    setattr(project, 'name', proj_name)
+                    setattr(proj, 'name', proj_name)
                     if _filter_with_group(proj, proj_name, options.group):
                         optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
-                        project.join(proj, option=optparse)
-                        # if a name has more than one project, run them in parallel
-                        if len(projs) == 1:
-                            projs.append(project)
+                        proj.join(project, option=optparse)
+                        if len(projects) == 1:
+                            projs.append(proj)
                         else:
-                            projects.append(project)
+                            tprojs.append(proj)
 
-            projs, nprojs = list(), list()
-            for project in projects:
+            for project in tprojs:
                 try:
                     multiple = self._cmd(  # pylint: disable=E1101
                         project.schema).support_jobs()
