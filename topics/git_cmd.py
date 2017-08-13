@@ -83,6 +83,10 @@ class GitCommand(Command):
     def ls_remote(self, *args, **kws):
         return self.raw_command_with_output('ls-remote', *args, **kws)
 
+    def pull(self, *args, **kws):
+        return self.raw_command(
+            'pull', capture_stdout=False, capture_stderr=False, *args, **kws)
+
     def push(self, *args, **kws):
         return self.raw_command(
             'push', capture_stdout=False, capture_stderr=False, *args, **kws)
