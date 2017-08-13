@@ -1,7 +1,6 @@
 
 import os
 import shutil
-import stat
 
 
 class ExecutableNotFoundError(Exception):
@@ -48,10 +47,10 @@ class FileUtils(object):
 
             os.symlink(linkto, dest)
         else:
-            if os.path.lexists(dest):
-                mode = os.lstat(dest)[stat.ST_MODE]
-                mode |= stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
-                os.chmod(dest, mode)
+            if os.path.isdir(dest):
+                shutil.rmtree(dest)
+            elif os.path.lexists(dest):
+                os.unlink(dest)
 
             shutil.copy2(src, dest)
 
