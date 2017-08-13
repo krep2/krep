@@ -17,14 +17,14 @@ class GitCommand(Command):
         cli.append(self.git)
 
         gitdir = self.gitdir if self.gitdir else None
-        nopath = kws.get('nopath', False)
-        if self.worktree and not nopath:
-            cli.append('--work-tree=%s' % self.worktree)
-            if not gitdir:
-                gitdir = FileUtils.ensure_path(self.worktree, '.git')
+        if not gitdir:
+            gitdir = FileUtils.ensure_path(self.worktree, '.git')
 
-        if gitdir and not nopath:
-            cli.append('--git-dir=%s' % gitdir)
+        if not kws.get('notdir', False):
+            if self.worktree:
+                cli.append('--work-tree=%s' % self.worktree)
+            if gitdir:
+                cli.append('--git-dir=%s' % gitdir)
 
         if len(args):
             cli.extend(args)

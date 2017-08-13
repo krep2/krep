@@ -70,7 +70,7 @@ class GitProject(Project, GitCommand):
         if len(args):
             cli.extend(args)
 
-        return GitCommand.clone(self, nopath=True, *cli, **kws)
+        return GitCommand.clone(self, notdir=True, *cli, **kws)
 
     def download(self, url=None, mirror=False, bare=False, *args, **kws):
         if self.gitdir and os.path.isdir(self.gitdir) \
