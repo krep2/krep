@@ -56,6 +56,31 @@ Execute the specified sub-commands, which can be listed with the command
     return global_options
 
 
+def _option_parse(argv, logger):
+    name = None
+    for i in range(len(argv)):
+        if not argv[i].startswith('-'):
+            name = argv[i]
+            del argv[i]
+            break
+
+    cmd = None
+    if name:
+        try:
+            cmd = all_commands[name]
+            cmd.COMMAND = name
+        except KeyError:
+            logger.error('Error: Sub-command "%s" is unknown to the program',
+                         name)
+            sys.exit(1)
+
+        options = cmd.get_option_parser(_global_options(cmd))
+    else:
+        options = _global_options()
+
+    return name, argv, cmd, options
+
+
 def _get_named_command(name):
     return all_commands.get(name)
 
@@ -122,31 +147,6 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             logger.error(e)
         else:
             raise
-
-
-def _option_parse(argv, logger):
-    name = None
-    for i in range(len(argv)):
-        if not argv[i].startswith('-'):
-            name = argv[i]
-            del argv[i]
-            break
-
-    cmd = None
-    if name:
-        try:
-            cmd = all_commands[name]
-            cmd.COMMAND = name
-        except KeyError:
-            logger.error('Error: Sub-command "%s" is unknown to the program',
-                         name)
-            sys.exit(1)
-
-        options = cmd.get_option_parser(_global_options(cmd))
-    else:
-        options = _global_options()
-
-    return name, argv, cmd, options
 
 
 def main(argv):
