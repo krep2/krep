@@ -56,6 +56,20 @@ Execute the specified sub-commands, which can be listed with the command
     return global_options
 
 
+def _load_default_option():
+    def _loadconf(confname):
+        if os.path.exists(confname):
+            return ConfigFile(confname).get_default()
+        else:
+            return Values()
+
+    opts = Values()
+    opts.join(_loadconf('/etc/default/krepconfig'))
+    opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
+
+    return opts
+
+
 def _option_parse(argv, logger):
     name = None
     for i in range(len(argv)):
@@ -129,6 +143,9 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
                 except TypeError:
                     pass
 
+        if defopts is None:
+            defopts = _load_default_option()
+
         lopts.join(defopts, optparse, override=False)
         with AutoChangedDir(
             FileUtils.ensure_path(
@@ -150,16 +167,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
 
 def main(argv):
-    def _loadconf(confname):
-        if os.path.exists(confname):
-            return ConfigFile(confname).get_default()
-        else:
-            return Values()
-
-    dopts = Values()
-    dopts.join(_loadconf('/etc/default/krepconfig'))
-    dopts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
-
+    dopts = _load_default_option()
     Logger.set(level=Logger.ERROR, verbose=dopts.verbose)
 
     logger = Logger.get_logger()
