@@ -107,14 +107,14 @@ The format of the plain-text configuration file can refer to the topic
                     # remove the prefix 'project.'
                     proj_name = conf.get_subsection_name(name)
                     setattr(proj, 'name', proj_name)
-                    if _filter_with_group(proj, proj_name, options.group):
-                        optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
+                    if _filter_with_group(project, proj_name, options.group):
+                        optparse = self._cmdopt(project.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
                         proj.join(project, option=optparse)
                         if len(projects) == 1:
-                            projs.append(proj)
-                        else:
                             tprojs.append(proj)
+                        else:
+                            projs.append(proj)
 
             for project in tprojs:
                 try:
