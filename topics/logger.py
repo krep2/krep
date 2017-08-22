@@ -57,19 +57,22 @@ class Logger(object):
         return logger
 
     @staticmethod
-    def get_logger(name=None):
-        if name:
-            curr = threading.currentThread()
-            # update the local data if the name is null or current thread is
-            # the main thread, which is because the running job is 1.
-            if not hasattr(_ldata, 'name') or curr.getName() == 'MainThread':
-                _ldata.name = name
-        else:
-            if hasattr(_ldata, 'name'):
-                name = _ldata.name
-
+    def get_logger(name=None, level=False):
         if _level < 0:
             Logger.set()
+
+        if name is None:
+            if hasattr(_ldata, 'name'):
+                name = _ldata.name
+        else:
+            if hasattr(_ldata, 'level'):
+                lvl = _ldata.level
+            else:
+                lvl = 0
+
+            if level >= lvl or not hasattr(_ldata, 'name'):
+                _ldata.name = name
+                _ldata.level = level
 
         logger = logging.getLogger(name or 'root')
         if logger.getEffectiveLevel() > _level:

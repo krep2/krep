@@ -100,9 +100,9 @@ class SubCommand(object):
                         pass
 
     @staticmethod
-    def get_logger(name=None):
+    def get_logger(name=None, level=0):
         """Returns the encapusulated logger for subcommands."""
-        return Logger.get_logger(name)
+        return Logger.get_logger(name, level)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
@@ -127,6 +127,9 @@ class SubCommand(object):
         return vb if vb is not None else va
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
+        # set the logger name at the beggining
+        self.get_logger(self.get_name(options), level=1)
+
         return True
 
 
