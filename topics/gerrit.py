@@ -2,7 +2,6 @@
 from command import Command
 from files.file_utils import FileUtils
 from logger import Logger
-from subcmd import SubCommand
 
 
 class GerritError(Exception):
@@ -90,9 +89,8 @@ implicitly."""
             if initial_commit:
                 args.append('--empty-commit')
 
-            # description may be None in the case, description=False means
-            # --no-description is set to suppress the function
-            if SubCommand.override_value(description):
+            # description=False means --no-description to suppress the function
+            if not description == False:
                 if not description:
                     description = "Mirror of %url"
 
