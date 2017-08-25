@@ -36,6 +36,10 @@ The format of the plain-text configuration file can refer to the topic
             '-u', '--group',
             dest='group', metavar='GROUP1,GROUP2,...',
             help='Set the handling groups')
+        options.add_option(
+            '--list',
+            dest='list', action='store_true',
+            help='List the selected projects')
 
         options = optparse.add_option_group('Error handling options')
         options.add_option(
@@ -136,12 +140,48 @@ The format of the plain-text configuration file can refer to the topic
                 else:
                     nprojs.append(project)
 
-            ret = self.run_with_thread(  # pylint: disable=E1101
-                options.job, nprojs, _run)
-            ret = self.run_with_thread(  # pylint: disable=E1101
-                1, projs, _run) and ret
+            if options.list:
+                def _inc(dicta, key):
+                    if key in dicta:
+                        dicta[key] += 1
+                    else:
+                        dicta[key] = 1
 
-            return ret
+                print '\nFile: %s' % batch
+                print '=================================='
+                if len(nprojs):
+                    print 'Parallel projects with %s jobs' % (options.job or 1)
+                    print '---------------------------------'
+                    results = dict()
+                    for project in nprojs:
+                        _inc(results, '[%s] %s' % (
+                            project.schema, project.name))
+
+                    for k, result in enumerate(sorted(results.keys())):
+                        print '  %2d. %s' % (k + 1, result)
+
+                if len(projs):
+                    print '\nNon-parallel projects'
+                    print '---------------------------------'
+                    results = dict()
+                    for project in projs:
+                        _inc(results, '[%s] %s' % (
+                            project.schema, project.name))
+
+                    for k, result in enumerate(sorted(results.keys())):
+                        print '  %2d. %s%s' % (
+                            k + 1, result, ' (%d)' % results[result]
+                            if results[result] > 1 else '')
+
+                print
+                return True
+            else:
+                ret = self.run_with_thread(  # pylint: disable=E1101
+                    options.job, nprojs, _run)
+                ret |= self.run_with_thread(  # pylint: disable=E1101
+                    1, projs, _run) and ret
+
+                return ret
 
         RaiseExceptionIfOptionMissed(
             options.batch_file or args, "batch file (--batch-file) is not set")
