@@ -10,18 +10,18 @@ from options import Values
 class BatchSubcmd(SubCommandWithThread):
     COMMAND = 'batch'
 
-    help_summary = 'Load and executes projects from specified files'
+    help_summary = 'Load and execute projects from specified files'
     help_usage = """\
 %prog [options] ...
 
-Read the project configures from files and executes per project configuration.
+Read project configurations from files and executes per project configuration.
 
-The project is implemented to read configs from file and execute. With the
-support, "%prog" would extend as the batch method to run as a single
-command to accomplish multiple commands.
+The project is implemented to read configations from the config file and
+execute. With the support, "%prog" would extend as the batch method to run as
+a single command to accomplish multiple commands.
 
-The plain-text file format can refer to the topic "config_file", which is used
-to define the projects in the config file.
+The format of the plain-text configuration file can refer to the topic
+"config_file", which is used to define the projects in the file.
 """
 
     def options(self, optparse):
@@ -36,6 +36,10 @@ to define the projects in the config file.
             '-u', '--group',
             dest='group', metavar='GROUP1,GROUP2,...',
             help='Set the handling groups')
+        options.add_option(
+            '--list',
+            dest='list', action='store_true',
+            help='List the selected projects')
 
         options = optparse.add_option_group('Error handling options')
         options.add_option(
@@ -65,13 +69,14 @@ to define the projects in the config file.
                 if limit in groups:
                     return not opposite
 
-            if (allminus or 'all' in limits) and '-all' not in groups:
+            if (allminus or 'default' in limits) and \
+                    'notdefault' not in groups and '-default' not in groups:
                 return True
 
             return False
 
         def _filter_with_group(project, name, limit):
-            limits = re.split(r'\s*,\s*', limit or 'all')
+            limits = re.split(r'\s*,\s*', limit or 'default')
 
             groups = re.split(r'\s*,\s*', project.exude('group', ''))
             groups.extend([name, os.path.basename(name)])
@@ -87,6 +92,8 @@ to define the projects in the config file.
             largs = options.args or list()
             ignore_error = options.ignore_error or False
 
+            # ensure to construct thread logger
+            self.get_logger(project.name, level=2)  # pylint: disable=E1101
             self._run(project.schema,  # pylint: disable=E1101
                       project,
                       largs,
@@ -95,30 +102,28 @@ to define the projects in the config file.
         def _batch(batch):
             conf = ConfigFile(batch)
 
-            projects = list()
+            projs, nprojs, tprojs = list(), list(), list()
             for name in conf.get_names('project') or list():
-                projs = conf.get_values(name)
-                if not isinstance(projs, list):
-                    projs = [projs]
+                projects = conf.get_values(name)
+                if not isinstance(projects, list):
+                    projects = [projects]
 
                 # handle projects with the same name
-                for proj in projs:
-                    project = Values()
+                for project in projects:
+                    proj = Values()
                     # remove the prefix 'project.'
                     proj_name = conf.get_subsection_name(name)
-                    setattr(project, 'name', proj_name)
-                    if _filter_with_group(proj, proj_name, options.group):
-                        optparse = self._cmdopt(proj.schema)  # pylint: disable=E1101
+                    setattr(proj, 'name', proj_name)
+                    if _filter_with_group(project, proj_name, options.group):
+                        optparse = self._cmdopt(project.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
-                        project.join(proj, option=optparse)
-                        # if a name has more than one project, run them in parallel
-                        if len(projs) == 1:
-                            projs.append(project)
+                        proj.join(project, option=optparse)
+                        if len(projects) == 1:
+                            tprojs.append(proj)
                         else:
-                            projects.append(project)
+                            projs.append(proj)
 
-            projs, nprojs = list(), list()
-            for project in projects:
+            for project in tprojs:
                 try:
                     multiple = self._cmd(  # pylint: disable=E1101
                         project.schema).support_jobs()
@@ -138,12 +143,48 @@ to define the projects in the config file.
                 else:
                     nprojs.append(project)
 
-            ret = self.run_with_thread(  # pylint: disable=E1101
-                options.job, nprojs, _run)
-            ret = self.run_with_thread(  # pylint: disable=E1101
-                1, projs, _run) and ret
+            if options.list:
+                def _inc(dicta, key):
+                    if key in dicta:
+                        dicta[key] += 1
+                    else:
+                        dicta[key] = 1
 
-            return ret
+                print '\nFile: %s' % batch
+                print '=================================='
+                if len(nprojs):
+                    print 'Parallel projects with %s jobs' % (options.job or 1)
+                    print '---------------------------------'
+                    results = dict()
+                    for project in nprojs:
+                        _inc(results, '[%s] %s' % (
+                            project.schema, project.name))
+
+                    for k, result in enumerate(sorted(results.keys())):
+                        print '  %2d. %s' % (k + 1, result)
+
+                if len(projs):
+                    print '\nNon-parallel projects'
+                    print '---------------------------------'
+                    results = dict()
+                    for project in projs:
+                        _inc(results, '[%s] %s' % (
+                            project.schema, project.name))
+
+                    for k, result in enumerate(sorted(results.keys())):
+                        print '  %2d. %s%s' % (
+                            k + 1, result, ' (%d)' % results[result]
+                            if results[result] > 1 else '')
+
+                print
+                return True
+            else:
+                ret = self.run_with_thread(  # pylint: disable=E1101
+                    options.job, nprojs, _run)
+                ret |= self.run_with_thread(  # pylint: disable=E1101
+                    1, projs, _run) and ret
+
+                return ret
 
         RaiseExceptionIfOptionMissed(
             options.batch_file or args, "batch file (--batch-file) is not set")

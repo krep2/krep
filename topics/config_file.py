@@ -49,7 +49,6 @@ import re
 import xml.dom.minidom
 
 from error import ProcessingError
-from logger import Logger
 from options import Values
 from pattern import PatternFile
 
@@ -188,12 +187,8 @@ class _IniConfigFile(_ConfigFile):
         self._parse_ini(self.read())
 
     def _parse_ini(self, content):
-        logger = Logger.get_logger()
-        k, cfg = 0, self._new_value(_ConfigFile.DEFAULT_CONFIG)
-        for line in content.split('\n'):
-            k += 1
-            logger.debug('%d: [%s]', k, line.rstrip())
-
+        cfg = self._new_value(_ConfigFile.DEFAULT_CONFIG)
+        for k, line in enumerate(content.split('\n')):
             strip = line.strip()
             if len(strip) == 0:
                 continue
@@ -226,7 +221,7 @@ class _IniConfigFile(_ConfigFile):
                 continue
 
             if len(strip) > 0:
-                raise ProcessingError('Unmatched Line %d: %s' % (k, strip))
+                raise ProcessingError('Unmatched Line %d: %s' % (k + 1, strip))
 
 
 class _XmlConfigFile(_ConfigFile):

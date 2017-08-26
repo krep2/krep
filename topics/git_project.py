@@ -1,6 +1,7 @@
 
 import os
 import re
+import urlparse
 
 from error import DownloadError, ProcessingError
 from git_cmd import GitCommand
@@ -13,6 +14,14 @@ def _sha1_equals(sha, shb):
         return sha.startswith(shb) or shb.startswith(sha)
     else:
         return sha == shb
+
+
+def ensure_remote(url):
+    ulp = urlparse.urlparse(url)
+    if not ulp.scheme:
+        url = 'git://' + url
+
+    return url
 
 
 class GitProject(Project, GitCommand):
@@ -33,7 +42,8 @@ class GitProject(Project, GitCommand):
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
         Project.__init__(
-            self, uri, worktree, revision, remote, pattern, *args, **kws)
+            self, uri, worktree, revision, ensure_remote(remote),
+            pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
         cli = list()
@@ -43,36 +53,45 @@ class GitProject(Project, GitCommand):
         if len(args):
             cli.extend(args)
 
-        return GitCommand.init(self, *cli, **kws)
+        return GitCommand.init(self, notdir=True, *cli, **kws)
 
-    def clone(self, url=None, mirror=None, bare=False, *args, **kws):
+    def clone(self, url=None, mirror=None, bare=False,
+              revision=None, single_branch=False, *args, **kws):
         cli = list()
         cli.append(url or self.remote)
 
         logger = Logger.get_logger()
-        if self.revision:
-            cli.append('--branch=%s' % self.revision)
+
+        if not revision:
+            revision = self.revision
+
+        if revision:
+            cli.append('--branch=%s' % revision)
         else:
             logger.warning(
                 '%s: branch/revision is null, the default branch '
                 'will be used by the git (server)', self.uri)
 
-        if bare:
-            cli.append('--bare')
         if mirror:
             cli.append('--reference=%s' % mirror)
+        if single_branch:
+            cli.append('--single-branch')
 
         if bare:
+            cli.append('--bare')
+
+        if bare and self.gitdir:
             cli.append(self.gitdir)
         else:
             cli.append(self.worktree)
 
-        if len(args):
+        if len(args) > 0:
             cli.extend(args)
 
-        return GitCommand.clone(self, nopath=True, *cli, **kws)
+        return GitCommand.clone(self, notdir=True, *cli, **kws)
 
-    def download(self, url=None, mirror=False, bare=False, *args, **kws):
+    def download(self, url=None, mirror=False, bare=False,
+                 revision=None, single_branch=False, *args, **kws):
         if self.gitdir and os.path.isdir(self.gitdir) \
                 and os.listdir(self.gitdir):
             ret, get_url = self.ls_remote('--get-url')
@@ -81,18 +100,30 @@ class GitProject(Project, GitCommand):
                     '%s: different url "%s" with existed git "%s"',
                     self.uri, url, get_url)
 
-            ret = self.fetch('--all', *args, **kws)
+            cli = list()
+            cli.append('origin')
+            cli.append('--progress')
+            if self.bare:
+                cli.append('--update-head-ok')
+            cli.append('--tags')
+            cli.append('+refs/heads/*:refs/heads/*')
+            cli.extend(args)
+            ret = self.fetch(*cli, **kws)
         else:
             if url is None:
                 url = self.remote
+            ret = self.clone(
+                ensure_remote(url), mirror=mirror, bare=bare,
+                revision=revision, single_branch=single_branch, *args, **kws)
 
-            ret = self.clone(url, mirror=mirror, bare=bare, *args, **kws)
+        if ret == 0:
+            self.revision = revision
 
         return ret
 
-    def get_remote_tags(self):
+    def get_remote_tags(self, remote=None):
         tags = dict()
-        ret, result = self.ls_remote('--tags', self.remote)
+        ret, result = self.ls_remote('--tags', remote or self.remote)
         if ret == 0 and result:
             for line in result.split('\n'):
                 sha1, tag = re.split(r'\s+', line, maxsplit=1)
@@ -100,10 +131,10 @@ class GitProject(Project, GitCommand):
 
         return ret, tags
 
-    def get_remote_heads(self):
+    def get_remote_heads(self, remote=None):
         heads = dict()
 
-        ret, result = self.ls_remote('--heads', self.remote)
+        ret, result = self.ls_remote('--heads', remote or self.remote)
         if ret == 0 and result:
             for line in result.split('\n'):
                 line = line.strip()
@@ -283,7 +314,8 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def init_or_download(self, revision=None, default='master', offsite=False):
+    def init_or_download(self, revision='master', single_branch=True,
+                         offsite=False):
         logger = Logger.get_logger()
 
         if not revision:
@@ -295,34 +327,21 @@ class GitProject(Project, GitCommand):
                 '--allow-empty', '--no-edit', '-m', 'Init the empty repository')
         elif self.remote:
             logger.info('Clone %s', self)
-            ret = self.download(self.remote)
-            if ret != 0 and self.revision != default:
-                self.revision = default
-                ret = self.download(self.remote)
-        else:
-            raise DownloadError('Remote is not defined')
 
-        rbranches = list()
-        if not offsite:
             ret, branches = self.get_remote_heads()
-            if ret:
-                rbranches.extend(branches)
-
-        if ret == 0:
-            ret, branches = self.get_local_heads(local=True)
             if ret == 0:
-                rbranches.extend(branches)
+                for branch in branches:
+                    if branch in (revision, 'refs/heads/%s' % revision):
+                        ret = self.download(
+                            self.remote, revision=revision,
+                            single_branch=single_branch)
+                        break
+                else:
+                    ret = self.download(
+                        self.remote, revision='master',
+                        single_branch=single_branch)
 
-        if ret == 0:
-            for branch in rbranches:
-                if branch in (revision, 'refs/heads/%s' % revision):
-                    self.checkout(revision)
-                    self.revision = revision
-                    break
-            else:
-                self.revision = default
-
-        if self.revision != revision:
+        if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')
             ret, _ = self.branch(revision, parent)
             if ret != 0:
