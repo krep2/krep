@@ -55,29 +55,37 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.init(self, notdir=True, *cli, **kws)
 
-    def clone(self, url=None, mirror=None, bare=False, *args, **kws):
+    def clone(self, url=None, mirror=None, bare=False,
+              revision=None, single_branch=False, *args, **kws):
         cli = list()
         cli.append(url or self.remote)
 
         logger = Logger.get_logger()
-        if self.revision:
-            cli.append('--branch=%s' % self.revision)
+
+        if not revision:
+            revision = self.revision
+
+        if revision:
+            cli.append('--branch=%s' % revision)
         else:
             logger.warning(
                 '%s: branch/revision is null, the default branch '
                 'will be used by the git (server)', self.uri)
 
-        if bare:
-            cli.append('--bare')
         if mirror:
             cli.append('--reference=%s' % mirror)
+        if single_branch:
+            cli.append('--single-branch')
 
         if bare:
+            cli.append('--bare')
+
+        if bare and self.gitdir:
             cli.append(self.gitdir)
         else:
             cli.append(self.worktree)
 
-        if len(args):
+        if len(args) > 0:
             cli.extend(args)
 
         return GitCommand.clone(self, notdir=True, *cli, **kws)
