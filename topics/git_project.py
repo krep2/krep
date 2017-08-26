@@ -53,7 +53,7 @@ class GitProject(Project, GitCommand):
         if len(args):
             cli.extend(args)
 
-        return GitCommand.init(self, *cli, **kws)
+        return GitCommand.init(self, notdir=True, *cli, **kws)
 
     def clone(self, url=None, mirror=None, bare=False, *args, **kws):
         cli = list()
