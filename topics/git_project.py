@@ -121,9 +121,9 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def get_remote_tags(self):
+    def get_remote_tags(self, remote=None):
         tags = dict()
-        ret, result = self.ls_remote('--tags', self.remote)
+        ret, result = self.ls_remote('--tags', remote or self.remote)
         if ret == 0 and result:
             for line in result.split('\n'):
                 sha1, tag = re.split(r'\s+', line, maxsplit=1)
@@ -131,10 +131,10 @@ class GitProject(Project, GitCommand):
 
         return ret, tags
 
-    def get_remote_heads(self):
+    def get_remote_heads(self, remote=None):
         heads = dict()
 
-        ret, result = self.ls_remote('--heads', self.remote)
+        ret, result = self.ls_remote('--heads', remote or self.remote)
         if ret == 0 and result:
             for line in result.split('\n'):
                 line = line.strip()
