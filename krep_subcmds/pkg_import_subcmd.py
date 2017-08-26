@@ -356,7 +356,7 @@ The escaped variants are supported for the imported files including:
             if options.washed:
                 if workp != temp:
                     os.makedirs(temp)
-                    shutil.copytree(workp, temp)
+                    shutil.copytree(workp, temp, symlinks=True)
                     # wash the directory
                     washer = FileWasher(
                         temp, overrideReadOnly=True,
