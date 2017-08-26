@@ -69,13 +69,14 @@ The format of the plain-text configuration file can refer to the topic
                 if limit in groups:
                     return not opposite
 
-            if (allminus or 'all' in limits) and '-all' not in groups:
+            if (allminus or 'default' in limits) and \
+                    'notdefault' not in groups and '-default' not in groups:
                 return True
 
             return False
 
         def _filter_with_group(project, name, limit):
-            limits = re.split(r'\s*,\s*', limit or 'all')
+            limits = re.split(r'\s*,\s*', limit or 'default')
 
             groups = re.split(r'\s*,\s*', project.exude('group', ''))
             groups.extend([name, os.path.basename(name)])
