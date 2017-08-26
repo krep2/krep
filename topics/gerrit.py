@@ -2,6 +2,7 @@
 from command import Command
 from files.file_utils import FileUtils
 from logger import Logger
+from synchronize import synchronized
 
 
 class GerritError(Exception):
@@ -73,6 +74,7 @@ implicitly."""
         self.new_args(cli)
         return self.wait(**kws)
 
+    @synchronized
     def ls_projects(self, force=False):
         if not self.enable:
             return list()
@@ -87,6 +89,7 @@ implicitly."""
 
         return self.projects
 
+    @synchronized
     def create_project(self, project, initial_commit=True, description=None,
                        source=None):
         if not self.enable:
@@ -126,6 +129,7 @@ implicitly."""
         else:
             logger.debug('%s existed in the remote', project)
 
+    @synchronized
     def create_branch(self, branch):
         if self.enable:
             return self._execute('create-branch', branch)
