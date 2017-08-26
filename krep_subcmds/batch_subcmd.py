@@ -92,6 +92,8 @@ The format of the plain-text configuration file can refer to the topic
             largs = options.args or list()
             ignore_error = options.ignore_error or False
 
+            # ensure to construct thread logger
+            self.get_logger(project.name, level=2)  # pylint: disable=E1101
             self._run(project.schema,  # pylint: disable=E1101
                       project,
                       largs,
