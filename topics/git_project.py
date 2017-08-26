@@ -90,7 +90,8 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.clone(self, notdir=True, *cli, **kws)
 
-    def download(self, url=None, mirror=False, bare=False, *args, **kws):
+    def download(self, url=None, mirror=False, bare=False,
+                 revision=None, single_branch=False, *args, **kws):
         if self.gitdir and os.path.isdir(self.gitdir) \
                 and os.listdir(self.gitdir):
             ret, get_url = self.ls_remote('--get-url')
@@ -99,12 +100,24 @@ class GitProject(Project, GitCommand):
                     '%s: different url "%s" with existed git "%s"',
                     self.uri, url, get_url)
 
-            ret = self.fetch('--all', *args, **kws)
+            cli = list()
+            cli.append('origin')
+            cli.append('--progress')
+            if self.bare:
+                cli.append('--update-head-ok')
+            cli.append('--tags')
+            cli.append('+refs/heads/*:refs/heads/*')
+            cli.extend(args)
+            ret = self.fetch(*cli, **kws)
         else:
             if url is None:
                 url = self.remote
+            ret = self.clone(
+                ensure_remote(url), mirror=mirror, bare=bare,
+                revision=revision, single_branch=single_branch, *args, **kws)
 
-            ret = self.clone(url, mirror=mirror, bare=bare, *args, **kws)
+        if ret == 0:
+            self.revision = revision
 
         return ret
 
@@ -301,7 +314,8 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def init_or_download(self, revision=None, default='master', offsite=False):
+    def init_or_download(self, revision='master', single_branch=True,
+                         offsite=False):
         logger = Logger.get_logger()
 
         if not revision:
@@ -313,34 +327,21 @@ class GitProject(Project, GitCommand):
                 '--allow-empty', '--no-edit', '-m', 'Init the empty repository')
         elif self.remote:
             logger.info('Clone %s', self)
-            ret = self.download(self.remote)
-            if ret != 0 and self.revision != default:
-                self.revision = default
-                ret = self.download(self.remote)
-        else:
-            raise DownloadError('Remote is not defined')
 
-        rbranches = list()
-        if not offsite:
             ret, branches = self.get_remote_heads()
-            if ret:
-                rbranches.extend(branches)
-
-        if ret == 0:
-            ret, branches = self.get_local_heads(local=True)
             if ret == 0:
-                rbranches.extend(branches)
+                for branch in branches:
+                    if branch in (revision, 'refs/heads/%s' % revision):
+                        ret = self.download(
+                            self.remote, revision=revision,
+                            single_branch=single_branch)
+                        break
+                else:
+                    ret = self.download(
+                        self.remote, revision='master',
+                        single_branch=single_branch)
 
-        if ret == 0:
-            for branch in rbranches:
-                if branch in (revision, 'refs/heads/%s' % revision):
-                    self.checkout(revision)
-                    self.revision = revision
-                    break
-            else:
-                self.revision = default
-
-        if self.revision != revision:
+        if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')
             ret, _ = self.branch(revision, parent)
             if ret != 0:
