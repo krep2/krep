@@ -154,6 +154,10 @@ The escaped variants are supported for the imported files including:
             help='Set the initialized path with the provided path or '
                  'extracted package')
         options.add_option(
+            '--temp-directory', '--temporary-directory',
+            dest='temp_directory', action='store',
+            help='Temporary directory for immediate storage')
+        options.add_option(
             '--auto-detect', '--skip-single-directory',
             dest='auto_detect', action='store_true',
             help='Ignore the root directory from the uncompressed package')
@@ -307,7 +311,7 @@ The escaped variants are supported for the imported files including:
             logger.error('Failed to init the repo %s' % project)
             return False
 
-        temp = options.temp_dir or tempfile.mkdtemp()
+        temp = options.temp_directory or tempfile.mkdtemp()
         tags = list()
         filter_out = list([r'\.git/'])
         for fout in options.filter_out or list():
