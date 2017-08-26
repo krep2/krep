@@ -1,6 +1,7 @@
 
 import os
 import re
+import urlparse
 
 from error import DownloadError, ProcessingError
 from git_cmd import GitCommand
@@ -13,6 +14,14 @@ def _sha1_equals(sha, shb):
         return sha.startswith(shb) or shb.startswith(sha)
     else:
         return sha == shb
+
+
+def ensure_remote(url):
+    ulp = urlparse.urlparse(url)
+    if not ulp.scheme:
+        url = 'git://' + url
+
+    return url
 
 
 class GitProject(Project, GitCommand):
@@ -33,7 +42,8 @@ class GitProject(Project, GitCommand):
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
         Project.__init__(
-            self, uri, worktree, revision, remote, pattern, *args, **kws)
+            self, uri, worktree, revision, ensure_remote(remote),
+            pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
         cli = list()
