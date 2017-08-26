@@ -2,7 +2,6 @@
 import os
 import tempfile
 import shutil
-import stat
 
 from dir_utils import AutoChangedDir
 from topics.command import Command

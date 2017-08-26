@@ -103,9 +103,9 @@ class FileDiff(object):
     def sync(self, gitcmd=None, logger=None):  # pylint: disable=R0915
         changes = 0
 
-        def info(msg):
+        def debug(msg):
             if logger:
-                logger.info(msg)
+                logger.debug(msg)
 
         slen = len(self.src) + 1
         dlen = len(self.dest) + 1
@@ -116,12 +116,12 @@ class FileDiff(object):
                 if self.sccsp.match(oldf[slen:]):
                     continue
                 elif self.pattern.match(oldf[slen:]):
-                    info('filter out %s' % oldf)
+                    debug('filter out %s' % oldf)
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
                 if not os.path.lexists(newf):
-                    info('remove file %s' % oldf)
+                    debug('remove file %s' % oldf)
                     changes += 1
                     if gitcmd:
                         gitcmd.rm(oldf)
@@ -133,12 +133,12 @@ class FileDiff(object):
                 if self.sccsp.match_dir(oldd[slen:]):
                     continue
                 elif self.pattern.match_dir(oldd[slen:]):
-                    info('filter out %s' % oldd)
+                    debug('filter out %s' % oldd)
                     continue
 
                 newd = oldd.replace(self.src, self.dest)
                 if not os.path.lexists(newd):
-                    info('remove directory %s' % oldd)
+                    debug('remove directory %s' % oldd)
                     changes += 1
                     if gitcmd:
                         gitcmd.rm('-r', oldd)
@@ -150,18 +150,18 @@ class FileDiff(object):
                 newd = os.path.join(root, dname)
                 oldd = newd.replace(self.dest, self.src)
                 if self.pattern.match(newd[dlen:]):
-                    info('filter out %s' % oldd)
+                    debug('filter out %s' % oldd)
                 elif not os.path.lexists(os.path.dirname(oldd)):
-                    info('ignored %s without dir' % oldd)
+                    debug('ignored %s without dir' % oldd)
                 elif not os.path.lexists(oldd):
-                    info('makedir %s' % oldd)
+                    debug('makedir %s' % oldd)
                     os.makedirs(oldd)
                 elif not os.path.isdir(oldd):
-                    info('type changed %s' % oldd)
+                    debug('type changed %s' % oldd)
                     os.unlink(oldd)
                     os.makedirs(oldd)
                 else:
-                    info('no change %s' % oldd)
+                    debug('no change %s' % oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
@@ -171,18 +171,18 @@ class FileDiff(object):
 
                 oldf = newf.replace(self.dest, self.src)
                 if self.pattern.match(newf[dlen:]):
-                    info('filter out %s' % oldf)
+                    debug('filter out %s' % oldf)
                 elif not os.path.lexists(os.path.dirname(oldf)):
-                    info('ignored %s without dir' % oldf)
+                    debug('ignored %s without dir' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
-                        info('copy the link file %s' % oldf)
+                        debug('copy the link file %s' % oldf)
                         FileUtils.copy_file(newf, oldf)
                         if gitcmd:
                             gitcmd.add(oldf)
                         changes += 1
                 elif not os.path.lexists(oldf):
-                    info('p: add file %s' % newf)
+                    debug('add file %s' % newf)
                     dirn = os.path.dirname(oldf)
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
@@ -193,19 +193,19 @@ class FileDiff(object):
                     changes += 1
                 else:
                     if os.path.islink(oldf):
-                        info('link file %s' % newf)
+                        debug('link file %s' % newf)
                         FileUtils.copy_file(newf, oldf)
                         if gitcmd:
                             gitcmd.add(oldf)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
-                        info('change file %s' % newf)
+                        debug('change file %s' % newf)
                         FileUtils.copy_file(newf, oldf)
                         if gitcmd:
                             gitcmd.add(oldf)
                         changes += 1
                     else:
-                        info('no change %s' % newf)
+                        debug('no change %s' % newf)
 
         return changes
 
