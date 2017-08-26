@@ -306,7 +306,8 @@ The escaped variants are supported for the imported files including:
             revision=branch,
             remote=remote)
 
-        ret = project.init_or_download(offsite=options.offsite)
+        ret = project.init_or_download(
+            branch, single_branch=True, offsite=options.offsite)
         if ret != 0:
             logger.error('Failed to init the repo %s' % project)
             return False
