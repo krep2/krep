@@ -22,10 +22,11 @@ required commands have been implemented with specific handling:
 Other unimplemented command can be accessed with __call__ method
 implicitly."""
 
-    def __init__(self, server, cwd=None):
-        Command.__init__(self, cwd=cwd)
+    def __init__(self, server, enable=True):
+        Command.__init__(self)
 
         self.dirty = True
+        self.enable = enable
         self.server = server
 
         self.projects = list()
@@ -35,6 +36,10 @@ implicitly."""
     def options(optparse):
         options = optparse.get_option_group('--refs') or \
             optparse.add_option_group('Remote options')
+        options.add_option(
+            '--disable-gerrit',
+            dest='enable_gerrit', action='store_false', default=True,
+            help='Enable gerrit server')
         options.add_option(
             '--remote', '--server', '--gerrit-server',
             dest='remote', action='store',
@@ -69,6 +74,9 @@ implicitly."""
         return self.wait(**kws)
 
     def ls_projects(self, force=False):
+        if not self.enable:
+            return list()
+
         if (self.dirty or force) and self._execute(
                 'ls-projects', capture_stdout=True) == 0:
             self.dirty = False
@@ -81,6 +89,9 @@ implicitly."""
 
     def create_project(self, project, initial_commit=True, description=None,
                        source=None):
+        if not self.enable:
+            return
+
         logger = Logger.get_logger('Gerrit')
 
         project = project.strip()
@@ -116,6 +127,10 @@ implicitly."""
             logger.debug('%s existed in the remote', project)
 
     def create_branch(self, branch):
-        return self._execute('create-branch', branch)
+        if self.enable:
+            return self._execute('create-branch', branch)
+        else:
+            return 0
+
 
 TOPIC_ENTRY = "Gerrit, GerritError"
