@@ -127,6 +127,10 @@ The escaped variants are supported for the imported files including:
         options = optparse.get_option_group('--refs') or \
             optparse.add_option_group('Remote options')
         options.add_option(
+            '-b', '--branch',
+            dest="branch", action='store', metavar='BRANCH',
+            help='Set the branch')
+        options.add_option(
             '-n', '--name', '--project-name',
             dest="name", action='store', metavar='NAME',
             help='Set the project name. If it\'s not set, the name will be '
@@ -242,7 +246,7 @@ The escaped variants are supported for the imported files including:
 
             if not revision and not options.ignore_version:
                 logger.error(
-                    'Error: %s failed to recognized with revision' % pkg)
+                    'Error: %s failed to be recognized with revision' % pkg)
             else:
                 name = pkgname
                 pkgs.append((os.path.realpath(pkg), pkgname, revision))
@@ -285,9 +289,11 @@ The escaped variants are supported for the imported files including:
             branch = '%s/%s' % (options.refs, branch or 'master')
 
         path = os.path.realpath(path)
-        remote = FileUtils.ensure_path(
-            options.remote, prefix='git://',
-            subdir=options.name, exists=False) if options.remote else None
+        if options.offsite and not os.path.exists(path):
+            os.makedirs(path)
+
+        remote = '%s/%s' % (options.remote.rstrip(), options.name) \
+            if options.remote else None
 
         project = GitProject(
             options.name,
@@ -391,13 +397,13 @@ The escaped variants are supported for the imported files including:
         # push the branches
         if not options.tryrun and not options.local:
             ret = 0
-            if self.override_value(  # pylint: disable=E1101
+            if self.overrided_value(  # pylint: disable=E1101
                     options.branches, options.all):
                 ret = project.push_heads(
                     branch, options.refs, force=options.force)
             # push the tags
             if ret == 0 and tags and \
-                self.override_value(  # pylint: disable=E1101
+                self.overrided_value(  # pylint: disable=E1101
                         options.tags, options.all):
                 ret = project.push_tags(
                     tags, None, fullname=True, force=options.force)
