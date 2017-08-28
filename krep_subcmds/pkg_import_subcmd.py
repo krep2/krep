@@ -84,6 +84,17 @@ def _pkg_sort(a, b):
     return cmp(len(va), len(vb))
 
 
+def _timestamp(src):
+    timestamp = 0
+    for root, _, files in os.walk(src):
+        for name in files:
+            timest = os.lstat(os.path.join(root, name))
+            if timest.st_mtime > timestamp:
+                timestamp = timest.st_mtime
+
+    return timestamp
+
+
 class PkgImportSubcmd(SubCommand):
     COMMAND = 'pkg-import'
     ALIASES = ('pki',)
@@ -373,16 +384,26 @@ The escaped variants are supported for the imported files including:
                     dname = os.listdir(workp)
                     logger.info('Go into %s' % workp)
 
-            diff = FileDiff(project.path, workp, filter_out,
-                            enable_sccs_pattern=options.filter_out_sccs)
-            if diff.sync(project, logger) > 0:
+            if options.washed:
+                diff = FileDiff(project.path, workp, filter_out,
+                                enable_sccs_pattern=options.filter_out_sccs)
+                ret = diff.sync(project, logger) > 0
+                timestamp = diff.timestamp
+            else:
+                timestamp = _timestamp(workp)
+                FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
+                FileUtils.copy_files(workp, project.path)
+
+                ret = project.add('--all', project.path)
+
+            if ret == 0:
                 args = list()
                 if options.author:
                     args.append('--author="%s"' % options.author)
 
                 args.append('-m')
                 args.append(message)
-                args.append('--date="%s"' % time.ctime(diff.timestamp))
+                args.append('--date="%s"' % time.ctime(timestamp))
 
                 ret = project.commit(*args)
                 if ret == 0:
