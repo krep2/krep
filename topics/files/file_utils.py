@@ -71,8 +71,15 @@ class FileUtils(object):
         return None
 
     @staticmethod
+    def secure_path(dirname):
+        if dirname:
+            dirname = re.sub(r"([^:]\/)\/+", "\\1", dirname.replace('\\', '/'))
+
+        return dirname
+
+    @staticmethod
     def ensure_path(dirname, subdir=None, prefix=None, exists=True):
-        name = dirname
+        name = FileUtils.secure_path(dirname)
         if prefix and not name.startswith(prefix):
             name = prefix + name
         if subdir and os.path.basename(dirname) != subdir:
