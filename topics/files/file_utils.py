@@ -15,6 +15,7 @@ class ExecutableNotFoundError(KrepError):
 
 class FileDecompressor(Command):
     COMMAND_FOR_EXTENSION = {
+        '.tar': {'p': ('tar', 'xf')},
         '.tar.gz': {'p': ('tar', 'xzf')},
         '.tar.bz2': {'p': ('tar', 'xjf')},
         '.tgz': {'p': ('tar', 'xzf')},
