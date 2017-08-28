@@ -1,5 +1,6 @@
 
 import os
+import re
 import tempfile
 import shutil
 
@@ -14,6 +15,7 @@ class ExecutableNotFoundError(KrepError):
 
 class FileDecompressor(Command):
     COMMAND_FOR_EXTENSION = {
+        '.tar': {'p': ('tar', 'xf')},
         '.tar.gz': {'p': ('tar', 'xzf')},
         '.tar.bz2': {'p': ('tar', 'xjf')},
         '.tgz': {'p': ('tar', 'xzf')},
@@ -69,8 +71,15 @@ class FileUtils(object):
         return None
 
     @staticmethod
+    def secure_path(dirname):
+        if dirname:
+            dirname = re.sub(r"([^:]\/)\/+", "\\1", dirname.replace('\\', '/'))
+
+        return dirname
+
+    @staticmethod
     def ensure_path(dirname, subdir=None, prefix=None, exists=True):
-        name = dirname
+        name = FileUtils.secure_path(dirname)
         if prefix and not name.startswith(prefix):
             name = prefix + name
         if subdir and os.path.basename(dirname) != subdir:
@@ -99,6 +108,42 @@ class FileUtils(object):
 
             shutil.copy2(src, dest)
 
+    @staticmethod
+    def rmtree(dest, ignore_list=None):
+        for name in os.listdir(dest):
+            matched = False
+            for pattern in ignore_list or list():
+                if re.match(pattern, name) is not None:
+                    matched = True
+                    break
+
+            if matched:
+                continue
+
+            filename = os.path.join(dest, name)
+            if os.path.isdir(filename):
+                shutil.rmtree(filename)
+            else:
+                os.unlink(filename)
+
+    @staticmethod
+    def copy_files(src, dest, ignore_list=None):
+        for name in os.listdir(src):
+            matched = False
+            for pattern in ignore_list or list():
+                if re.match(pattern, name) is not None:
+                    matched = True
+                    break
+
+            if matched:
+                continue
+
+            filename = os.path.join(src, name)
+            if os.path.isdir(filename):
+                shutil.copytree(
+                    filename, os.path.join(dest, name), symlinks=True)
+            else:
+                FileUtils.copy_file(filename, os.path.join(dest, name))
 
     @staticmethod
     def extract_file(src, dest):

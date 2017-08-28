@@ -181,7 +181,7 @@ The format of the plain-text configuration file can refer to the topic
             else:
                 ret = self.run_with_thread(  # pylint: disable=E1101
                     options.job, nprojs, _run)
-                ret |= self.run_with_thread(  # pylint: disable=E1101
+                ret = self.run_with_thread(  # pylint: disable=E1101
                     1, projs, _run) and ret
 
                 return ret
