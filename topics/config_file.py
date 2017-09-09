@@ -198,20 +198,20 @@ class _IniConfigFile(_ConfigFile):
                 continue
 
             # [section]
-            m = re.match(r'^\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
+            m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
             if m:
                 cfg = self._new_value(m.group('section'))
                 continue
 
             # [section "subsection"]
-            m = re.match(r'^\[(?P<section>[A-Za-z0-9\-]+)\s+'
+            m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\s+'
                          r'"(?P<subsection>[A-Za-z0-9\-]+)"\]', strip)
             if m:
                 cfg = self._new_value(
                     '%s.%s' % (m.group('section'), m.group('subsection')))
 
             # option = value
-            m = re.match(r'^(?P<name>[A-Za-z0-9\-_]+)\s*=\s*'
+            m = re.match(r'^\s*(?P<name>[A-Za-z0-9\-_]+)\s*=\s*'
                          r'(?P<value>.*)$', strip)
             if m:
                 name = m.group('name')
