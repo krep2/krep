@@ -60,8 +60,8 @@ class Command(object):  # pylint: disable=R0902
         return self.args[:]
 
     def wait(self, **kws):
-        if kws:
-            self.kws = kws
+        if not kws and self.kws:
+            kws = self.kws
 
         cli = list()
         cli.extend([str(a) for a in self.args])
