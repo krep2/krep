@@ -74,6 +74,7 @@ class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
     PROJECT_PREFIX = 'project'
     FILE_PREFIX = 'file'
+    HOOK_PREFIX = "hook"
 
     def __init__(self, filename=None):
         self.vals = dict()
@@ -255,6 +256,15 @@ class _XmlConfigFile(_ConfigFile):
                 xvals = _XmlConfigFile(name, self.get_default())
                 return name, xvals
 
+            def _parse_hook(cfg, node):
+                name = _getattr(node, 'name')
+                filename = _getattr(node, 'file')
+                if filename and not filename.startswith('/'):
+                    filename = os.path.join(
+                        os.path.dirname(self.filename), filename)
+
+                _setattr(cfg, 'hook-%s' % filename, file)
+
             def _parse_project(node):
                 name = _getattr(node, 'name')
                 cfg = self._new_value(
@@ -280,6 +290,8 @@ class _XmlConfigFile(_ConfigFile):
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
+                    elif child.nodeName == 'hook':
+                        _parse_hook(cfg, child)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
@@ -290,6 +302,8 @@ class _XmlConfigFile(_ConfigFile):
                     _parse_global(node)
                 elif node.nodeName == 'project':
                     _parse_project(node)
+                elif node.nodeName == 'hook':
+                    _parse_hook(default, node)
                 elif node.nodeName == 'include':
                     name, xvals = _parse_include(node)
                     self._new_value(
