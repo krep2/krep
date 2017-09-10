@@ -101,13 +101,8 @@ class Values(optparse.Values):
 
         return diffs
 
-    def exude(self, attr, default=None):
-        ret = default
-        if attr in self.__dict__:
-            ret = self.__dict__[attr]
-            del self.__dict__[attr]
-
-        return ret
+    def pop(self, attr, default=None):
+        return self.__dict__.pop(attr, default)
 
     def ensure_value(self, attr, value):
         return optparse.Values.ensure_value(
