@@ -77,7 +77,7 @@ class _ConfigFile(object):
 
     def __init__(self, filename=None):
         self.vals = dict()
-        self.filename = filename
+        self.filename = os.path.realpath(filename)
 
     def _new_value(self, name, vals=None):
         val = vals or Values()
