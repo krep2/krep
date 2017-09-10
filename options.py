@@ -8,6 +8,10 @@ make_option = optparse.make_option  # pylint: disable=C0103
 OptionValueError = optparse.OptionValueError
 
 
+def _ensure_attr(attr):
+    return attr.replace('-', '_')
+
+
 class Values(optparse.Values):
     def __init__(self, defaults=None):
         if isinstance(defaults, Values):
@@ -36,7 +40,7 @@ class Values(optparse.Values):
 
     @staticmethod
     def _getopt(option, attr):
-        nattr = attr.replace('_', '-').strip('-')
+        nattr = _ensure_attr(attr).strip('-')
         sattr = '-%s' % nattr
         lattr = '--%s' % nattr
         if lattr in option._long_opt:  # pylint: disable=W0212
@@ -73,9 +77,10 @@ class Values(optparse.Values):
                             getattr(values, attr), boolean=st_b))
 
     def __getattr__(self, attr):
-        try:
-            return self.__dict__[attr]
-        except KeyError:
+        nattr = _ensure_attr(attr)
+        if nattr in self.__dict__:
+            return self.__dict__[nattr]
+        else:
             return None
 
     def diff(self, values, option=None, args=None):
@@ -102,11 +107,11 @@ class Values(optparse.Values):
         return diffs
 
     def pop(self, attr, default=None):
-        return self.__dict__.pop(attr, default)
+        return self.__dict__.pop(_ensure_attr(attr), default)
 
     def ensure_value(self, attr, value):
         return optparse.Values.ensure_value(
-            self, attr, Values._handle_value(value))
+            self, _ensure_attr(attr), Values._handle_value(value))
 
 
 class OptionParser(optparse.OptionParser):
