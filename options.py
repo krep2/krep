@@ -28,7 +28,7 @@ class Values(optparse.Values):
             return True
         elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
             return False
-        elif re.match(r'^(0x|0X)?[A-Fa-f\d+]$', sval):
+        elif re.match(r'^(0x)?[a-f0-9]+$', sval):
             if sval.startswith('0x'):
                 return int(sval, 16)
             elif sval.startswith('0'):
