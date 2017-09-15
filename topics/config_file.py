@@ -263,7 +263,7 @@ class _XmlConfigFile(_ConfigFile):
                     filename = os.path.join(
                         os.path.dirname(self.filename), filename)
 
-                _setattr(cfg, 'hook-%s' % filename, file)
+                _setattr(cfg, 'hook-%s' % name, filename)
 
             def _parse_project(node):
                 name = _getattr(node, 'name')
