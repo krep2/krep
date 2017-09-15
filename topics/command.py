@@ -46,10 +46,10 @@ class Command(object):  # pylint: disable=R0902
                     else:
                         self.args.append(arg)
 
-        if condition and args:
-            _append_args(before)
-            _append_args(args)
-            _append_args(after)
+            if condition:
+                _append_args(before)
+                _append_args(args)
+                _append_args(after)
 
     def new_args(self, *args):
         self.args = list()
