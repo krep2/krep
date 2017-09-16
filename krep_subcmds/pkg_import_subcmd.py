@@ -290,13 +290,9 @@ The escaped variants are supported for the imported files including:
                 options.name,
                 description=options.description or False)
 
+        branch = options.branch or 'master'
+
         path, _ = os.path.splitext(os.path.basename(options.name))
-
-        branch, tagp = options.branch, ''
-        if options.refs:
-            tagp = '%s/' % options.refs
-            branch = '%s/%s' % (options.refs, branch or 'master')
-
         path = os.path.realpath(path)
         if options.offsite and not os.path.exists(path):
             os.makedirs(path)
@@ -405,7 +401,7 @@ The escaped variants are supported for the imported files including:
                         tags.append(options.tag_template % tmpl)
                     else:
                         tags.append(
-                            '%s%s%s' % (tagp, options.tag_prefix, revision))
+                            '%s%s' % (options.tag_prefix, revision))
                     ret, _ = project.tag(tags[-1])
 
             if os.path.lexists(temp):
@@ -420,12 +416,16 @@ The escaped variants are supported for the imported files including:
             if self.overrided_value(  # pylint: disable=E1101
                     options.branches, options.all):
                 ret = project.push_heads(
-                    branch, options.refs, force=options.force)
+                    branch,
+                    self.override_value(  # pylint: disable=E1101
+                        options.refs, options.head_refs),
+                    force=options.force)
             # push the tags
-            if ret == 0 and tags and \
-                self.overrided_value(  # pylint: disable=E1101
-                        options.tags, options.all):
+            if tags and self.overrided_value(  # pylint: disable=E1101
+                    options.tags, options.all):
                 ret = project.push_tags(
-                    tags, None, fullname=True, force=options.force)
+                    tags, self.override_value(  # pylint: disable=E1101
+                        options.refs, options.tag_refs),
+                    fullname=True, force=options.force)
 
         return ret
