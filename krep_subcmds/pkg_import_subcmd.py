@@ -183,11 +183,6 @@ The escaped variants are supported for the imported files including:
 
         options = optparse.add_option_group('File options')
         options.add_option(
-            '--iversion', '--ignore-version',
-            dest='ignore_version', action='store_true',
-            help='Ignore the fail to fetch the version from the file or '
-                 'directory name')
-        options.add_option(
             '--ppattern', '--pkg-pattern',
             dest='pkg_pattern', action='append', metavar='PATTERN',
             help='setup the matching pattern with the file or directory name '
@@ -259,7 +254,7 @@ The escaped variants are supported for the imported files including:
                 logger.warn(
                     'Warning: pkgname "%s" mismatched "%s"', pkgname, name)
 
-            if not revision and not options.ignore_version:
+            if not revision:
                 logger.error(
                     'Error: %s failed to be recognized with revision' % pkg)
             else:
@@ -285,8 +280,7 @@ The escaped variants are supported for the imported files including:
         RaiseExceptionIfOptionMissed(
             options.name, "project name (--name) is not set")
         RaiseExceptionIfOptionMissed(
-            options.ignore_version or options.pkg_pattern,
-            "pkg pattern (--pkg-pattern) is not set")
+            options.pkg_pattern, "pkg pattern (--pkg-pattern) is not set")
         RaiseExceptionIfOptionMissed(
             args, "no files or directories are specified to import")
 
