@@ -264,6 +264,10 @@ class _XmlConfigFile(_ConfigFile):
                         os.path.dirname(self.filename), filename)
 
                 _setattr(cfg, 'hook-%s' % name, filename)
+                for child in node.childNodes:
+                    if child.nodeName != '#text':
+                        _setattr(cfg, 'hook-%s-%s' % (name, child.nodeName),
+                                 _getattr(child, 'value'))
 
             def _parse_project(node):
                 name = _getattr(node, 'name')
