@@ -8,8 +8,11 @@ make_option = optparse.make_option  # pylint: disable=C0103
 OptionValueError = optparse.OptionValueError
 
 
-def _ensure_attr(attr):
-    return attr.replace('-', '_')
+def _ensure_attr(attr, reverse=False):
+    if reverse:
+        return attr.replace('_', '-')
+    else:
+        return attr.replace('-', '_')
 
 
 class Values(optparse.Values):
@@ -40,7 +43,7 @@ class Values(optparse.Values):
 
     @staticmethod
     def _getopt(option, attr):
-        nattr = _ensure_attr(attr).strip('-')
+        nattr = _ensure_attr(attr, reverse=True).strip('-')
         sattr = '-%s' % nattr
         lattr = '--%s' % nattr
         if lattr in option._long_opt:  # pylint: disable=W0212
