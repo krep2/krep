@@ -305,7 +305,7 @@ this command.
             elif not options.repo_create and len(new_projects) > 0:
                 print 'Exit with following new projects:'
                 for project in sorted(new_projects, _cmp):
-                    print ' %s' % project.uri
+                    print ' %s' % project.source
 
                 return
 
