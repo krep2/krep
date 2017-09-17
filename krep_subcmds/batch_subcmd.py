@@ -118,6 +118,7 @@ The format of the plain-text configuration file can refer to the topic
                         optparse = self._cmdopt(project.schema)  # pylint: disable=E1101
                         # recalculate the attribute types
                         proj.join(project, option=optparse)
+                        proj.join(options, option=optparse, override=False)
                         if len(projects) == 1:
                             tprojs.append(proj)
                         else:
@@ -137,7 +138,6 @@ The format of the plain-text configuration file can refer to the topic
                     setattr(
                         project, 'working_dir', os.path.abspath(working_dir))
 
-                project.join(options, override=False)
                 if multiple:
                     projs.append(project)
                 else:
