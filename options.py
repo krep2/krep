@@ -116,6 +116,45 @@ class Values(optparse.Values):
         return optparse.Values.ensure_value(
             self, _ensure_attr(attr), Values._handle_value(value))
 
+    def _normalize(self, val):
+        newval = None
+        while newval != val:
+            match = re.search(r'\$\{([0-9A-Za-z_\-]+)\}', val)
+            if match:
+                name = match.group(1)
+                newval = val.replace(
+                    '${%s}' % name, self.__dict__.get(_ensure_attr(name), ''))
+            else:
+                match = re.search(r'\$\(([0-9A-Za-z_\-]+)\)', val)
+                if match:
+                    name = match.group(1)
+                    newval = val.replace(
+                        '$(%s)' % name,
+                        self.__dict__.get(_ensure_attr(name), ''))
+                else:
+                    break
+
+            val, newval = newval, val
+
+        return val
+
+    def normalize(self, values, attr=False):
+        if isinstance(values, (list, tuple)):
+            ret = list()
+            for val in values:
+                ret.append(self.normalize(val, attr=attr))
+
+            return ret
+        else:
+            if attr:
+                values = self.__dict__.get(_ensure_attr(values))
+                if isinstance(values, (list, tuple)):
+                    return self.normalize(values, attr=False)
+                elif not isinstance(values, (str, unicode)):
+                    return values
+
+            return self._normalize(values)
+
 
 class OptionParser(optparse.OptionParser):
     def __init__(self,  # pylint: disable=R0913
