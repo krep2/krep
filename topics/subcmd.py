@@ -107,6 +107,11 @@ class SubCommand(object):
         """Returns the encapusulated logger for subcommands."""
         return Logger.get_logger(name, level)
 
+    @staticmethod
+    def get_absolute_working_dir(options):
+        return os.path.join(options.working_dir, options.relative_dir) \
+		    if options.relative_dir else options.working_dir
+
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
         return self._name or \
