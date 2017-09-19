@@ -129,7 +129,7 @@ class SubCommand(object):
         """Overrides the late values if it's not a boolean value."""
         return vb if vb is not None else va
 
-    def run_hook(self, hook, hargs, tryrun=False, *args, **kws):
+    def run_hook(self, hook, hargs, cwd=None, tryrun=False, *args, **kws):
         if hook:
             if os.path.exists(hook):
                 cli = list([hook])
@@ -138,7 +138,7 @@ class SubCommand(object):
                 if args:
                     cli.extend(args)
 
-                cmd = Command(capture_stdout=False, tryrun=tryrun)
+                cmd = Command(cwd=cwd, tryrun=tryrun)
                 cmd.new_args(*cli)
                 return cmd.wait(**kws)
             else:
