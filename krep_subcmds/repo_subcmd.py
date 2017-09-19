@@ -73,21 +73,10 @@ this command.
             dest='reference', metavar='REFERENCE',
             help='Set the local project mirror')
         options.add_option(
-            '--repo-url',
-            dest='repo_url', metavar='URL',
-            help='repo repository location')
-        options.add_option(
-            '--repo-branch',
-            dest='repo_branch', metavar='REVISION',
-            help='repo branch or revision')
-        options.add_option(
-            '--no-repo-verify',
-            dest='no_repo_verify', action='store_true',
-            help='Do not verify repo source code')
-        options.add_option(
-            '--no-clone-bundle',
-            dest='repo_bundle', action='store_true',
-            help='repo no-bundle option')
+            '--repo-options',
+            dest='repo_options', action='append', metavar='OPTIONS',
+            help='Provides options to repo command. sub-command prefix with '
+                 'colon can be used to provide the option to the command only')
 
         options = optparse.get_option_group('--remote') or \
             optparse.add_option_group('Remote options')
@@ -174,6 +163,19 @@ this command.
             options.prefix += '/'
 
         if not options.offsite:
+            def _repo_options(cli, subcmd):
+                if options.repo_options is not None and \
+                        not isinstance(options.repo_options, list):
+                    options.repo_options = [options.repo_options]
+
+                for opts in options.repo_options or list():
+                    for opt in opts.split(' '):
+                        prefix = opt.split(':', 1)
+                        if prefix[0] == subcmd and len(prefix) > 1:
+                            cli.add_args(prefix[1])
+                        elif prefix[0] == opt:
+                            cli.add_args(opt)
+
             res = 0
             if not os.path.exists('.repo'):
                 RaiseExceptionIfOptionMissed(
@@ -185,27 +187,19 @@ this command.
                 repo.add_args(options.manifest_name, before='-m')
                 repo.add_args('--mirror', condition=options.mirror)
                 repo.add_args(options.reference, before='--reference')
-                repo.add_args(options.repo_url, before='--repo-url')
-                repo.add_args(options.repo_branch, before='--repo-branch')
-                if not options.repo_bundle:
-                    repo.add_args('--no-clone-bundle')
                 # pylint: enable=E1101
-                res = repo.init(**kws)
+                _repo_options(repo, 'init')
+                res = repo.init()
 
             if res:
                 raise DownloadError(
                     'Failed to init "%s"' % options.manifest)
             else:
                 repo = RepoCommand()
-                # pylint: disable=E1101
-                repo.add_args(options.job,
-                              before='-j')
-                if options.force:
-                    repo.add_args('--force-broken')
-                if not options.repo_bundle:
-                    repo.add_args('--no-clone-bundle')
-                # pylint: enable=E1101
-                res = repo.sync(**kws)
+                repo.add_args(options.job, before='-j')   # pylint: disable=E1101
+                _repo_options(repo, 'sync')
+                res = repo.sync()
+
                 if res:
                     if options.force:
                         print 'Failed to sync "%s"' % options.manifest
