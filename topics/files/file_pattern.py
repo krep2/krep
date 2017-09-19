@@ -5,10 +5,13 @@ import re
 
 class FilePattern(object):
     def __init__(self, patterns=None):
-        self.filep, self.dirp, self.others = self._filter(patterns)
+        self.patterns = list(patterns or [])
+        self.filep, self.dirp, self.others = FilePattern._filter(patterns)
 
     def __iadd__(self, obj):
         if isinstance(obj, FilePattern):
+            self.patterns.extend(obj.patterns)
+
             self.filep.extend(obj.filep or list())
             self.dirp.extend(obj.dirp or list())
             self.others.extend(obj.others or list())
@@ -28,6 +31,9 @@ class FilePattern(object):
                 files.append(pattern)
 
         return files, dirs, others
+
+    def get_patterns(self):
+        return self.patterns
 
     def match(self, fullname):
         if fullname.endswith('/'):
