@@ -115,7 +115,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
         cmd._cmdopt = _get_named_options  # pylint: disable=W0212
 
         logger = Logger.set(
-            verbose=lopts.exude('verbose'), name=cmd.get_name(lopts))
+            verbose=lopts.pop('verbose'), name=cmd.get_name(lopts))
 
         # sub-command
         if optparse is None:
@@ -125,7 +125,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             optparse.join(lopts)
 
             # inject options
-            for opt in lopts.exude('inject_option') or list():
+            for opt in lopts.pop('inject_option') or list():
                 if opt.find(':') > 0:
                     oname = opt[:opt.find(':')]
                     if oname in all_commands and oname != name:
@@ -179,7 +179,7 @@ def main(argv):
         sys.exit(1)
 
     # correct the verbose follow the final settings
-    verbose = opts.exude('verbose')
+    verbose = opts.pop('verbose')
     if verbose > -1:
         Logger.set(verbose=verbose)
 

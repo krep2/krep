@@ -8,6 +8,13 @@ make_option = optparse.make_option  # pylint: disable=C0103
 OptionValueError = optparse.OptionValueError
 
 
+def _ensure_attr(attr, reverse=False):
+    if reverse:
+        return attr.replace('_', '-')
+    else:
+        return attr.replace('-', '_')
+
+
 class Values(optparse.Values):
     def __init__(self, defaults=None):
         if isinstance(defaults, Values):
@@ -24,7 +31,7 @@ class Values(optparse.Values):
             return True
         elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
             return False
-        elif re.match(r'^(0x|0X)?[A-Fa-f\d+]$', sval):
+        elif re.match(r'^(0x)?[a-f0-9]+$', sval):
             if sval.startswith('0x'):
                 return int(sval, 16)
             elif sval.startswith('0'):
@@ -36,7 +43,7 @@ class Values(optparse.Values):
 
     @staticmethod
     def _getopt(option, attr):
-        nattr = attr.replace('_', '-').strip('-')
+        nattr = _ensure_attr(attr, reverse=True).strip('-')
         sattr = '-%s' % nattr
         lattr = '--%s' % nattr
         if lattr in option._long_opt:  # pylint: disable=W0212
@@ -73,9 +80,10 @@ class Values(optparse.Values):
                             getattr(values, attr), boolean=st_b))
 
     def __getattr__(self, attr):
-        try:
-            return self.__dict__[attr]
-        except KeyError:
+        nattr = _ensure_attr(attr)
+        if nattr in self.__dict__:
+            return self.__dict__[nattr]
+        else:
             return None
 
     def diff(self, values, option=None, args=None):
@@ -101,17 +109,51 @@ class Values(optparse.Values):
 
         return diffs
 
-    def exude(self, attr, default=None):
-        ret = default
-        if attr in self.__dict__:
-            ret = self.__dict__[attr]
-            del self.__dict__[attr]
-
-        return ret
+    def pop(self, attr, default=None):
+        return self.__dict__.pop(_ensure_attr(attr), default)
 
     def ensure_value(self, attr, value):
         return optparse.Values.ensure_value(
-            self, attr, Values._handle_value(value))
+            self, _ensure_attr(attr), Values._handle_value(value))
+
+    def _normalize(self, val):
+        newval = None
+        while newval != val:
+            match = re.search(r'\$\{([0-9A-Za-z_\-]+)\}', val)
+            if match:
+                name = match.group(1)
+                newval = val.replace(
+                    '${%s}' % name, self.__dict__.get(_ensure_attr(name), ''))
+            else:
+                match = re.search(r'\$\(([0-9A-Za-z_\-]+)\)', val)
+                if match:
+                    name = match.group(1)
+                    newval = val.replace(
+                        '$(%s)' % name,
+                        self.__dict__.get(_ensure_attr(name), ''))
+                else:
+                    break
+
+            val, newval = newval, val
+
+        return val
+
+    def normalize(self, values, attr=False):
+        if isinstance(values, (list, tuple)):
+            ret = list()
+            for val in values:
+                ret.append(self.normalize(val, attr=attr))
+
+            return ret
+        else:
+            if attr:
+                values = self.__dict__.get(_ensure_attr(values))
+                if isinstance(values, (list, tuple)):
+                    return self.normalize(values, attr=False)
+                elif not isinstance(values, (str, unicode)):
+                    return values
+
+            return self._normalize(values)
 
 
 class OptionParser(optparse.OptionParser):

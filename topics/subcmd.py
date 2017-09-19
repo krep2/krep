@@ -1,6 +1,9 @@
 
+import os
 import threading
 import types
+
+from command import Command
 from logger import Logger
 
 
@@ -112,6 +115,11 @@ class SubCommand(object):
         """Returns the encapusulated logger for subcommands."""
         return Logger.get_logger(name, level)
 
+    @staticmethod
+    def get_absolute_working_dir(options):
+        return os.path.join(options.working_dir, options.relative_dir) \
+		    if options.relative_dir else options.working_dir
+
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
         return self._name or \
@@ -133,6 +141,21 @@ class SubCommand(object):
     def override_value(va, vb=None):
         """Overrides the late values if it's not a boolean value."""
         return vb if vb is not None else va
+
+    def run_hook(self, hook, hargs, cwd=None, tryrun=False, *args, **kws):
+        if hook:
+            if os.path.exists(hook):
+                cli = list([hook])
+                if hargs:
+                    cli.extend(hargs)
+                if args:
+                    cli.extend(args)
+
+                cmd = Command(cwd=cwd, tryrun=tryrun)
+                cmd.new_args(*cli)
+                return cmd.wait(**kws)
+            else:
+                self.get_logger().debug("Error: %s not existed", hook)
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
         # set the logger name at the beggining

@@ -78,7 +78,7 @@ The format of the plain-text configuration file can refer to the topic
         def _filter_with_group(project, name, limit):
             limits = re.split(r'\s*,\s*', limit or 'default')
 
-            groups = re.split(r'\s*,\s*', project.exude('group', ''))
+            groups = re.split(r'\s*,\s*', project.pop('group', ''))
             groups.extend([name, os.path.basename(name)])
             if _in_group(limits, groups):
                 return True
@@ -133,7 +133,7 @@ The format of the plain-text configuration file can refer to the topic
                         'schema is not recognized or undefined in %s' %
                         project)
 
-                working_dir = project.exude('working_dir')
+                working_dir = project.pop('working_dir')
                 if working_dir:
                     setattr(
                         project, 'working_dir', os.path.abspath(working_dir))

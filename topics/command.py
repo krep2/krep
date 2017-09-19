@@ -14,10 +14,13 @@ class Command(object):  # pylint: disable=R0902
     """Executes a local executable command."""
     def __init__(self, cwd=None, provide_stdin=False,  # pylint: disable=R0913
                  capture_stdout=False, capture_stderr=True,
-                 tryrun=False, *args, **kws):
+                 environ=None, tryrun=False, *args, **kws):
         self.cwd = cwd
         self.stdout = ''
         self.stderr = ''
+        self.env = os.environ.copy()
+        if environ:
+            self.env.update(environ)
 
         self.args = args or list()
         self.kws = kws or dict()
@@ -46,10 +49,10 @@ class Command(object):  # pylint: disable=R0902
                     else:
                         self.args.append(arg)
 
-        if condition and args:
-            _append_args(before)
-            _append_args(args)
-            _append_args(after)
+            if condition:
+                _append_args(before)
+                _append_args(args)
+                _append_args(after)
 
     def new_args(self, *args):
         self.args = list()
@@ -59,9 +62,12 @@ class Command(object):  # pylint: disable=R0902
     def get_args(self):
         return self.args[:]
 
+    def set_env(self, environ):
+        self.env.update(environ)
+
     def wait(self, **kws):
-        if kws:
-            self.kws = kws
+        if not kws and self.kws:
+            kws = self.kws
 
         cli = list()
         cli.extend([str(a) for a in self.args])
@@ -93,7 +99,7 @@ class Command(object):  # pylint: disable=R0902
 
         proc = subprocess.Popen(
             cli, cwd=cwd,
-            env=os.environ,
+            env=self.env,
             stdin=subprocess.PIPE if provide_stdin else None,
             stdout=subprocess.PIPE if capture_stdout else None,
             stderr=subprocess.PIPE if capture_stderr else None)
