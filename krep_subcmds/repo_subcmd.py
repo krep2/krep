@@ -108,8 +108,7 @@ this command.
         if not refsp and options is not None:
             refsp = options.manifest
 
-        working_dir = FileUtils.ensure_path(
-            options.working_dir, options.relative_dir)
+        working_dir = RepoSubcmd.get_absolute_working_dir(options)  # pylint: disable=E1101
         if not refsp:
             repo = GitProject(
                 'repo-manifest',
@@ -132,8 +131,6 @@ this command.
         logger = self.get_logger()  # pylint: disable=E1101
         pattern = Pattern(options.pattern)
 
-        working_dir = FileUtils.ensure_path(
-            options.working_dir, options.relative_dir)
         for node in manifest.get_projects():
             if not os.path.exists(node.path):
                 logger.warning('%s not existed, ignored', node.path)
@@ -148,7 +145,8 @@ this command.
             projects.append(
                 GitProject(
                     name,
-                    worktree=os.path.join(working_dir, node.path),
+                    worktree=os.path.join(
+                        self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
                     revision=node.revision,
                     remote='%s/%s' % (options.remote, name),
                     pattern=pattern,
@@ -312,8 +310,7 @@ this command.
 
             builder = ManifestBuilder(
                 options.output_xml_file,
-                FileUtils.ensure_path(
-                    options.working_dir, options.relative_dir),
+                self.get_absolute_working_dir(options),  # pylint: disable=E1101
                 options.mirror)
 
             default = manifest.get_default()

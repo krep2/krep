@@ -86,8 +86,7 @@ replaced by GIT_URL."""
         remote = FileUtils.ensure_path(
             remote, prefix='git://', subdir=projectname, exists=False)
 
-        working_dir = FileUtils.ensure_path(
-            options.working_dir, options.relative_dir)
+        working_dir = self.get_absolute_working_dir(options)  # pylint: disable=E1101
         project = GitProject(
             options.git,
             worktree=working_dir,

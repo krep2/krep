@@ -2,7 +2,7 @@
 import os
 
 from repo_subcmd import RepoSubcmd
-from topics import FileUtils, GitProject, Pattern
+from topics import GitProject, Pattern
 
 
 class RepoMirrorSubcmd(RepoSubcmd):
@@ -38,8 +38,7 @@ acutally in platform/manifest.git within a mirror.)
 
         for node in manifest.get_projects():
             path = os.path.join(
-                FileUtils.ensure_path(
-                    options.working_dir, options.relative_dir),
+                self.get_absolute_working_dir(options),  # pylint: disable=E1101
                 '%s.git' % node.name)
             if not os.path.exists(path):
                 logger.warning('%s not existed, ignored', path)
