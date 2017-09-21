@@ -413,7 +413,7 @@ The escaped variants are supported for the imported files including:
         # push the branches
         if not options.tryrun and not options.local:
             ret = 0
-            if self.overrided_value(  # pylint: disable=E1101
+            if self.override_value(  # pylint: disable=E1101
                     options.branches, options.all):
                 ret = project.push_heads(
                     branch,
@@ -421,7 +421,7 @@ The escaped variants are supported for the imported files including:
                         options.refs, options.head_refs),
                     force=options.force)
             # push the tags
-            if tags and self.overrided_value(  # pylint: disable=E1101
+            if tags and self.override_value(  # pylint: disable=E1101
                     options.tags, options.all):
                 ret = project.push_tags(
                     tags, self.override_value(  # pylint: disable=E1101
