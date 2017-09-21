@@ -74,10 +74,11 @@ class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
     PROJECT_PREFIX = 'project'
     FILE_PREFIX = 'file'
+    HOOK_PREFIX = "hook"
 
     def __init__(self, filename=None):
         self.vals = dict()
-        self.filename = filename
+        self.filename = os.path.realpath(filename)
 
     def _new_value(self, name, vals=None):
         val = vals or Values()
@@ -198,20 +199,20 @@ class _IniConfigFile(_ConfigFile):
                 continue
 
             # [section]
-            m = re.match(r'^\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
+            m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
             if m:
                 cfg = self._new_value(m.group('section'))
                 continue
 
             # [section "subsection"]
-            m = re.match(r'^\[(?P<section>[A-Za-z0-9\-]+)\s+'
+            m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\s+'
                          r'"(?P<subsection>[A-Za-z0-9\-]+)"\]', strip)
             if m:
                 cfg = self._new_value(
                     '%s.%s' % (m.group('section'), m.group('subsection')))
 
             # option = value
-            m = re.match(r'^(?P<name>[A-Za-z0-9\-_]+)\s*=\s*'
+            m = re.match(r'^\s*(?P<name>[A-Za-z0-9\-_]+)\s*=\s*'
                          r'(?P<value>.*)$', strip)
             if m:
                 name = m.group('name')
@@ -255,6 +256,19 @@ class _XmlConfigFile(_ConfigFile):
                 xvals = _XmlConfigFile(name, self.get_default())
                 return name, xvals
 
+            def _parse_hook(cfg, node):
+                name = _getattr(node, 'name')
+                filename = _getattr(node, 'file')
+                if filename and not filename.startswith('/'):
+                    filename = os.path.join(
+                        os.path.dirname(self.filename), filename)
+
+                _setattr(cfg, 'hook-%s' % name, filename)
+                for child in node.childNodes:
+                    if child.nodeName != '#text':
+                        _setattr(cfg, 'hook-%s-%s' % (name, child.nodeName),
+                                 _getattr(child, 'value'))
+
             def _parse_project(node):
                 name = _getattr(node, 'name')
                 cfg = self._new_value(
@@ -280,6 +294,8 @@ class _XmlConfigFile(_ConfigFile):
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
+                    elif child.nodeName == 'hook':
+                        _parse_hook(cfg, child)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
@@ -290,6 +306,8 @@ class _XmlConfigFile(_ConfigFile):
                     _parse_global(node)
                 elif node.nodeName == 'project':
                     _parse_project(node)
+                elif node.nodeName == 'hook':
+                    _parse_hook(default, node)
                 elif node.nodeName == 'include':
                     name, xvals = _parse_include(node)
                     self._new_value(

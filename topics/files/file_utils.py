@@ -112,6 +112,9 @@ class FileUtils(object):
     def rmtree(dest, ignore_list=None):
         for name in os.listdir(dest):
             matched = False
+            if os.path.isdir(os.path.join(dest, name)):
+                name += '/'
+
             for pattern in ignore_list or list():
                 if re.match(pattern, name) is not None:
                     matched = True
