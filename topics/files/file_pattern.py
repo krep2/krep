@@ -67,6 +67,15 @@ class FilePattern(object):
         return False
 
 
+class RepoFilePattern(FilePattern):
+    FILTER_OUT_PATTERN = (
+        r'^\.repo/',                          # repo
+    )
+
+    def __init__(self):
+        FilePattern.__init__(self, RepoFilePattern.FILTER_OUT_PATTERN)
+
+
 class GitFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
         r'^\.git/', r'\.gitignore',           # git
