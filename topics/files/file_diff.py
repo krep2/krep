@@ -3,7 +3,8 @@ import filecmp
 import os
 import shutil
 
-from file_pattern import FilePattern, GitFilePattern, SccsFilePattern
+from file_pattern import FilePattern, GitFilePattern, RepoFilePattern, \
+    SccsFilePattern
 from file_utils import FileUtils
 
 
@@ -32,6 +33,7 @@ class FileDiff(object):
             self.pattern += self.sccsp
         else:
             self.sccsp = GitFilePattern()
+            self.sccsp += RepoFilePattern()
 
     @staticmethod
     def _normalize(path):
