@@ -174,6 +174,14 @@ this command.
                         elif prefix[0] == opt:
                             cli.add_args(opt)
 
+            # pylint: disable=E1101
+            self.run_hook(
+                options.pop('hook-pre-init'),
+                options.normalize('hook-pre-init-args', attr=True),
+                cwd=self.get_absolute_working_dir(options),
+                tryrun=options.tryrun)
+            # pylint: enable=E1101
+
             res = 0
             if not os.path.exists('.repo'):
                 RaiseExceptionIfOptionMissed(
@@ -192,18 +200,38 @@ this command.
             if res:
                 raise DownloadError(
                     'Failed to init "%s"' % options.manifest)
-            else:
-                repo = RepoCommand()
-                repo.add_args(options.job, before='-j')   # pylint: disable=E1101
-                _repo_options(repo, 'sync')
-                res = repo.sync()
 
-                if res:
-                    if options.force:
-                        print 'Failed to sync "%s"' % options.manifest
-                    else:
-                        raise DownloadError(
-                            'Failed to sync "%s"' % options.manifest)
+            # pylint: disable=E1101
+            self.run_hook(
+                options.pop('hook-post-init'),
+                options.normalize('hook-post-init-args', attr=True),
+                cwd=self.get_absolute_working_dir(options),
+                tryrun=options.tryrun)
+            self.run_hook(
+                options.pop('hook-pre-sync'),
+                options.normalize('hook-pre-sync-args', attr=True),
+                cwd=self.get_absolute_working_dir(options),
+                tryrun=options.tryrun)
+            # pylint: enable=E1101
+
+            repo = RepoCommand()
+            repo.add_args(options.job, before='-j')   # pylint: disable=E1101
+            _repo_options(repo, 'sync')
+            res = repo.sync()
+            if res:
+                if options.force:
+                    print 'Failed to sync "%s"' % options.manifest
+                else:
+                    raise DownloadError(
+                        'Failed to sync "%s"' % options.manifest)
+
+            # pylint: disable=E1101
+            self.run_hook(
+                options.pop('hook-post-sync'),
+                options.normalize('hook-post-sync-args', attr=True),
+                cwd=self.get_absolute_working_dir(options),
+                tryrun=options.tryrun)
+            # pylint: enable=E1101
 
         def _run(project, remote):
             project_name = str(project)
@@ -214,6 +242,14 @@ this command.
             if not options.tryrun and remote:
                 gerrit = Gerrit(remote)
                 gerrit.create_project(project.uri)
+
+           # pylint: disable=E1101
+            self.run_hook(
+                options.pop('hook-pre-push'),
+                options.normalize('hook-pre-push-args', attr=True),
+                cwd=project.path,
+                tryrun=options.tryrun)
+            # pylint: enable=E1101
 
             # push the branches
             if self.override_value(  # pylint: disable=E1101
@@ -240,6 +276,14 @@ this command.
                     tryrun=options.tryrun)
                 if res != 0:
                     logger.error('failed to push tags')
+
+            # pylint: disable=E1101
+            self.run_hook(
+                options.pop('hook-post-push'),
+                options.normalize('hook-post-push-args', attr=True),
+                cwd=project.path,
+                tryrun=options.tryrun)
+            # pylint: enable=E1101
 
         # handle the schema of the remote
         ulp = urlparse.urlparse(options.remote)
