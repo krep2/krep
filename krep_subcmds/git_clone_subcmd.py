@@ -117,6 +117,14 @@ replaced by GIT_URL."""
             raise ProcessingError(
                 '%s: unknown scheme for remote "%s"' % (project, remote))
 
+        # pylint: disable=E1101
+        self.run_hook(
+            options.pop('hook-pre-push'),
+            options.normalize('hook-pre-push-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
+
         # push the branches
         if self.override_value(  # pylint: disable=E1101
                 options.all, options.branches):
@@ -147,5 +155,13 @@ replaced by GIT_URL."""
             ret |= res
             if res:
                 logger.error('Failed to push tags')
+
+        # pylint: disable=E1101
+        self.run_hook(
+            options.pop('hook-post-push'),
+            options.normalize('hook-post-push-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
 
         return ret
