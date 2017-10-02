@@ -87,12 +87,12 @@ this command.
 
         options = optparse.add_option_group('Debug options')
         options.add_option(
-            '--dump-project',
-            dest='dump_project', action='store_true',
+            '--dump-projects',
+            dest='dump_projects', action='store_true',
             help='Print the info of imported project')
         options.add_option(
-            '--print-new-project',
-            dest='print_new_project', action='store_true',
+            '--print-new-projects',
+            dest='print_new_projects', action='store_true',
             help='Print the new projects which isn\'t managed by Gerrit')
 
         options = optparse.get_option_group('--force') or \
@@ -251,7 +251,7 @@ this command.
 
         projects = self.fetch_projects_in_manifest(options)
 
-        if options.print_new_project or options.dump_project or \
+        if options.print_new_projects or options.dump_projects or \
                 not options.repo_create:
             lsrc, luri, new_projects = 0, 0, list()
             gerrit = Gerrit(remote)
@@ -263,7 +263,7 @@ this command.
             def _cmp(prja, prjb):
                 return cmp(prja.source, prjb.source)
 
-            if options.dump_project:
+            if options.dump_projects:
                 print 'IMPORTED PROJECTS'
                 print '====================='
                 for p in projects:
@@ -276,11 +276,11 @@ this command.
                 for project in sorted(projects, _cmp):
                     print sfmt % (
                         project.source, project.uri,
-                        ' [NEW]' if options.print_new_project and
+                        ' [NEW]' if options.print_new_projects and
                         project in new_projects else '')
 
                 return
-            elif options.print_new_project:
+            elif options.print_new_projects:
                 print 'NEW PROJECTS'
                 print '================'
                 for p in new_projects:
