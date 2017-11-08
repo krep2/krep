@@ -30,11 +30,12 @@ The commands of krep are:
 See more info with "krep help <command>"
 ```
 
-Sub-command `batch` supports to run with `batch` files, which hold other sub-
-commands and parameters. `git-b` manages the immigration of git bare
-repositories but `git-p` does with a normal one. `repo` is the sub-command
-to work with [git-repo] projects while `repo-mirror` works with the mirror
-[git-repo] project, which was created with the command `repo init --mirror`.
+Though the main idea comes from [git-repo][], it extends to load the component
+named `topic` in the directory `topics`, and the sub-commands in the directory
+`krep_subcmds`. The implemented sub-commands prefer to use the standard Python
+libraries and the exported `class` from the exported `topic` classes, which are
+guaranteed to be used continuously. Other classes might be visited but not
+encouraged to use at all.
 
 The tool can also support to immigrate the git into a git or gerrit server, for
 example, to immigrate the official linux git repository:

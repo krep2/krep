@@ -273,35 +273,6 @@ be saved in XML file again with limited attributes.
         self._parse_manifest(nodes)
 
     def _build_projects(self, project_list):
-        def _relpath(path, start):
-            names = path.replace('\\', '/').split('/')
-
-            for k, name in enumerate(names):
-                if name == '.':
-                    continue
-                elif name == '..':
-                    start = os.path.dirname(start)
-                else:
-                    start = os.path.join(start, names[k])
-
-            return start
-
-        def _build_fetch_url(relative, project):
-            if not relative:
-                return project.name
-
-            if project.remote:
-                remote = project.remote
-            else:
-                remote = self._default.remote
-
-            remotep = self._remote[remote]
-            if remotep.fetch and remotep.fetch.find('://') > 0:
-                return os.path.join(remotep.fetch, project.name)
-            else:
-                return os.path.join(
-                    _relpath(remotep.fetch, relative), project.name)
-
         def _get_revision(project):
             revision = project.revision
 
@@ -324,7 +295,7 @@ be saved in XML file again with limited attributes.
             projects.append(
                 _XmlProject(
                     name=project.name,
-                    remote=_build_fetch_url(self.refspath, project),
+                    remote=project.remote or self._default.remote,
                     path=project.path or project.name,
                     revision=_get_revision(project),
                     groups=project.groups))

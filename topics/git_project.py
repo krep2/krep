@@ -17,9 +17,10 @@ def _sha1_equals(sha, shb):
 
 
 def ensure_remote(url):
-    ulp = urlparse.urlparse(url)
-    if not ulp.scheme:
-        url = 'git://' + url
+    if url:
+        ulp = urlparse.urlparse(url)
+        if not ulp.scheme:
+            url = 'git://' + url
 
     return url
 

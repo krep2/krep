@@ -3,8 +3,20 @@ import filecmp
 import os
 import shutil
 
-from file_pattern import FilePattern, GitFilePattern, SccsFilePattern
+from file_pattern import FilePattern, GitFilePattern, RepoFilePattern, \
+    SccsFilePattern
 from file_utils import FileUtils
+
+
+def _timestamp(src):
+    timestamp = 0
+    for root, _, files in os.walk(src):
+        for name in files:
+            timest = os.lstat(os.path.join(root, name))
+            if timest.st_mtime > timestamp:
+                timestamp = timest.st_mtime
+
+    return timestamp
 
 
 class FileDiff(object):
@@ -32,6 +44,7 @@ class FileDiff(object):
             self.pattern += self.sccsp
         else:
             self.sccsp = GitFilePattern()
+            self.sccsp += RepoFilePattern()
 
     @staticmethod
     def _normalize(path):
@@ -100,7 +113,7 @@ class FileDiff(object):
 
         return False
 
-    def sync(self, gitcmd=None, logger=None):  # pylint: disable=R0915
+    def _sync(self, gitcmd=None, logger=None):  # pylint: disable=R0915
         changes = 0
 
         def debug(msg):
@@ -208,5 +221,19 @@ class FileDiff(object):
                         debug('no change %s' % newf)
 
         return changes
+
+    def sync(self, gitcmd=None, logger=None, quickcopy=False):
+        if not quickcopy:
+            ret = self._sync(gitcmd=gitcmd, logger=logger)
+        else:
+            self._timestamp = _timestamp(self.src)
+            print self.sccsp.get_patterns()
+            FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
+            FileUtils.copy_files(self.src, self.dest)
+            if gitcmd:
+                ret = gitcmd.add('--all', self.dest)
+
+        return ret
+
 
 TOPIC_ENTRY = 'FileDiff'
