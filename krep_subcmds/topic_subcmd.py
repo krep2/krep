@@ -78,7 +78,7 @@ is the official way to use by the implemented sub-commands."""
 
         if len(topics) > 1:
             TopicSubcmd._print_formatted_topic(topics)
-        else:
+        elif len(topics) == 1:
             print all_topics[topics[0]]
 
     def execute(self, options, *args):  # pylint: disable=W0613

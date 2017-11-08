@@ -142,7 +142,8 @@ class SubCommand(object):
         """Overrides the late values if it's not a boolean value."""
         return vb if vb is not None else va
 
-    def run_hook(self, hook, hargs, cwd=None, tryrun=False, *args, **kws):
+    @staticmethod
+    def run_hook(hook, hargs, cwd=None, tryrun=False, *args, **kws):
         if hook:
             if os.path.exists(hook):
                 cli = list([hook])
@@ -155,7 +156,7 @@ class SubCommand(object):
                 cmd.new_args(*cli)
                 return cmd.wait(**kws)
             else:
-                self.get_logger().debug("Error: %s not existed", hook)
+                SubCommand.get_logger().debug("Error: %s not existed", hook)
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
         # set the logger name at the beggining

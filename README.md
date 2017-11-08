@@ -8,15 +8,17 @@ other sub-commands with a batch file in the `config` format.
 
 Though the main idea comes from [git-repo][], it extends to load the component
 named `topic` in the directory `topics`, and the sub-commands in the directory
-`krep_subcmds`. The implemented sub-commands can only use the standard Python
-libraries and the exported `class` from the exported `topic` classes.
+`krep_subcmds`. The implemented sub-commands prefer to use the standard Python
+libraries and the exported `class` from the exported `topic` classes, which are
+guaranteed to be used continuously. Other classes might be visited but not
+encouraged to use at all.
 
 Topic
 -----
 
 The directory `topics` can contain any of Python files with implemented classes.
-Only the class listed in the string `TOPIC_ENTRY` will be loaded and exported
-to the run-time system under the module `topic`.
+Only the classes listed in the string `TOPIC_ENTRY` with comma as the delimiter
+will be loaded and exported to the run-time system under the module `topic`.
 
 For example, `SubCommand` is the parent class for all sub-commands. It can be
 imported like:
@@ -30,6 +32,7 @@ Sub-command
 
 Sub-command is implemented to support specified activities, which can use the
 common functions provided by Python libraries and extra functions by `topics`.
+It can be executed from the command line.
 
 As all commands are dynamically loaded, the framework can be easily implemented
 with different purpose.
@@ -55,5 +58,6 @@ environment variables, which works like the environment variable `PATH`:
 | `KREP_TOPIC_PATH` | Directories containing the `topic` files |
 | `KREP_SUBCMD_PATH` | Directories containing the sub-commands |
 
-[gerrit]: https://www.gerritcodereview.com
+With these variables, external `topic`s and `subcommand`s can be loaded and executed.
+
 [git-repo]: https://gerrit.googlesource.com/git-repo
