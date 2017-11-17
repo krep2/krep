@@ -47,7 +47,7 @@ Not like the sub-command "repo-mirror", the manifest git would be handled with
 this command.
 """
 
-    def options(self, optparse):
+    def options(self, optparse, inherited=False):
         SubCommandWithThread.options(self, optparse, option_remote=True,
                                      option_import=True, modules=globals())
 
@@ -78,29 +78,30 @@ this command.
             help='Provides options to repo command. sub-command prefix with '
                  'colon can be used to provide the option to the command only')
 
-        options = optparse.get_option_group('--remote') or \
-            optparse.add_option_group('Remote options')
-        options.add_option(
-            '--prefix',
-            dest='prefix', metavar='PREFIX',
-            help='prefix on the remote location')
+        if not inherited:
+            options = optparse.get_option_group('--remote') or \
+                optparse.add_option_group('Remote options')
+            options.add_option(
+                '--prefix',
+                dest='prefix', metavar='PREFIX',
+                help='prefix on the remote location')
 
-        options = optparse.add_option_group('Debug options')
-        options.add_option(
-            '--dump-projects',
-            dest='dump_projects', action='store_true',
-            help='Print the info of imported project')
-        options.add_option(
-            '--print-new-projects',
-            dest='print_new_projects', action='store_true',
-            help='Print the new projects which isn\'t managed by Gerrit')
+            options = optparse.add_option_group('Debug options')
+            options.add_option(
+                '--dump-projects',
+                dest='dump_projects', action='store_true',
+                help='Print the info of imported project')
+            options.add_option(
+                '--print-new-projects',
+                dest='print_new_projects', action='store_true',
+                help='Print the new projects which isn\'t managed by Gerrit')
 
-        options = optparse.get_option_group('--force') or \
-            optparse.add_option_group('Other options')
-        options.add_option(
-            '--output-xml-file',
-            dest='output_xml_file', action='store', metavar='FILE',
-            help='Set the output XML filename')
+            options = optparse.get_option_group('--force') or \
+                optparse.add_option_group('Other options')
+            options.add_option(
+                '--output-xml-file',
+                dest='output_xml_file', action='store', metavar='FILE',
+                help='Set the output XML filename')
 
     @staticmethod
     def get_manifest(options, manifest=None, mirror=False):
@@ -154,6 +155,128 @@ this command.
 
         return projects
 
+    def init_and_sync(self, options):
+        def _repo_options(cli, subcmd):
+            if options.repo_options is not None and \
+                    not isinstance(options.repo_options, list):
+                options.repo_options = [options.repo_options]
+
+            for opts in options.repo_options or list():
+                for opt in opts.split(' '):
+                    prefix = opt.split(':', 1)
+                    if prefix[0] == subcmd and len(prefix) > 1:
+                        cli.add_args(prefix[1])
+                    elif prefix[0] == opt:
+                        cli.add_args(opt)
+        # pylint: disable=E1101
+        self.run_hook(
+            options.pop('hook-pre-init'),
+            options.normalize('hook-pre-init-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
+        res = 0
+        if not os.path.exists('.repo'):
+            RaiseExceptionIfOptionMissed(
+                options.manifest, 'manifest (--manifest) is not set')
+            repo = RepoCommand()
+            # pylint: disable=E1101
+            repo.add_args(options.manifest, before='-u')
+            repo.add_args(options.manifest_branch, before='-b')
+            repo.add_args(options.manifest_name, before='-m')
+            repo.add_args('--mirror', condition=options.mirror)
+            repo.add_args(options.reference, before='--reference')
+            # pylint: enable=E1101
+            _repo_options(repo, 'init')
+            res = repo.init()
+
+        if res:
+            raise DownloadError(
+                'Failed to init "%s"' % options.manifest)
+
+        # pylint: disable=E1101
+        self.run_hook(
+            options.pop('hook-post-init'),
+            options.normalize('hook-post-init-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+        self.run_hook(
+            options.pop('hook-pre-sync'),
+            options.normalize('hook-pre-sync-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
+
+        repo = RepoCommand()
+        repo.add_args(options.job, before='-j')   # pylint: disable=E1101
+        _repo_options(repo, 'sync')
+        res = repo.sync()
+        if res:
+            if options.force:
+                print 'Failed to sync "%s"' % options.manifest
+            else:
+                raise DownloadError(
+                    'Failed to sync "%s"' % options.manifest)
+
+        self.run_hook(
+            options.pop('hook-post-sync'),
+            options.normalize('hook-post-sync-args', attr=True),
+            cwd=self.get_absolute_working_dir(options),
+            tryrun=options.tryrun)
+
+    @staticmethod
+    def push(project, options, remote):
+        project_name = str(project)
+        logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
+            name=project_name)
+
+        logger.info('Start processing ...')
+        if not options.tryrun and remote:
+            gerrit = Gerrit(remote)
+            gerrit.create_project(project.uri)
+
+        # pylint: disable=E1101
+        RepoSubcmd.run_hook(
+            options.pop('hook-pre-push'),
+            options.normalize('hook-pre-push-args', attr=True),
+            cwd=project.path,
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
+
+        # push the branches
+        if RepoSubcmd.override_value(  # pylint: disable=E1101
+                options.branches, options.all):
+            res = project.push_heads(
+                project.revision,
+                RepoSubcmd.override_value(  # pylint: disable=E1101
+                    options.refs, options.head_refs),
+                push_all=options.all,
+                fullname=options.keep_name,
+                force=options.force,
+                tryrun=options.tryrun)
+            if res != 0:
+                logger.error('failed to push heads')
+
+        # push the tags
+        if RepoSubcmd.override_value(  # pylint: disable=E1101
+                options.tags, options.all):
+            res = project.push_tags(
+                None, RepoSubcmd.override_value(  # pylint: disable=E1101
+                    options.refs, options.tag_refs),
+                fullname=options.keep_name,
+                force=options.force,
+                tryrun=options.tryrun)
+            if res != 0:
+                logger.error('failed to push tags')
+
+        # pylint: disable=E1101
+        RepoSubcmd.run_hook(
+            options.pop('hook-post-push'),
+            options.normalize('hook-post-push-args', attr=True),
+            cwd=project.path,
+            tryrun=options.tryrun)
+        # pylint: enable=E1101
+
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 
@@ -161,129 +284,7 @@ this command.
             options.prefix += '/'
 
         if not options.offsite:
-            def _repo_options(cli, subcmd):
-                if options.repo_options is not None and \
-                        not isinstance(options.repo_options, list):
-                    options.repo_options = [options.repo_options]
-
-                for opts in options.repo_options or list():
-                    for opt in opts.split(' '):
-                        prefix = opt.split(':', 1)
-                        if prefix[0] == subcmd and len(prefix) > 1:
-                            cli.add_args(prefix[1])
-                        elif prefix[0] == opt:
-                            cli.add_args(opt)
-
-            # pylint: disable=E1101
-            self.run_hook(
-                options.pop('hook-pre-init'),
-                options.normalize('hook-pre-init-args', attr=True),
-                cwd=self.get_absolute_working_dir(options),
-                tryrun=options.tryrun)
-            # pylint: enable=E1101
-
-            res = 0
-            if not os.path.exists('.repo'):
-                RaiseExceptionIfOptionMissed(
-                    options.manifest, 'manifest (--manifest) is not set')
-                repo = RepoCommand()
-                # pylint: disable=E1101
-                repo.add_args(options.manifest, before='-u')
-                repo.add_args(options.manifest_branch, before='-b')
-                repo.add_args(options.manifest_name, before='-m')
-                repo.add_args('--mirror', condition=options.mirror)
-                repo.add_args(options.reference, before='--reference')
-                # pylint: enable=E1101
-                _repo_options(repo, 'init')
-                res = repo.init()
-
-            if res:
-                raise DownloadError(
-                    'Failed to init "%s"' % options.manifest)
-
-            # pylint: disable=E1101
-            self.run_hook(
-                options.pop('hook-post-init'),
-                options.normalize('hook-post-init-args', attr=True),
-                cwd=self.get_absolute_working_dir(options),
-                tryrun=options.tryrun)
-            self.run_hook(
-                options.pop('hook-pre-sync'),
-                options.normalize('hook-pre-sync-args', attr=True),
-                cwd=self.get_absolute_working_dir(options),
-                tryrun=options.tryrun)
-            # pylint: enable=E1101
-
-            repo = RepoCommand()
-            repo.add_args(options.job, before='-j')   # pylint: disable=E1101
-            _repo_options(repo, 'sync')
-            res = repo.sync()
-            if res:
-                if options.force:
-                    print 'Failed to sync "%s"' % options.manifest
-                else:
-                    raise DownloadError(
-                        'Failed to sync "%s"' % options.manifest)
-
-            # pylint: disable=E1101
-            self.run_hook(
-                options.pop('hook-post-sync'),
-                options.normalize('hook-post-sync-args', attr=True),
-                cwd=self.get_absolute_working_dir(options),
-                tryrun=options.tryrun)
-            # pylint: enable=E1101
-
-        def _run(project, remote):
-            project_name = str(project)
-            logger = self.get_logger(  # pylint: disable=E1101
-                name=project_name)
-
-            logger.info('Start processing ...')
-            if not options.tryrun and remote:
-                gerrit = Gerrit(remote)
-                gerrit.create_project(project.uri)
-
-           # pylint: disable=E1101
-            self.run_hook(
-                options.pop('hook-pre-push'),
-                options.normalize('hook-pre-push-args', attr=True),
-                cwd=project.path,
-                tryrun=options.tryrun)
-            # pylint: enable=E1101
-
-            # push the branches
-            if self.override_value(  # pylint: disable=E1101
-                    options.branches, options.all):
-                res = project.push_heads(
-                    project.revision,
-                    self.override_value(  # pylint: disable=E1101
-                        options.refs, options.head_refs),
-                    push_all=options.all,
-                    fullname=options.keep_name,
-                    force=options.force,
-                    tryrun=options.tryrun)
-                if res != 0:
-                    logger.error('failed to push heads')
-
-            # push the tags
-            if self.override_value(  # pylint: disable=E1101
-                    options.tags, options.all):
-                res = project.push_tags(
-                    None, self.override_value(  # pylint: disable=E1101
-                        options.refs, options.tag_refs),
-                    fullname=options.keep_name,
-                    force=options.force,
-                    tryrun=options.tryrun)
-                if res != 0:
-                    logger.error('failed to push tags')
-
-            # pylint: disable=E1101
-            self.run_hook(
-                options.pop('hook-post-push'),
-                options.normalize('hook-post-push-args', attr=True),
-                cwd=project.path,
-                tryrun=options.tryrun)
-            # pylint: enable=E1101
+            self.init_and_sync(options)
 
         # handle the schema of the remote
         ulp = urlparse.urlparse(options.remote)
@@ -347,14 +348,14 @@ this command.
 
         if options.output_xml_file:
             projv = dict()
-            manifest = self.get_manifest(options)
+            manifest = RepoSubcmd.get_manifest(options)
             for project in manifest.get_projects():
                 projv['%s"%s' % (project.name, project.revision)] = (
                     project.path, project.groups)
 
             builder = ManifestBuilder(
                 options.output_xml_file,
-                self.get_absolute_working_dir(options),  # pylint: disable=E1101
+                RepoSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
                 options.mirror)
 
             default = manifest.get_default()
@@ -376,4 +377,4 @@ this command.
             builder.save()
 
         return self.run_with_thread(  # pylint: disable=E1101
-            options.job, projects, _run, remote)
+            options.job, projects, RepoSubcmd.push, options, remote)
