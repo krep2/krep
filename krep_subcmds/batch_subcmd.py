@@ -153,7 +153,7 @@ The format of the plain-text configuration file can refer to the topic
                 print '\nFile: %s' % batch
                 print '=================================='
                 if len(nprojs):
-                    print 'Parallel projects with %s jobs' % (options.job or 1)
+                    print 'Parallel projects with %s job(s)' % (options.job or 1)
                     print '---------------------------------'
                     results = dict()
                     for project in nprojs:
