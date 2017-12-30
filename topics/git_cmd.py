@@ -1,4 +1,6 @@
 
+import os
+
 from command import Command
 from files.file_utils import FileUtils
 
@@ -9,7 +11,7 @@ class GitCommand(Command):
         Command.__init__(self, cwd=worktree, *args, **kws)
 
         self.gitdir = gitdir
-        self.worktree = worktree
+        self.worktree = worktree or os.getcwd()
         self.git = FileUtils.find_execute('git')
 
     def _execute(self, *args, **kws):

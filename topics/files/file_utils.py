@@ -82,7 +82,7 @@ class FileUtils(object):
         name = FileUtils.secure_path(dirname)
         if prefix and not name.startswith(prefix):
             name = prefix + name
-        if subdir and os.path.basename(dirname) != subdir:
+        if subdir and os.path.basename(name) != subdir:
             name = os.path.join(name, subdir)
 
         if exists:
