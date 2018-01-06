@@ -213,6 +213,26 @@ class PatternFile(object):  # pylint: disable=R0903
         return patterns
 
 
+class Replace(object):
+    REPLACEMENT = ('-rp', '-replace', '-replacement')
+
+    @staticmethod
+    def meet(replace):
+        for rep in Replace.REPLACEMENT:
+            if replace.endswith(rep):
+                return True
+
+        return False
+
+    @staticmethod
+    def ensure_str(replace):
+        for rep in Replace.REPLACEMENT:
+            if replace.endswith(rep):
+                replace = replace[:-len(rep)]
+
+        return replace + Replace.REPLACEMENT[0]
+
+
 class Pattern(object):
     """\
 Contains pattern categories with the format CATEGORY:PATTERN,PATTERN.
@@ -225,7 +245,6 @@ Each category supports several patterns split with a comma. The exclamation
 mark shows an opposite pattern which means to return the opposite result if
 matching.
 """
-    REPLACEMENT = ('-rp', '-replace', '-replacement')
 
     def __init__(self, pattern=None, pattern_file=None):
         self.orders = dict()
@@ -253,6 +272,9 @@ matching.
             help='Set the pattern file in XML format for patterns')
 
     def _ensure_item(self, category, name):
+        if Replace.meet(category):
+            category = Replace.ensure_str(category)
+
         if category in self.categories:
             items = self.categories[category]
             if name in items:
@@ -286,15 +308,12 @@ matching.
 
                     pi = PatternItem(category, value, exclude, name=name)
                     if pi.replacable:
-                        for replace in Pattern.REPLACEMENT:
-                            if category == replace:
-                                break
-                        else:
+                        if not Replace.meet(category):
                             logger.info(
                                 'replacement detected, category "%s" appended '
-                                'with "%s"' % (
-                                    category, Pattern.REPLACEMENT[0]))
-                            category += Pattern.REPLACEMENT[0]
+                                'with "replacement" mode', category)
+
+                        category = Replace.ensure_str(category)
 
                     if category not in self.categories:
                         self.orders[category] = list()
@@ -342,19 +361,7 @@ matching.
 
     def replace(self, categories, value, name=None):
         for category in categories.split(','):
-            item = None
-            for replace in Pattern.REPLACEMENT:
-                if category.endswith(replace):
-                    item = self._ensure_item(category, name)
-                    if item:
-                        break
-            else:
-                for replace in Pattern.REPLACEMENT:
-                    item = self._ensure_item(
-                        '%s%s' % (category, replace), name)
-                    if item:
-                        break
-
+            item = self._ensure_item(Replace.ensure_str(category), name)
             if item:
                 return item.replace(value)
 
