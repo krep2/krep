@@ -268,7 +268,7 @@ The escaped variants are supported for the imported files including:
             pkgs.sort(_pkg_sort)
 
         if options.show_order or options.verbose > 0:
-            print 'Effective packages'
+            print 'Effective packages (%d)' % len(pkgs)
             print '----------------------------'
             for pkg, pkgname, revision in pkgs:
                 print '%s %-15s %s' % (pkgname, '[v%s]' % revision, pkg)
