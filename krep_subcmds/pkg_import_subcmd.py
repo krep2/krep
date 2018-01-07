@@ -75,8 +75,14 @@ def _pkg_sort(a, b):
                 return cmp(
                     int(maa.group('digit')), int(mab.group('digit')))
 
-            if maa.group('patch') != mab.group('patch'):
-                return cmp(maa.group('patch'), mab.group('patch'))
+            paa, pab = maa.group('patch'), mab.group('patch')
+            if paa != pab:
+                if not paa:
+                    return 1
+                elif not pab:
+                    return -1
+                else:
+                    return cmp(paa, pab)
 
         if cmp(va[k], vb[k]) != 0:
             return cmp(va[k], vb[k])
