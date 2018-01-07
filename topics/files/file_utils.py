@@ -14,24 +14,33 @@ class ExecutableNotFoundError(KrepError):
 
 
 class FileDecompressor(Command):
-    COMMAND_FOR_EXTENSION = {
-        '.tar': {'p': ('tar', 'xf')},
-        '.tar.gz': {'p': ('tar', 'xzf')},
-        '.tar.bz2': {'p': ('tar', 'xjf')},
-        '.tgz': {'p': ('tar', 'xzf')},
-        '.gz': {'p': ('gunzip', '--keep')},
-        '.gzip': {'p': ('gunzip', '--keep')},
-        '.bz2': {'p': ('bzip',)},
-        '.zip': {'p': ('unzip',)},
-        '.7z': {'p': ('p7zip', '-d'), 'duplicated': True},
-    }
+
+    COMMAND_FOR_EXTENSION = (
+        ('.tar', ('tar', 'xf')),
+        ('.tar.gz', ('tar', 'xzf')),
+        ('.tar.bz2', ('tar', 'xjf')),
+        ('.tar.xz', ('tar', 'xJf')),
+        ('.tgz', ('tar', 'xzf')),
+        ('.gz', ('gunzip', '--keep')),
+        ('.gzip', ('gunzip', '--keep')),
+        ('.bz2', ('bzip',)),
+        ('.zip', ('unzip',)),
+        ('.7z', ('p7zip', '-d'), ('keep',)),
+        ('.xz', ('xz', '--keep')),
+    )
 
     def execute(self, filename):
         args = list()
-        for ext, vals in FileDecompressor.COMMAND_FOR_EXTENSION.items():
+        for items in FileDecompressor.COMMAND_FOR_EXTENSION:
+            if len(items) == 2:
+                extends = list()
+                ext, vals = items
+            else:
+                ext, vals, extends = items
+
             if filename.endswith(ext):
-                args.extend(vals['p'])
-                if 'duplicated' in vals:
+                args.extend(vals)
+                if 'keep' in extends:
                     tempname = tempfile.mktemp()
                     os.symlink(filename, tempname)
                     args.append(tempname)
@@ -82,7 +91,7 @@ class FileUtils(object):
         name = FileUtils.secure_path(dirname)
         if prefix and not name.startswith(prefix):
             name = prefix + name
-        if subdir and os.path.basename(name) != subdir:
+        if subdir and os.path.basename(dirname) != subdir:
             name = os.path.join(name, subdir)
 
         if exists:

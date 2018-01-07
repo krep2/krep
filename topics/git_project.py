@@ -186,7 +186,7 @@ class GitProject(Project, GitCommand):
         logger = Logger.get_logger()
 
         refs = refs and '%s/' % refs.rstrip('/')
-        ret, local_heads = self.get_local_heads()
+        ret, local_heads = self.get_local_heads(local=True)
         ret, remote_heads = self.get_remote_heads()
 
         if not push_all:
@@ -241,9 +241,16 @@ class GitProject(Project, GitCommand):
 
                 head = '/'.join(heads)
 
-            remote_ref = 'refs/heads/%s' % self.pattern.replace(
-                'r,rev,revision', '%s%s' % (refs or '', head),
-                name=self.uri)
+            rhead = self.pattern.replace(
+                'r,rev,revision', '%s' % head, name=self.uri)
+            if rhead != head:
+                rhead = '%s%s' % (refs or '', rhead)
+            else:
+                rhead = self.pattern.replace(
+                    'r,rev,revision', '%s%s' % (refs or '', head),
+                    name=self.uri)
+
+            remote_ref = 'refs/heads/%s' % rhead
 
             sha1 = local_heads[origin]
             if _sha1_equals(remote_heads.get(remote_ref), sha1):
@@ -290,28 +297,36 @@ class GitProject(Project, GitCommand):
                 logger.debug('%s: "%s" not match tag pattern', origin, tag)
                 continue
 
-            rtags = 'refs/tags/%s' % self.pattern.replace(
-                't,tag,revision', '%s%s' % (refs or '', tag), name=self.uri)
+            rtag = self.pattern.replace(
+                't,tag,revision', '%s' % tag, name=self.uri)
+            if rtag != tag:
+                rtag = '%s%s' % (refs or '', rtag)
+            else:
+                rtag = self.pattern.replace(
+                    't,tag,revision', '%s%s' % (refs or '', tag),
+                    name=self.uri)
 
-            if rtags in remote_tags:
+            remote_tag = 'refs/tags/%s' % rtag
+            if remote_tag in remote_tags:
                 equals = True
                 if force:
-                    sha1 = remote_tags[rtags]
+                    sha1 = remote_tags[remote_tag]
                     ret, lsha1 = self.rev_parse(origin)
                     equals = _sha1_equals(sha1, lsha1)
 
                 if equals:
-                    logger.info('%s is up-to-date', rtags)
+                    logger.info('%s is up-to-date', remote_tag)
                     continue
 
             ret = self.push(
                 self.remote,
                 '%srefs/tags/%s:%s' % (
-                    '+' if force else '', origin, rtags),
+                    '+' if force else '', origin, remote_tag),
                 *args, **kws)
 
             if ret != 0:
-                logger.error('%s: cannot push tag "%s"', self.remote, rtags)
+                logger.error(
+                    '%s: cannot push tag "%s"', self.remote, remote_tag)
 
         return ret
 
