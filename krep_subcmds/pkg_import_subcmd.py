@@ -377,7 +377,9 @@ The escaped variants are supported for the imported files including:
             if options.washed:
                 diff = FileDiff(project.path, workp, filter_out,
                                 enable_sccs_pattern=options.filter_out_sccs)
-                ret = diff.sync(project, logger) > 0
+                if diff.sync(project, logger) > 0:
+                    ret = 0
+
                 timestamp = diff.timestamp
             else:
                 timestamp = _timestamp(workp)
