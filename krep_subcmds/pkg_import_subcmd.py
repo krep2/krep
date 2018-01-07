@@ -177,8 +177,8 @@ The escaped variants are supported for the imported files including:
             dest='local', action='store_true',
             help='Set locally not to push the stuffs')
         options.add_option(
-            '--keep-file-order', '--skip-file-sort',
-            dest='keep_file_order', action='store_true',
+            '--keep-order', '--keep-file-order', '--skip-file-sort',
+            dest='keep_order', action='store_true',
             help='Keep the order of input files or directories without sort')
 
         options = optparse.add_option_group('File options')
