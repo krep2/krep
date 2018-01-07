@@ -186,7 +186,7 @@ class GitProject(Project, GitCommand):
         logger = Logger.get_logger()
 
         refs = refs and '%s/' % refs.rstrip('/')
-        ret, local_heads = self.get_local_heads()
+        ret, local_heads = self.get_local_heads(local=True)
         ret, remote_heads = self.get_remote_heads()
 
         if not push_all:
