@@ -31,13 +31,12 @@ class Values(optparse.Values):
             return True
         elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
             return False
-        elif re.match(r'^(0x)?[a-f0-9]+$', sval):
-            if sval.startswith('0x'):
-                return int(sval, 16)
-            elif sval.startswith('0'):
-                return int(sval, 8)
-            else:
-                return int(sval)
+        elif re.match(r'^0x[a-f0-9]+$', sval):
+            return int(sval, 16)
+        elif re.match(r'^0[0-7]+$', sval):
+            return int(sval, 8)
+        elif re.match(r'^[0-9]+$', sval):
+            return int(sval)
         else:
             return val
 
