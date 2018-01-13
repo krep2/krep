@@ -17,6 +17,8 @@ class XmlError(KrepError):
 class PatternItem(object):
     """Contains the positive or opposite pattern items."""
 
+    REPLACEMENT = ('-rp', '-replace', '-replacement')
+
     CATEGORY_DELIMITER = ':'
     PATTERN_DELIMITER = ','
     OPPOSITE_DELIMITER = '!'
@@ -52,6 +54,18 @@ class PatternItem(object):
             ('%s%s' % (self.name, PatternItem.ITEM_NAME_DELIMITER)
              if self.name else ''),
             PatternItem.PATTERN_DELIMITER.join(patterns))
+
+    @staticmethod
+    def ensure_category(name):
+        for replace in PatternItem.REPLACEMENT:
+            if name and name.endswith(replace):
+                return name[:-len(replace)]
+
+        return name
+
+    def replacable_only(self):
+        return len(self.subst) > 0 and len(self.include) == 0 \
+            and len(self.exclude) == 0
 
     def split(self, patterns):
         inc, exc, rep = list(), list(), list()
@@ -222,7 +236,6 @@ Each category supports several patterns split with a comma. The exclamation
 mark shows an opposite pattern which means to return the opposite result if
 matching.
 """
-    REPLACEMENT = ('rp', 'replace', 'replacement')
 
     def __init__(self, pattern=None, pattern_file=None):
         self.orders = dict()
@@ -250,6 +263,7 @@ matching.
             help='Set the pattern file in XML format for patterns')
 
     def _ensure_item(self, category, name, strict=False):
+        category = PatternItem.ensure_category(category)
         if category in self.categories:
             items = self.categories[category]
             if name in items:
@@ -282,6 +296,7 @@ matching.
                     else:
                         name = None
 
+                    category = PatternItem.ensure_category(category)
                     if category not in self.categories:
                         self.orders[category] = list()
                         self.categories[category] = dict()
@@ -320,7 +335,7 @@ matching.
 
         for category in categories.split(','):
             item = self._ensure_item(category, name)
-            if item:
+            if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
 
@@ -328,19 +343,7 @@ matching.
 
     def replace(self, categories, value, name=None):
         for category in categories.split(','):
-            item = None
-            for replace in Pattern.REPLACEMENT:
-                if category.endswith(replace):
-                    item = self._ensure_item(category, name)
-                    if item:
-                        break
-            else:
-                for replace in Pattern.REPLACEMENT:
-                    item = self._ensure_item(
-                        '%s-%s' % (category, replace), name)
-                    if item:
-                        break
-
+            item = self._ensure_item(category, name)
             if item:
                 return item.replace(value)
 
