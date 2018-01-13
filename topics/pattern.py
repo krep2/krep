@@ -17,6 +17,8 @@ class XmlError(KrepError):
 class PatternItem(object):
     """Contains the positive or opposite pattern items."""
 
+    REPLACEMENT = ('-rp', '-replace', '-replacement')
+
     CATEGORY_DELIMITER = ':'
     PATTERN_DELIMITER = ','
     OPPOSITE_DELIMITER = '!'
@@ -53,6 +55,18 @@ class PatternItem(object):
              if self.name else ''),
             PatternItem.PATTERN_DELIMITER.join(patterns))
 
+    @staticmethod
+    def ensure_category(name):
+        for replace in PatternItem.REPLACEMENT:
+            if name and name.endswith(replace):
+                return name[:-len(replace)]
+
+        return name
+
+    def replacable_only(self):
+        return len(self.subst) > 0 and len(self.include) == 0 \
+            and len(self.exclude) == 0
+
     def split(self, patterns):
         inc, exc, rep = list(), list(), list()
         patterns = patterns.strip()
@@ -70,9 +84,6 @@ class PatternItem(object):
                 inc.append(pattern)
 
         return inc, exc, rep
-
-    def replacable(self):
-        return len(self.subst) > 0
 
     def add(self, patterns='', exclude=False, subst=None):
         inc, exc, rep = self.split(patterns)
@@ -213,26 +224,6 @@ class PatternFile(object):  # pylint: disable=R0903
         return patterns
 
 
-class Replace(object):
-    REPLACEMENT = ('-rp', '-replace', '-replacement')
-
-    @staticmethod
-    def meet(replace):
-        for rep in Replace.REPLACEMENT:
-            if replace.endswith(rep):
-                return True
-
-        return False
-
-    @staticmethod
-    def ensure_str(replace):
-        for rep in Replace.REPLACEMENT:
-            if replace.endswith(rep):
-                replace = replace[:-len(rep)]
-
-        return replace + Replace.REPLACEMENT[0]
-
-
 class Pattern(object):
     """\
 Contains pattern categories with the format CATEGORY:PATTERN,PATTERN.
@@ -271,10 +262,8 @@ matching.
             dest='pattern-file', action='store',
             help='Set the pattern file in XML format for patterns')
 
-    def _ensure_item(self, category, name):
-        if Replace.meet(category):
-            category = Replace.ensure_str(category)
-
+    def _ensure_item(self, category, name, strict=False):
+        category = PatternItem.ensure_category(category)
         if category in self.categories:
             items = self.categories[category]
             if name in items:
@@ -285,7 +274,8 @@ matching.
                     if re.search(pattern, name) is not None:
                         return items[pattern]
 
-            return items.get(None)
+            if not strict:
+                return items.get(None)
 
         return None
 
@@ -306,20 +296,12 @@ matching.
                     else:
                         name = None
 
-                    pi = PatternItem(category, value, exclude, name=name)
-                    if pi.replacable:
-                        if not Replace.meet(category):
-                            logger.info(
-                                'replacement detected, category "%s" appended '
-                                'with "replacement" mode', category)
-
-                        category = Replace.ensure_str(category)
-
+                    category = PatternItem.ensure_category(category)
                     if category not in self.categories:
                         self.orders[category] = list()
                         self.categories[category] = dict()
 
-                    item = self._ensure_item(category, name)
+                    item = self._ensure_item(category, name, strict=True)
                     if item:
                         item.add(value, exclude)
                     else:
@@ -353,7 +335,7 @@ matching.
 
         for category in categories.split(','):
             item = self._ensure_item(category, name)
-            if item:
+            if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
 
@@ -361,7 +343,7 @@ matching.
 
     def replace(self, categories, value, name=None):
         for category in categories.split(','):
-            item = self._ensure_item(Replace.ensure_str(category), name)
+            item = self._ensure_item(category, name)
             if item:
                 return item.replace(value)
 
