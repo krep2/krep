@@ -249,7 +249,7 @@ matching.
             dest='pattern-file', action='store',
             help='Set the pattern file in XML format for patterns')
 
-    def _ensure_item(self, category, name):
+    def _ensure_item(self, category, name, strict=False):
         if category in self.categories:
             items = self.categories[category]
             if name in items:
@@ -260,7 +260,8 @@ matching.
                     if re.search(pattern, name) is not None:
                         return items[pattern]
 
-            return items.get(None)
+            if not strict:
+                return items.get(None)
 
         return None
 
@@ -285,7 +286,7 @@ matching.
                         self.orders[category] = list()
                         self.categories[category] = dict()
 
-                    item = self._ensure_item(category, name)
+                    item = self._ensure_item(category, name, strict=True)
                     if item:
                         item.add(value, exclude)
                     else:
