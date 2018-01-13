@@ -71,9 +71,6 @@ class PatternItem(object):
 
         return inc, exc, rep
 
-    def replacable(self):
-        return len(self.subst) > 0
-
     def add(self, patterns='', exclude=False, subst=None):
         inc, exc, rep = self.split(patterns)
         if exclude:
@@ -225,7 +222,7 @@ Each category supports several patterns split with a comma. The exclamation
 mark shows an opposite pattern which means to return the opposite result if
 matching.
 """
-    REPLACEMENT = ('-rp', '-replace', '-replacement')
+    REPLACEMENT = ('rp', 'replace', 'replacement')
 
     def __init__(self, pattern=None, pattern_file=None):
         self.orders = dict()
@@ -284,18 +281,6 @@ matching.
                     else:
                         name = None
 
-                    pi = PatternItem(category, value, exclude, name=name)
-                    if pi.replacable:
-                        for replace in Pattern.REPLACEMENT:
-                            if category == replace:
-                                break
-                        else:
-                            logger.info(
-                                'replacement detected, category "%s" appended '
-                                'with "%s"' % (
-                                    category, Pattern.REPLACEMENT[0]))
-                            category += Pattern.REPLACEMENT[0]
-
                     if category not in self.categories:
                         self.orders[category] = list()
                         self.categories[category] = dict()
@@ -351,7 +336,7 @@ matching.
             else:
                 for replace in Pattern.REPLACEMENT:
                     item = self._ensure_item(
-                        '%s%s' % (category, replace), name)
+                        '%s-%s' % (category, replace), name)
                     if item:
                         break
 
