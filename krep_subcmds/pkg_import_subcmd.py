@@ -290,9 +290,9 @@ The escaped variants are supported for the imported files including:
         RaiseExceptionIfOptionMissed(
             args, "no files or directories are specified to import")
 
-        if not options.tryrun and options.gerrit:
-            gerrit = Gerrit(options.gerrit)
-            gerrit.createProject(
+        if not options.tryrun and options.remote:
+            gerrit = Gerrit(options.remote)
+            gerrit.create_project(
                 options.name,
                 description=options.description or False)
 
