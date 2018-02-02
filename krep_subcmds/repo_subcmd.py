@@ -319,10 +319,11 @@ this command.
 
                 sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
                 for project in sorted(projects, _cmp):
-                    print sfmt % (
-                        project.source, project.uri,
-                        ' [NEW]' if options.print_new_projects and
-                        project in new_projects else '')
+                    print (
+                        sfmt % (
+                            project.source, project.uri,
+                            ' [NEW]' if options.print_new_projects and
+                            project in new_projects else '')).rstrip()
 
                 return
             elif options.print_new_projects:
@@ -336,7 +337,7 @@ this command.
 
                 sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
                 for project in sorted(new_projects, _cmp):
-                    print sfmt % (project.source, project.uri)
+                    print (sfmt % (project.source, project.uri)).rstrip()
 
                 return
             elif not options.repo_create and len(new_projects) > 0:
