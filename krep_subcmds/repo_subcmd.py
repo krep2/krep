@@ -218,11 +218,13 @@ this command.
                 raise DownloadError(
                     'Failed to sync "%s"' % options.manifest)
 
+        # pylint: disable=E1101
         self.run_hook(
             options.pop('hook-post-sync'),
             options.normalize('hook-post-sync-args', attr=True),
             cwd=self.get_absolute_working_dir(options),
             tryrun=options.tryrun)
+        # pylint: enable=E1101
 
     @staticmethod
     def push(project, options, remote):
