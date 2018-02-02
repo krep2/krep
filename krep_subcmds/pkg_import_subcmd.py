@@ -419,21 +419,21 @@ The escaped variants are supported for the imported files including:
                     logger.exception(e)
 
         # push the branches
-        if not options.tryrun and not options.local:
-            ret = 0
+        if not ret and not options.local:
             if self.override_value(  # pylint: disable=E1101
                     options.branches, options.all):
                 ret = project.push_heads(
                     branch,
                     self.override_value(  # pylint: disable=E1101
                         options.refs, options.head_refs),
-                    force=options.force)
+                    force=options.force, tryrun=options.tryrun)
             # push the tags
             if tags and self.override_value(  # pylint: disable=E1101
                     options.tags, options.all):
                 ret = project.push_tags(
                     tags, self.override_value(  # pylint: disable=E1101
                         options.refs, options.tag_refs),
-                    fullname=True, force=options.force)
+                    fullname=True, force=options.force, tryrun=options.tryrun)
 
-        return ret
+        return ret == 0
+
