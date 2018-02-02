@@ -3,7 +3,7 @@ import cStringIO
 import fnmatch
 import os
 import stat
-
+import subprocess
 
 try:
     import magic  # pylint: disable=F0401
@@ -20,8 +20,11 @@ try:
 
         return result
 except ImportError:
+    from file_utils import FileUtils
+
+    filebin = FileUtils.find_execute('file')
     def _get_magic(filename):
-        return filename and None
+        return subprocess.check_output([filebin, filename])
 
 
 class FileMagic(object):
