@@ -185,7 +185,7 @@ class OptionParser(optparse.OptionParser):
     def split_argument(arg):
         for k, c in enumerate(arg):
             if c == ' ' or c == '=':
-                return [arg[:k], arg[k:]]
+                return [arg[:k], arg[k + 1:]]
 
         return [arg]
 
