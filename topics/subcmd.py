@@ -69,7 +69,7 @@ class SubCommand(object):
         options = optparse.add_option_group('Git options')
         options.add_option(
             '-a', '--all',
-            dest='all', action='store_true', default=False,
+            dest='all', action='store_true', default=None,
             help='Take all operations except to suppress with opposite option '
                  'like "--no-tags". The action is merged by the sub-command')
         # Not to set the default for no-option
