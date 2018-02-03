@@ -25,6 +25,14 @@ def _ensure_remote(url):
     return url
 
 
+def _secure_head_name(head):
+    heads = head.split('/')
+    while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
+        heads = heads[1:]
+
+    return '/'.join(heads)
+
+
 class GitProject(Project, GitCommand):
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
@@ -205,7 +213,7 @@ class GitProject(Project, GitCommand):
                 return cmp(rev1, rev2)
 
         for origin in sorted(local_heads, rev_sort):
-            head = origin
+            head = _secure_head_name(origin)
             if not fullname:
                 head = os.path.basename(head)
             if not head:
@@ -236,13 +244,6 @@ class GitProject(Project, GitCommand):
                     'r,rev,revision', local_ref, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
-
-            if fullname:
-                heads = head.split('/')
-                while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
-                    heads = heads[1:]
-
-                head = '/'.join(heads)
 
             rhead = self.pattern.replace(
                 'r,rev,revision', '%s' % head, name=self.uri)
