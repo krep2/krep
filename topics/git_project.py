@@ -16,7 +16,7 @@ def _sha1_equals(sha, shb):
         return sha == shb
 
 
-def ensure_remote(url):
+def _ensure_remote(url):
     if url:
         ulp = urlparse.urlparse(url)
         if not ulp.scheme:
@@ -43,7 +43,7 @@ class GitProject(Project, GitCommand):
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
         Project.__init__(
-            self, uri, worktree, revision, ensure_remote(remote),
+            self, uri, worktree, revision, _ensure_remote(remote),
             pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
@@ -114,7 +114,7 @@ class GitProject(Project, GitCommand):
             if url is None:
                 url = self.remote
             ret = self.clone(
-                ensure_remote(url), mirror=mirror, bare=bare,
+                _ensure_remote(url), mirror=mirror, bare=bare,
                 revision=revision, single_branch=single_branch, *args, **kws)
 
         if ret == 0:
