@@ -174,6 +174,7 @@ class GitProject(Project, GitCommand):
 
                 head = re.split(r'[\s]+', line, maxsplit=2)
                 if head[1] != '->':
+                    heads[_secure_head_name(head[0])] = head[1]
                     heads[head[0]] = head[1]
 
         return ret, heads
