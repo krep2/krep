@@ -148,7 +148,7 @@ this command.
                     name,
                     worktree=os.path.join(
                         self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
-                    revision=node.revision,
+                    revision='%s/%s' % (node.remote, node.revision),
                     remote='%s/%s' % (options.remote, name),
                     pattern=pattern,
                     source=node.name))
