@@ -194,8 +194,9 @@ class OptionParser(optparse.OptionParser):
         group = None
 
         for arg in args or sys.argv[1:]:
-            if arg.startswith('--no-'):
-                opt = '--%s' % arg[5:]
+            if arg.startswith('--no-') or arg.startswith('--not-'):
+                off = 5 if arg.startswith('--no-') else 6
+                opt = '--%s' % arg[off:]
                 if opt in self._long_opt:
                     if not group:
                         group = self.add_option_group('Pseduo options')
