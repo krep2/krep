@@ -16,13 +16,21 @@ def _sha1_equals(sha, shb):
         return sha == shb
 
 
-def ensure_remote(url):
+def _ensure_remote(url):
     if url:
         ulp = urlparse.urlparse(url)
         if not ulp.scheme:
             url = 'git://' + url
 
     return url
+
+
+def _secure_head_name(head):
+    heads = head.split('/')
+    while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
+        heads = heads[1:]
+
+    return '/'.join(heads)
 
 
 class GitProject(Project, GitCommand):
@@ -43,7 +51,7 @@ class GitProject(Project, GitCommand):
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
         Project.__init__(
-            self, uri, worktree, revision, ensure_remote(remote),
+            self, uri, worktree, revision, _ensure_remote(remote),
             pattern, *args, **kws)
 
     def init(self, bare=False, *args, **kws):
@@ -114,7 +122,7 @@ class GitProject(Project, GitCommand):
             if url is None:
                 url = self.remote
             ret = self.clone(
-                ensure_remote(url), mirror=mirror, bare=bare,
+                _ensure_remote(url), mirror=mirror, bare=bare,
                 revision=revision, single_branch=single_branch, *args, **kws)
 
         if ret == 0:
@@ -166,6 +174,7 @@ class GitProject(Project, GitCommand):
 
                 head = re.split(r'[\s]+', line, maxsplit=2)
                 if head[1] != '->':
+                    heads[_secure_head_name(head[0])] = head[1]
                     heads[head[0]] = head[1]
 
         return ret, heads
@@ -205,7 +214,7 @@ class GitProject(Project, GitCommand):
                 return cmp(rev1, rev2)
 
         for origin in sorted(local_heads, rev_sort):
-            head = origin
+            head = _secure_head_name(origin)
             if not fullname:
                 head = os.path.basename(head)
             if not head:
@@ -236,13 +245,6 @@ class GitProject(Project, GitCommand):
                     'r,rev,revision', local_ref, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
-
-            if fullname:
-                heads = head.split('/')
-                while len(heads) > 1 and heads[0] in ('remotes', 'origin'):
-                    heads = heads[1:]
-
-                head = '/'.join(heads)
 
             rhead = self.pattern.replace(
                 'r,rev,revision', '%s' % head, name=self.uri)
