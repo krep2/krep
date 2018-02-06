@@ -279,6 +279,39 @@ this command.
             tryrun=options.tryrun)
         # pylint: enable=E1101
 
+    @staticmethod
+    def build_xml_file(options, projects):
+        _project_key = lambda name, rev: '%s"%s' % (name, rev)
+
+        projv = dict()
+        manifest = RepoSubcmd.get_manifest(options)
+        for project in manifest.get_projects():
+            projv[_project_key(project.name, project.revision)] = (
+                project.path, project.groups)
+
+        builder = ManifestBuilder(
+            options.output_xml_file,
+            RepoSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
+            options.mirror)
+
+        default = manifest.get_default()
+        default.remote = options.remote
+        builder.append(default)
+
+        for remote in manifest.get_remotes():
+            builder.append(remote)
+
+        for project in projects:
+            path, groups = project.path, None
+
+            key = _project_key(project.source, project.revision)
+            if key in projv:
+                path, groups = projv[key]
+
+            builder.project(project.uri, path, project.revision, groups)
+
+        builder.save()
+
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 
@@ -350,34 +383,7 @@ this command.
                 return
 
         if options.output_xml_file:
-            projv = dict()
-            manifest = RepoSubcmd.get_manifest(options)
-            for project in manifest.get_projects():
-                projv['%s"%s' % (project.name, project.revision)] = (
-                    project.path, project.groups)
-
-            builder = ManifestBuilder(
-                options.output_xml_file,
-                RepoSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
-                options.mirror)
-
-            default = manifest.get_default()
-            default.remote = options.remote
-            builder.append(default)
-
-            for remote in manifest.get_remotes():
-                builder.append(remote)
-
-            for project in projects:
-                path, groups = project.path, None
-
-                key = '%s"%s' % (project.source, project.revision)
-                if key in projv:
-                    path, groups = projv[key]
-
-                builder.project(project.uri, path, project.revision, groups)
-
-            builder.save()
+            RepoSubcmd.build_xml_file(options, projects)
 
         return self.run_with_thread(  # pylint: disable=E1101
             options.job, projects, RepoSubcmd.push, options, remote)
