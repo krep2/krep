@@ -29,56 +29,11 @@ class SubCommand(object):
 
         return self._optparse
 
-    def options(self, optparse, option_remote=False, option_import=False,
-                *args, **kws):  # pylint: disable=W0613
+    def options(self, optparse, *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
-        if option_remote:
-            self.options_remote(optparse)
-        if option_import:
-            self.options_import(optparse)
-
         self._options_jobs(optparse)
         # load options from the imported classes
         self._options_loaded(optparse, kws.get('modules'))
-
-    def options_remote(self, optparse):
-        # Remote options
-        options = optparse.add_option_group('Remote options')
-        options.add_option(
-            '-r', '--refs',
-            dest='refs', action='store', metavar='REF',
-            help='the reference prefix of the remote server')
-        options.add_option(
-            '-k', '--keep-name',
-            dest='keep_name', action='store_true', default=False,
-            help='keep current head or tag name without new refs as the '
-                 'last part')
-
-        return options
-
-    def options_import(self, optparse):
-        # Import options
-        options = optparse.add_option_group('Git options')
-        options.add_option(
-            '-a', '--all',
-            dest='all', action='store_true', default=False,
-            help='Take all operations except to suppress with opposite option '
-                 'like "--no-tags". The action is merged by the sub-command')
-        # Not to set the default for no-option
-        options.add_option(
-            '--branches', '--heads',
-            dest='branches', action='store_true',
-            help='push all branches to the remote. Once option "--all" is '
-                 'set, it is enabled except "--no-branches" or "--no-heads" '
-                 'is set explicitly')
-        # Not to set the default for no-option
-        options.add_option(
-            '--tags',
-            dest='tags', action='store_true',
-            help='push all tags to the remote. Once option "--all" is set, it '
-                 'is enabled except "--no-tags" is set explicitly')
-
-        return options
 
     def _options_jobs(self, optparse):
         if self.support_jobs():
