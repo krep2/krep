@@ -7,7 +7,7 @@ from error import KrepError
 from logger import Logger
 
 
-PatternReplaceItem = namedtuple('PatternReplaceItem', 'pattern,subst')
+PatternReplaceItem = namedtuple('PatternReplaceItem', 'pattern,subst,cont')
 
 
 class XmlError(KrepError):
@@ -23,10 +23,12 @@ class PatternItem(object):
     PATTERN_DELIMITER = ','
     OPPOSITE_DELIMITER = '!'
     ITEM_NAME_DELIMITER = '@'
-    REPLACEMENT_DELIMITER = '~'
+    REPLACEMENT_DELIMITER = '='
+    CONN_REPLACE_DELIMITER = '~'
 
     def __init__(self, category, patterns=None, exclude=False, name=None):
         self.name = name
+        self.cont = False
         self.include = list()
         self.exclude = list()
         self.subst = list()
@@ -44,7 +46,8 @@ class PatternItem(object):
                          for e in self.exclude])
         patterns.extend(
             ['%(d)s%(p)s%(d)s%(r)s%(d)s' % {
-                'd': PatternItem.REPLACEMENT_DELIMITER,
+                'd': PatternItem.CONN_REPLACE_DELIMITER if rp.cont else \
+                     PatternItem.REPLACEMENT_DELIMITER,
                 'p': rp.pattern or '',
                 'r': rp.subst or ''} for rp in self.subst])
 
@@ -63,9 +66,15 @@ class PatternItem(object):
 
         return name
 
+    def replacable(self):
+        return len(self.subst) > 0
+
     def replacable_only(self):
         return len(self.subst) > 0 and len(self.include) == 0 \
             and len(self.exclude) == 0
+
+    def continuable(self):
+        return self.cont
 
     def split(self, patterns):
         inc, exc, rep = list(), list(), list()
@@ -73,11 +82,15 @@ class PatternItem(object):
 
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
-            if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER):
-                items = re.split(PatternItem.REPLACEMENT_DELIMITER, pattern)
+            if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER) or \
+                    pattern.startswith(PatternItem.CONN_REPLACE_DELIMITER):
+                items = re.split(pattern[0], pattern)
                 if len(items) == 4:
                     rep.append(
-                        PatternReplaceItem(items[1] or self.name, items[2]))
+                        PatternReplaceItem(
+                            items[1] or self.name, items[2],
+                            pattern.startswith(
+                                PatternItem.CONN_REPLACE_DELIMITER)))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
             elif pattern:
@@ -124,6 +137,7 @@ class PatternItem(object):
         if self.subst:
             for rep in self.subst:
                 value = re.sub(rep.pattern, rep.subst, value)
+                self.cont = rep.cont
 
         return value
 
@@ -150,7 +164,9 @@ class PatternFile(object):  # pylint: disable=R0903
 
         if p.replacement is not None:
             pi = PatternItem(category=p.category, name=p.name)
-            pi.add(subst=PatternReplaceItem(p.value, p.replacement))
+            pi.add(
+                subst=PatternReplaceItem(
+                    p.value, p.replacement, _attr(node, 'continue') != 'false'))
         else:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
@@ -342,10 +358,30 @@ matching.
         return ret if existed else True
 
     def replace(self, categories, value, name=None):
+        replaced = False
+
         for category in categories.split(','):
-            item = self._ensure_item(category, name)
-            if item:
-                return item.replace(value)
+            category = PatternItem.ensure_category(category)
+            if category in self.categories:
+                items = self.categories[category]
+                for pattern in self.orders[category]:
+                    if pattern is not None and name and (
+                            re.search(pattern, name) is not None):
+                        item = items[pattern]
+                        if not item.replacable():
+                            continue
+
+                        value, ovalue = item.replace(value), value
+                        if value != ovalue:
+                            replaced = True
+                        if replaced and not item.continuable():
+                            return value
+
+
+            if not replaced:
+                item = self._ensure_item(category, name)
+                if item and item.replacable():
+                    return item.replace(value)
 
         return value
 
