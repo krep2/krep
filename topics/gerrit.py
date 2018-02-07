@@ -112,7 +112,7 @@ implicitly."""
                     description = description.replace('%url', source)
 
                 if description.find('%url') > -1:
-                    logger.error("gerrit url is being missed")
+                    logger.warning("gerrit url is being missed")
                 else:
                     args.append('--description')
                     args.append("'%s'" % description.strip("'\""))
