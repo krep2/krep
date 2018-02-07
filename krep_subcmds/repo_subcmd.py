@@ -235,7 +235,7 @@ this command.
         logger.info('Start processing ...')
         if not options.tryrun and remote:
             gerrit = Gerrit(remote)
-            gerrit.create_project(project.uri)
+            gerrit.create_project(project.uri, description=False)
 
         # pylint: disable=E1101
         RepoSubcmd.run_hook(
