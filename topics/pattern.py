@@ -355,6 +355,13 @@ matching.
                 existed = True
                 ret |= item.match(value)
 
+        if not existed and name is None:
+            for category in categories.split(','):
+                item = self._ensure_item(category, value)
+                if item and not item.replacable_only():
+                    existed = True
+                    ret |= item.match(value)
+
         return ret if existed else True
 
     def replace(self, categories, value, name=None):
