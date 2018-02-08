@@ -280,7 +280,7 @@ this command.
         # pylint: enable=E1101
 
     @staticmethod
-    def build_xml_file(options, projects):
+    def build_xml_file(options, projects, sort=False):
         _project_key = lambda name, rev: '%s"%s' % (name, rev)
 
         projv = dict()
@@ -300,6 +300,9 @@ this command.
 
         for remote in manifest.get_remotes():
             builder.append(remote)
+
+        if sort:
+            projects.sort(lambda prja, prjb: cmp(prja.path, prjb.path))
 
         for project in projects:
             path, groups = project.path, None
@@ -383,7 +386,8 @@ this command.
                 return
 
         if options.output_xml_file:
-            RepoSubcmd.build_xml_file(options, projects)
+            RepoSubcmd.build_xml_file(options, projects, True)
+            return
 
         return self.run_with_thread(  # pylint: disable=E1101
             options.job, projects, RepoSubcmd.push, options, remote)
