@@ -315,6 +315,45 @@ this command.
 
         builder.save()
 
+    @staticmethod
+    def dump_projects(options, projects, nprojects):
+        def _cmp(prja, prjb):
+            return cmp(prja.source, prjb.source)
+
+        lsrc, luri = 0, 0
+        if options.dump_projects:
+            print 'IMPORTED PROJECTS'
+            print '====================='
+            for p in projects:
+                if len(p.source) > lsrc:
+                    lsrc = len(p.source)
+                if len(p.uri) > luri:
+                    luri = len(p.uri)
+
+            sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
+            for project in sorted(projects, _cmp):
+                print (
+                    sfmt % (
+                        project.source, project.uri,
+                        ' [NEW]' if options.print_new_projects and
+                        project in nprojects else '')).rstrip()
+        elif options.print_new_projects:
+            print 'NEW PROJECTS'
+            print '================'
+            for p in nprojects:
+                if len(p.source) > lsrc:
+                    lsrc = len(p.source)
+                if len(p.uri) > luri:
+                    luri = len(p.uri)
+
+            sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
+            for project in sorted(nprojects, _cmp):
+                print (sfmt % (project.source, project.uri)).rstrip()
+        elif not options.repo_create and len(nprojects) > 0:
+            print 'Exit with following new projects:'
+            for project in sorted(nprojects, _cmp):
+                print ' %s' % project.source
+
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 
@@ -336,53 +375,17 @@ this command.
 
         if options.print_new_projects or options.dump_projects or \
                 not options.repo_create:
-            lsrc, luri, new_projects = 0, 0, list()
             gerrit = Gerrit(remote)
+
+            new_projects = list()
             existed_projects = gerrit.ls_projects()
             for p in projects:
                 if p.uri not in existed_projects:
                     new_projects.append(p)
 
-            def _cmp(prja, prjb):
-                return cmp(prja.source, prjb.source)
-
-            if options.dump_projects:
-                print 'IMPORTED PROJECTS'
-                print '====================='
-                for p in projects:
-                    if len(p.source) > lsrc:
-                        lsrc = len(p.source)
-                    if len(p.uri) > luri:
-                        luri = len(p.uri)
-
-                sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
-                for project in sorted(projects, _cmp):
-                    print (
-                        sfmt % (
-                            project.source, project.uri,
-                            ' [NEW]' if options.print_new_projects and
-                            project in new_projects else '')).rstrip()
-
-                return
-            elif options.print_new_projects:
-                print 'NEW PROJECTS'
-                print '================'
-                for p in new_projects:
-                    if len(p.source) > lsrc:
-                        lsrc = len(p.source)
-                    if len(p.uri) > luri:
-                        luri = len(p.uri)
-
-                sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
-                for project in sorted(new_projects, _cmp):
-                    print (sfmt % (project.source, project.uri)).rstrip()
-
-                return
-            elif not options.repo_create and len(new_projects) > 0:
-                print 'Exit with following new projects:'
-                for project in sorted(new_projects, _cmp):
-                    print ' %s' % project.source
-
+            if options.dump_projects or options.print_new_projects or \
+                    not options.repo_create and len(new_projects) > 0:
+                RepoSubcmd.dump_projects(options, projects, new_projects)
                 return
 
         if options.output_xml_file:
