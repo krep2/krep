@@ -261,10 +261,7 @@ be saved in XML file again with limited attributes.
         for node in nodes:
             if node.nodeName == 'remove-project':
                 name = _attr(node, 'name')
-                if name not in self._projects:
-                    raise ManifestException(
-                        'remove-project project %s is not existent' % name)
-                else:
+                if name in self._projects:
                     self._projects[name].set_removed(True)
 
     def _load(self, filename):
