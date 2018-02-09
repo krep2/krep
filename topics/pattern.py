@@ -28,7 +28,7 @@ class PatternItem(object):
 
     def __init__(self, category, patterns=None, exclude=False, name=None):
         self.name = name
-        self.cont = False
+        self.cont = True
         self.include = list()
         self.exclude = list()
         self.subst = list()
@@ -66,6 +66,23 @@ class PatternItem(object):
 
         return name
 
+    @staticmethod
+    def is_replace_str(value):
+        if value and (
+                value.startswith(PatternItem.CONN_REPLACE_DELIMITER) or
+                value.startswith(PatternItem.REPLACEMENT_DELIMITER)):
+            pattern1 = '%(p)s[^%(p)s]*%(p)s[^%(p)s]*%(p)s' % {
+                'p': PatternItem.CONN_REPLACE_DELIMITER}
+            pattern2 = '%(p)s[^%(p)s]*%(p)s[^%(p)s]*%(p)s' % {
+                'p': PatternItem.REPLACEMENT_DELIMITER}
+
+            if re.match(pattern1, value):
+                return True
+            elif re.match(pattern2, value):
+                return True
+
+        return False
+
     def replacable(self):
         return len(self.subst) > 0
 
@@ -76,19 +93,19 @@ class PatternItem(object):
     def continuable(self):
         return self.cont
 
-    def split(self, patterns):
+    def split(self, patterns, cont=None):
         inc, exc, rep = list(), list(), list()
         patterns = patterns.strip()
 
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
-            if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER) or \
-                    pattern.startswith(PatternItem.CONN_REPLACE_DELIMITER):
+            if PatternItem.is_replace_str(pattern):
                 items = re.split(pattern[0], pattern)
                 if len(items) == 4:
                     rep.append(
                         PatternReplaceItem(
                             items[1] or self.name, items[2],
+                            cont if cont is not None else
                             pattern.startswith(
                                 PatternItem.CONN_REPLACE_DELIMITER)))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
@@ -98,8 +115,8 @@ class PatternItem(object):
 
         return inc, exc, rep
 
-    def add(self, patterns='', exclude=False, subst=None):
-        inc, exc, rep = self.split(patterns)
+    def add(self, patterns='', exclude=False, subst=None, cont=None):
+        inc, exc, rep = self.split(patterns, cont)
         if exclude:
             inc, exc = exc, inc
 
@@ -147,7 +164,8 @@ def _attr(node, attribute, default=None):
 
 
 class PatternFile(object):  # pylint: disable=R0903
-    _XmlPattern = namedtuple('_XmlPattern', 'category,name,value,replacement')
+    _XmlPattern = namedtuple(
+        '_XmlPattern', 'category,name,value,replacement,cont')
 
     @staticmethod
     def parse_pattern(node, patterns=None, exclude=False, replacement=False):
@@ -155,18 +173,33 @@ class PatternFile(object):  # pylint: disable=R0903
                 'pattern', 'exclude-pattern', 'rp-pattern', 'replace-pattern'):
             return None
 
+        def _ensure_bool(value):
+            if value is None:
+                return None
+            else:
+                value = value.lower()
+                if value in ('true', 'yes'):
+                    return True
+                elif value in ('false', 'no'):
+                    return False
+
+            return None
+
         p = PatternFile._XmlPattern(
             name=_attr(node, 'name', patterns and patterns.name),
             category=_attr(node, 'category', patterns and patterns.category),
-            value=_attr(node, 'value'),
+            value=_attr(node, 'value') or _attr(node, 'name'),
             replacement=_attr(node, 'replace')
-            if node.nodeName != 'exclude-pattern' or replacement else None)
+            if node.nodeName != 'exclude-pattern' or replacement else None,
+            cont=_ensure_bool(_attr(node, 'continue')))
 
-        if p.replacement is not None:
+        if p.replacement is not None or PatternItem.is_replace_str(p.value):
             pi = PatternItem(category=p.category, name=p.name)
-            pi.add(
-                subst=PatternReplaceItem(
-                    p.value, p.replacement, _attr(node, 'continue') != 'false'))
+            if p.replacement:
+                pi.add(
+                    subst=PatternReplaceItem(p.value, p.replacement, pi.cont))
+            else:
+                pi.add(p.value, cont=p.cont)
         else:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
@@ -189,7 +222,7 @@ class PatternFile(object):  # pylint: disable=R0903
                 'replace-patterns'):
             parent = PatternFile._XmlPattern(
                 name=_attr(node, 'name'), category=_attr(node, 'category'),
-                value=None, replacement=None)
+                value=None, replacement=None, cont=True)
 
             for child in node.childNodes:
                 pi = PatternFile.parse_pattern(
@@ -354,6 +387,13 @@ matching.
             if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
+
+        if not existed and name is None:
+            for category in categories.split(','):
+                item = self._ensure_item(category, value)
+                if item and not item.replacable_only():
+                    existed = True
+                    ret |= item.match(value)
 
         return ret if existed else True
 
