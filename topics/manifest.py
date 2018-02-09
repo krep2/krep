@@ -89,8 +89,8 @@ class _XmlProject(object):  # pylint: disable=R0902
         self.rebase = rebase
         self.upstream = upstream
         self.removed = False
-        self.copyfile = list()
-        self.linkfile = list()
+        self.copyfiles = list()
+        self.linkfiles = list()
 
     def xml(self, doc, default, remotes, rootdir, mirror):
         e = doc.createElement('project')
@@ -116,13 +116,13 @@ class _XmlProject(object):  # pylint: disable=R0902
             _setattr(e, 'remote', remote.name)
         _setattr(e, 'upstream', self.upstream)
         _setattr(e, 'groups', self.groups)
-        for item in self.copyfile:
+        for item in self.copyfiles:
             xce = doc.createElement('copyfile')
             _setattr(xce, 'src', item.src)
             _setattr(xce, 'dest', item.dest)
             e.appendChild(xce)
 
-        for item in self.linkfile:
+        for item in self.linkfiles:
             xle = doc.createElement('linkfile')
             _setattr(xle, 'src', item.src)
             _setattr(xle, 'dest', item.dest)
@@ -134,10 +134,16 @@ class _XmlProject(object):  # pylint: disable=R0902
         self.removed = removed
 
     def add_copy_file(self, src, dest):
-        self.copyfile.append(_XmlProject.File(src, dest))
+        self.copyfiles.append(_XmlProject.File(src, dest))
+
+    def add_copy_files(self, files):
+        self.copyfiles.extend(files)
 
     def add_link_file(self, src, dest):
-        self.linkfile.append(_XmlProject.File(src, dest))
+        self.linkfiles.append(_XmlProject.File(src, dest))
+
+    def add_link_files(self, files):
+        self.linkfiles.extend(files)
 
 
 class Manifest(object):
@@ -184,14 +190,24 @@ be saved in XML file again with limited attributes.
         return default
 
     def _parse_project(self, node):
-        # subproject isn't checked
-        return _XmlProject(
+        project = _XmlProject(
             name=_attr(node, 'name', _attr2(node, 'in-project')),
             path=_attr2(node, 'path'),
             revision=_attr2(node, 'revision'),
             remote=_attr2(node, 'remote'),
             groups=_attr2(node, 'groups'),
             rebase=_attr2(node, 'rebase'))
+
+        # annotation, subproject isn't checked
+        for child in node.childNodes:
+            if child.nodeName == 'copyfile':
+                project.add_copy_file(
+                    _attr2(child, 'src'), _attr2(child, 'dest'))
+            elif child.nodeName == 'linkfile':
+                project.add_link_file(
+                    _attr2(child, 'src'), _attr2(child, 'dest'))
+
+        return project
 
     def _parse_manifest_xml(self, filename, path=None):
         try:
@@ -296,6 +312,8 @@ be saved in XML file again with limited attributes.
                     path=project.path or project.name,
                     revision=_get_revision(project),
                     groups=project.groups))
+            projects[-1].add_copy_files(project.copyfiles)
+            projects[-1].add_link_files(project.linkfiles)
 
         return projects
 
@@ -354,8 +372,13 @@ store the live manifest nodes into files.
         self.append(remote)
 
     def project(self, name, path=None, revision=None, groups=None,
-                remote=None, rebase=None):
+                remote=None, rebase=None, copyfiles=None, linkfiles=None):
         project = _XmlProject(name, path, revision, groups, remote, rebase)
+        if copyfiles:
+            project.add_copy_files(copyfiles)
+        if linkfiles:
+            project.add_link_files(linkfiles)
+
         self.append(project)
 
         return project
