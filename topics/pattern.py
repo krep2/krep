@@ -66,6 +66,23 @@ class PatternItem(object):
 
         return name
 
+    @staticmethod
+    def is_replace_str(value):
+        if value and (
+                value.startswith(PatternItem.CONN_REPLACE_DELIMITER) or
+                value.startswith(PatternItem.REPLACEMENT_DELIMITER)):
+            pattern1 = '%(p)s[^%(p)s]*%(p)s[^%(p)s]*%(p)s' % {
+                'p': PatternItem.CONN_REPLACE_DELIMITER}
+            pattern2 = '%(p)s[^%(p)s]*%(p)s[^%(p)s]*%(p)s' % {
+                'p': PatternItem.REPLACEMENT_DELIMITER}
+
+            if re.match(pattern1, value):
+                return True
+            elif re.match(pattern2, value):
+                return True
+
+        return False
+
     def replacable(self):
         return len(self.subst) > 0
 
@@ -82,8 +99,7 @@ class PatternItem(object):
 
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
-            if pattern.startswith(PatternItem.REPLACEMENT_DELIMITER) or \
-                    pattern.startswith(PatternItem.CONN_REPLACE_DELIMITER):
+            if PatternItem.is_replace_str(pattern):
                 items = re.split(pattern[0], pattern)
                 if len(items) == 4:
                     rep.append(
