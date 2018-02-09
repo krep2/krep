@@ -59,6 +59,8 @@ acutally in platform/manifest.git within a mirror.)
                     remote='%s/%s' % (options.remote, name),
                     bare=True,
                     pattern=pattern,
-                    source=node.name))
+                    source=node.name,
+                    copyfiles=node.copyfiles,
+                    linkfiles=node.linkfiles))
 
         return projects

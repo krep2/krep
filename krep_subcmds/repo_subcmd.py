@@ -149,9 +149,12 @@ this command.
                     worktree=os.path.join(
                         self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
                     revision='%s/%s' % (node.remote, node.revision),
-                    remote='%s/%s' % (options.remote, name),
-                    pattern=pattern,
-                    source=node.name))
+                remote='%s/%s' % (options.remote, name),
+                pattern=pattern,
+                source=node.name,
+                copyfiles=node.copyfiles,
+                linkfiles=node.linkfiles))
+
 
         return projects
 
@@ -311,7 +314,9 @@ this command.
             if key in projv:
                 path, groups = projv[key]
 
-            builder.project(project.uri, path, project.revision, groups)
+            builder.project(
+                project.uri, path, project.revision, groups,
+                copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
 
