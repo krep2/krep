@@ -11,6 +11,8 @@ class Project(object):
         self.remote = remote
         self.source = kws.get('source') or remote
         self.pattern = pattern or Pattern()
+        self.args = args
+        self.kws = kws
 
     def _safepath(self, path):
         if path:
@@ -19,6 +21,9 @@ class Project(object):
             ret = path
 
         return ret
+
+    def __getattr__(self, attr):
+        return self.kws.get(attr)
 
     def __str__(self):
         return '%s' % self.uri
