@@ -197,7 +197,8 @@ class PatternFile(object):  # pylint: disable=R0903
             pi = PatternItem(category=p.category, name=p.name)
             if p.replacement:
                 pi.add(
-                    subst=PatternReplaceItem(p.value, p.replacement, pi.cont))
+                    subst=PatternReplaceItem(
+                        p.value, p.replacement, p.cont == True))
             else:
                 pi.add(p.value, cont=p.cont)
         else:
