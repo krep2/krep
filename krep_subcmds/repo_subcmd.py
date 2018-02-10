@@ -357,7 +357,11 @@ this command.
         elif not options.repo_create and len(nprojects) > 0:
             print 'Exit with following new projects:'
             for project in sorted(nprojects, _cmp):
-                print ' %s' % project.source
+                print ' %s' % project.source,
+                if project.source != project.uri:
+                    print ' (%s)' % project.uri
+                else:
+                    print
 
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
