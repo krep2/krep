@@ -191,7 +191,8 @@ class PatternFile(object):  # pylint: disable=R0903
             value=_attr(node, 'value') or _attr(node, 'name'),
             replacement=_attr(node, 'replace')
             if node.nodeName != 'exclude-pattern' or replacement else None,
-            cont=_ensure_bool(_attr(node, 'continue')))
+            cont=_ensure_bool(
+                _attr(node, 'continue', patterns and patterns.cont)))
 
         if p.replacement is not None or PatternItem.is_replace_str(p.value):
             pi = PatternItem(category=p.category, name=p.name)
@@ -222,8 +223,10 @@ class PatternFile(object):  # pylint: disable=R0903
                 'patterns', 'exclude-patterns', 'rp-patterns',
                 'replace-patterns'):
             parent = PatternFile._XmlPattern(
-                name=_attr(node, 'name'), category=_attr(node, 'category'),
-                value=None, replacement=None, cont=True)
+                name=_attr(node, 'name'),
+                category=_attr(node, 'category'),
+                value=None, replacement=None,
+                cont=_attr(node, 'continue', 'true'))
 
             for child in node.childNodes:
                 pi = PatternFile.parse_pattern(
