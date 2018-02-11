@@ -1,4 +1,5 @@
 
+import re
 import os
 import urlparse
 
@@ -143,18 +144,23 @@ this command.
             name = '%s%s' % (
                 options.prefix or '',
                 pattern.replace('p,project', node.name, name=node.name))
-            projects.append(
-                GitProject(
-                    name,
-                    worktree=os.path.join(
-                        self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
-                    revision='%s/%s' % (node.remote, node.revision),
+            project = GitProject(
+                name,
+                worktree=os.path.join(
+                    self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
                 remote='%s/%s' % (options.remote, name),
                 pattern=pattern,
                 source=node.name,
                 copyfiles=node.copyfiles,
-                linkfiles=node.linkfiles))
+                linkfiles=node.linkfiles)
 
+            if project.is_sha1(node.revision) and \
+                    project.rev_existed(node.revision):
+                project.revision = '%s' % node.revision
+            else:
+                project.revision = '%s/%s' % (node.remote, node.revision)
+
+            projects.append(project)
 
         return projects
 
