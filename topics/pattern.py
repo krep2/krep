@@ -23,12 +23,12 @@ class PatternItem(object):
     PATTERN_DELIMITER = ','
     OPPOSITE_DELIMITER = '!'
     ITEM_NAME_DELIMITER = '@'
-    REPLACEMENT_DELIMITER = '='
-    CONN_REPLACE_DELIMITER = '~'
+    REPLACEMENT_DELIMITER = '~'
+    CONN_REPLACE_DELIMITER = '='
 
     def __init__(self, category, patterns=None, exclude=False, name=None):
         self.name = name
-        self.cont = True
+        self.cont = False
         self.include = list()
         self.exclude = list()
         self.subst = list()
@@ -226,7 +226,7 @@ class PatternFile(object):  # pylint: disable=R0903
                 name=_attr(node, 'name'),
                 category=_attr(node, 'category'),
                 value=None, replacement=None,
-                cont=_attr(node, 'continue', 'true'))
+                cont=_attr(node, 'continue', 'false'))
 
             for child in node.childNodes:
                 pi = PatternFile.parse_pattern(
