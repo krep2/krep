@@ -349,17 +349,20 @@ this command.
                         ' [NEW]' if options.print_new_projects and
                         project in nprojects else '')).rstrip()
         elif options.print_new_projects:
-            print 'NEW PROJECTS'
-            print '================'
-            for p in nprojects:
-                if len(p.source) > lsrc:
-                    lsrc = len(p.source)
-                if len(p.uri) > luri:
-                    luri = len(p.uri)
+            if nprojects:
+                print 'NEW PROJECTS'
+                print '================'
+                for p in nprojects:
+                    if len(p.source) > lsrc:
+                        lsrc = len(p.source)
+                    if len(p.uri) > luri:
+                        luri = len(p.uri)
 
-            sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
-            for project in sorted(nprojects, _cmp):
-                print (sfmt % (project.source, project.uri)).rstrip()
+                sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
+                for project in sorted(nprojects, _cmp):
+                    print (sfmt % (project.source, project.uri)).rstrip()
+            else:
+                print 'No new project found'
         elif not options.repo_create and len(nprojects) > 0:
             print 'Exit with following new projects:'
             for project in sorted(nprojects, _cmp):
