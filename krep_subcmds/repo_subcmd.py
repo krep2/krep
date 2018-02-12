@@ -341,11 +341,13 @@ this command.
                 if len(p.uri) > luri:
                     luri = len(p.uri)
 
-            sfmt = ' %%-%ds -> %%-%ds %%s' % (lsrc, luri)
+            sfmt = ' %%-%ds %%s> %%-%ds%%s' % (lsrc, luri)
             for project in sorted(projects, _cmp):
                 print (
                     sfmt % (
-                        project.source, project.uri,
+                        project.source,
+                        '=' if project.source == project.uri else '-',
+                        project.uri,
                         ' [NEW]' if options.print_new_projects and
                         project in nprojects else '')).rstrip()
         elif options.print_new_projects:
@@ -358,9 +360,13 @@ this command.
                     if len(p.uri) > luri:
                         luri = len(p.uri)
 
-                sfmt = ' %%-%ds -> %%-%ds' % (lsrc, luri)
+                sfmt = ' %%-%ds %%s> %%-%ds' % (lsrc, luri)
                 for project in sorted(nprojects, _cmp):
-                    print (sfmt % (project.source, project.uri)).rstrip()
+                    print (
+                        sfmt % (
+                            project.source,
+                            '=' if project.source == project.uri else '-',
+                            project.uri)).rstrip()
             else:
                 print 'No new project found'
         elif not options.repo_create and len(nprojects) > 0:
