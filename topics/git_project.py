@@ -188,6 +188,10 @@ class GitProject(Project, GitCommand):
 
         return ret, tags
 
+    @staticmethod
+    def is_sha1(sha1):
+        return re.match('^[0-9a-z]{6,40}$', sha1)
+
     def rev_existed(self, rev):
         ret, _ = self.rev_parse(rev, capture_stderr=False)
 
@@ -202,7 +206,9 @@ class GitProject(Project, GitCommand):
         ret, remote_heads = self.get_remote_heads()
 
         if not push_all:
-            local_heads = {branch or '': local_heads.get(branch)}
+            local_heads = {
+                branch or '': branch if self.is_sha1(branch) \
+                    else local_heads.get(branch)}
 
         # put 'master' to end of the list
         def rev_sort(rev1, rev2):
@@ -228,7 +234,9 @@ class GitProject(Project, GitCommand):
                 logger.debug('"%s" do not match revision pattern', head)
                 continue
 
-            if not self.bare and not origin.startswith('remotes/'):
+            if self.is_sha1(origin) and self.rev_existed(origin):
+                local_ref = origin
+            elif not self.bare and not origin.startswith('remotes/'):
                 local_ref = 'refs/remotes/%s' % origin
             elif origin.startswith('remotes/'):
                 local_ref = 'refs/%s' % origin
@@ -255,9 +263,14 @@ class GitProject(Project, GitCommand):
                     'r,rev,revision', '%s%s' % (refs or '', head),
                     name=self.uri)
 
-            remote_ref = 'refs/heads/%s' % rhead
-
             sha1 = local_heads[origin]
+            remote_ref = 'refs/heads/%s' % rhead
+            if os.path.basename(remote_ref) == sha1:
+                logger.warning(
+                    "remote branch %s equals to an existed SHA-1, which "
+                    "isn't normal. Ignoring ...", remote_ref)
+                continue
+
             if _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
                 continue
