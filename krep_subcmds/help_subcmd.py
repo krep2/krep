@@ -14,9 +14,9 @@ sub-commands.
 The argument "all" indicats to list all sub-commands implicitly.'''
 
     def _print_all_commands(self):
-        print 'Usage: krep subcmd [args] ...'
-        print 'The commands of krep are:'
-        print
+        print('Usage: krep subcmd [args] ...')
+        print('The commands of krep are:')
+        print('')
 
         lines = list()
         for name, cmd in self.commands.items():  # pylint: disable=E1101
@@ -41,14 +41,36 @@ The argument "all" indicats to list all sub-commands implicitly.'''
 
             return cmp(linea, lineb)
 
+        class _cmp3:
+            def __init__(self, obj, *args):
+                self.obj = obj
+
+            def __lt__(self, other):
+                return _sort(self.obj, other.obj) < 0
+
+            def __gt__(self, other):
+                return _sort(self.obj, other.obj) > 0
+
+            def __eq__(self, other):
+                return _sort(self.obj, other.obj) == 0
+
+            def __le__(self, other):
+                return _sort(self.obj, other.obj) <= 0
+
+            def __ge__(self, other):
+                return _sort(self.obj, other.obj) >= 0
+
+            def __ne__(self, other):
+                return _sort(self, obj, other.obj) != 0
+
         # put help command on the top
-        lines.sort(_sort)
-        print '\n'.join(lines)
-        print '\nSee more info with "krep help <command>"'
+        lines.sort(key=_cmp3)
+        print('\n'.join(lines))
+        print('\nSee more info with "krep help <command>"')
 
     def _print_command(self, command):
         if command not in self.commands:  # pylint: disable=E1101
-            print 'krep: "%s" is not a known command' % command
+            print('krep: "%s" is not a known command' % command)
         else:
             try:
                 cmd = self.commands[command]  # pylint: disable=E1101
@@ -56,7 +78,7 @@ The argument "all" indicats to list all sub-commands implicitly.'''
             except AttributeError:
                 help_usage = 'Failed to read the command help.'
 
-            print help_usage.replace('%prog', 'krep %s' % command)
+            print(help_usage.replace('%prog', 'krep %s' % command))
 
     def execute(self, options, *args):  # pylint: disable=W0613
         if len(args) == 0 or 'all' in args:

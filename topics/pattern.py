@@ -333,7 +333,7 @@ matching.
         return None
 
     def add(self, patterns, exclude=False):  # pylint: disable=R0912
-        if isinstance(patterns, (str, unicode)):
+        if isinstance(patterns, str):
             patterns = [patterns]
 
         logger = Logger.get_logger('PATTERN')
