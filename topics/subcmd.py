@@ -66,7 +66,7 @@ class SubCommand(object):
 
     def options_import(self, optparse):
         # Import options
-        options = optparse.add_option_group('Git options')
+        options = optparse.add_option_group('Import options')
         options.add_option(
             '-a', '--all',
             dest='all', action='store_true', default=None,
