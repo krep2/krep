@@ -125,9 +125,9 @@ name. For example, bzip30 could be matched with (\\w+)(\\d)(\\d) as v3.0. And
 sqlite-autoconf-3081101 could be (\\d\\d)(\\d\\d)(\\d\\d)(\\d\\d) as v3.8.11.1,
 which is combinated with dot. Currently no more than four segments will be
 handled. the program will treat the pkgname bzip and the revision v3.0 if the
-option tag_prefix "v" is omitted. In the case, %(NAME)s would be
+option version-prefix "v" is omitted. In the case, %(NAME)s would be
 "SQLITE-AUTOCONF" and %(name)s be "sqlite-autoconf". Both %(VERSION)s and
-%(version)s are 38.11.1 without the default "v" as tag_prefix.
+%(version)s are 38.11.1 without the default "v" as version-prefix.
 
 The escaped variants are supported for the imported files including:
 
@@ -152,12 +152,6 @@ The escaped variants are supported for the imported files including:
             dest="name", action='store', metavar='NAME',
             help='Set the project name. If it\'s not set, the name will be '
                  'generated from the git name')
-        options.add_option(
-            '--tpref', '--tag-prefix',
-            dest='tag_prefix', action='store', default='v', metavar='PREFIX',
-            help='append the tag prefix ahead of the normal tag, it has no '
-                 'effort with the option "tag-template", the default '
-                 'is "%default"')
 
         options = optparse.get_option_group('-a') or \
             optparse.add_option_group('Import options')
@@ -171,14 +165,6 @@ The escaped variants are supported for the imported files including:
             help='Set the initialized path with the provided path or '
                  'extracted package')
         options.add_option(
-            '--temp-directory', '--temporary-directory',
-            dest='temp_directory', action='store',
-            help='Temporary directory for immediate storage')
-        options.add_option(
-            '--auto-detect', '--skip-single-directory',
-            dest='auto_detect', action='store_true',
-            help='Ignore the root directory from the uncompressed package')
-        options.add_option(
             '-l', '--local',
             dest='local', action='store_true',
             help='Set locally not to push the stuffs')
@@ -189,6 +175,21 @@ The escaped variants are supported for the imported files including:
 
         options = optparse.add_option_group('File options')
         options.add_option(
+            '--auto-detect', '--skip-single-directory',
+            dest='auto_detect', action='store_true',
+            help='Ignore the root directory from the uncompressed package')
+        options.add_option(
+            '--vpref', '--version-prefix',
+            dest='version_prefix', action='store',
+            default='v', metavar='PREFIX',
+            help='append the tag prefix ahead of the normal tag, it has no '
+                 'effort with the option "tag-template", the default '
+                 'is "%default"')
+        options.add_option(
+            '--temp-directory', '--temporary-directory',
+            dest='temp_directory', action='store',
+            help='Temporary directory for immediate storage')
+        options.add_option(
             '--ppattern', '--pkg-pattern',
             dest='pkg_pattern', action='append', metavar='PATTERN',
             help='setup the matching pattern with the file or directory name '
@@ -197,6 +198,21 @@ The escaped variants are supported for the imported files including:
                  'package name {%(n)s in normal and %(N)s in capital} and '
                  'other will be built as the version {%(v)s or ${V}s}. More '
                  'than one pattern can be accepted')
+        options.add_option(
+            '--message-template',
+            dest='message_template', action='store',
+            help='Set the message template with the value from option '
+                 '"--ppattern"')
+        options.add_option(
+            '--enable-escape',
+            dest='enable_escape', action='store_true',
+            help='Escape the messages with the known items like %sha1, '
+                 '%md5, %file, %size, etc')
+        options.add_option(
+            '--version-template',
+            dest='version_template', action='store',
+            help='Set the tag template with the value from option '
+                 '"--ppattern"')
         options.add_option(
             '--use-commit-file',
             dest='use_commit_file', action='store_true',
@@ -227,21 +243,6 @@ The escaped variants are supported for the imported files including:
             '--show-order',
             dest='show_order', action='store_true',
             help='Show the import order for the listed files')
-        options.add_option(
-            '--enable-escape',
-            dest='enable_escape', action='store_true',
-            help='Escape the messages with the known items like %sha1, '
-                 '%md5, %file, %size, etc')
-        options.add_option(
-            '--message-template',
-            dest='message_template', action='store',
-            help='Set the message template with the value from option '
-                 '"--ppattern"')
-        options.add_option(
-            '--tag-template',
-            dest='tag_template', action='store',
-            help='Set the tag template with the value from option '
-                 '"--ppattern"')
 
     def get_name(self, options):
         return options.name or '[-]'
@@ -344,7 +345,7 @@ The escaped variants are supported for the imported files including:
                 message = 'Import %s' % (
                     '%s%s%s' % (
                         pkgname,
-                        revision and ' %s' % options.tag_prefix,
+                        revision and ' %s' % options.version_prefix,
                         revision))
 
             if options.use_commit_file:
@@ -405,11 +406,11 @@ The escaped variants are supported for the imported files including:
 
                 ret = project.commit(*args)
                 if ret == 0:
-                    if options.tag_template:
-                        tags.append(options.tag_template % tmpl)
+                    if options.version_template:
+                        tags.append(options.version_template % tmpl)
                     else:
                         tags.append(
-                            '%s%s' % (options.tag_prefix, revision))
+                            '%s%s' % (options.version_prefix, revision))
                     ret, _ = project.tag(tags[-1])
 
             if os.path.lexists(temp):
