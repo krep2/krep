@@ -6,6 +6,7 @@ import sys
 from dir_utils import AutoChangedDir
 from krep_subcmds import all_commands
 from options import OptionParser, OptionValueError, Values
+from synchronize import synchronized
 from topics import ConfigFile, FileUtils, KrepError, Logger
 
 
@@ -56,6 +57,10 @@ Execute the specified sub-commands, which can be listed with the command
     return global_options
 
 
+_default_option = None  # pylint: disable=C0103
+
+
+@synchronized
 def _load_default_option():
     def _loadconf(confname):
         if os.path.exists(confname):
@@ -63,11 +68,15 @@ def _load_default_option():
         else:
             return Values()
 
-    opts = Values()
-    opts.join(_loadconf('/etc/default/krepconfig'))
-    opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
+    global _default_option  # pylint: disable=C0103,W0603
+    if _default_option is None:
+        opts = Values()
+        opts.join(_loadconf('/etc/default/krepconfig'))
+        opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
 
-    return opts
+        _default_option = opts
+
+    return _default_option
 
 
 def _option_parse(argv, logger):
