@@ -177,13 +177,10 @@ this command.
                         cli.add_args(prefix[1])
                     elif prefix[0] == opt:
                         cli.add_args(opt)
-        # pylint: disable=E1101
-        self.run_hook(
-            options.pop('hook-pre-init'),
-            options.normalize('hook-pre-init-args', attr=True),
-            cwd=self.get_absolute_working_dir(options),
-            tryrun=options.tryrun)
-        # pylint: enable=E1101
+
+        self.do_hook(  # pylint: disable=E1101
+            'pre-init', options, tryrun=options.tryrun)
+
         res = 0
         if not os.path.exists('.repo'):
             RaiseExceptionIfOptionMissed(
@@ -204,16 +201,8 @@ this command.
                 'Failed to init "%s"' % options.manifest)
 
         # pylint: disable=E1101
-        self.run_hook(
-            options.pop('hook-post-init'),
-            options.normalize('hook-post-init-args', attr=True),
-            cwd=self.get_absolute_working_dir(options),
-            tryrun=options.tryrun)
-        self.run_hook(
-            options.pop('hook-pre-sync'),
-            options.normalize('hook-pre-sync-args', attr=True),
-            cwd=self.get_absolute_working_dir(options),
-            tryrun=options.tryrun)
+        self.do_hook('post-init', options, tryrun=options.tryrun)
+        self.do_hook('pre-sync', options, tryrun=options.tryrun)
         # pylint: enable=E1101
 
         repo = RepoCommand()
@@ -227,13 +216,8 @@ this command.
                 raise DownloadError(
                     'Failed to sync "%s"' % options.manifest)
 
-        # pylint: disable=E1101
-        self.run_hook(
-            options.pop('hook-post-sync'),
-            options.normalize('hook-post-sync-args', attr=True),
-            cwd=self.get_absolute_working_dir(options),
-            tryrun=options.tryrun)
-        # pylint: enable=E1101
+        self.do_hook(  # pylint: disable=E1101
+            'post-sync', options, tryrun=options.tryrun)
 
     @staticmethod
     def push(project, options, remote):
@@ -246,13 +230,8 @@ this command.
             gerrit = Gerrit(remote)
             gerrit.create_project(project.uri)
 
-        # pylint: disable=E1101
-        RepoSubcmd.run_hook(
-            options.pop('hook-pre-push'),
-            options.normalize('hook-pre-push-args', attr=True),
-            cwd=project.path,
-            tryrun=options.tryrun)
-        # pylint: enable=E1101
+        RepoSubcmd.do_hook(  # pylint: disable=E1101
+            'pre-push', options, tryrun=options.tryrun)
 
         # push the branches
         if RepoSubcmd.override_value(  # pylint: disable=E1101
@@ -280,13 +259,8 @@ this command.
             if res != 0:
                 logger.error('failed to push tags')
 
-        # pylint: disable=E1101
-        RepoSubcmd.run_hook(
-            options.pop('hook-post-push'),
-            options.normalize('hook-post-push-args', attr=True),
-            cwd=project.path,
-            tryrun=options.tryrun)
-        # pylint: enable=E1101
+        RepoSubcmd.do_hook(  # pylint: disable=E1101
+            'post-push', options, tryrun=options.tryrun)
 
     @staticmethod
     def build_xml_file(options, projects, sort=False):
