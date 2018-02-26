@@ -31,6 +31,12 @@ class SubCommand(object):
 
     def options(self, optparse, *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
+        options = optparse.add_option_group('File options')
+        options.add_option(
+            '--hook-dir',
+            dest='hook_dir', action='store',
+            help='Indicates the directory with the preinstalled hooks')
+
         self._options_jobs(optparse)
         # load options from the imported classes
         self._options_loaded(optparse, kws.get('modules'))
@@ -88,6 +94,32 @@ class SubCommand(object):
     def override_value(va, vb=None):
         """Overrides the late values if it's not a boolean value."""
         return vb if vb is not None else va
+
+    @staticmethod
+    def do_hook(name, option, tryrun=False):
+        # try option.hook-name first to support xml configurations
+        hook = option.pop('hook-%s' % name)
+        if hook:
+            args = option.normalize('hook-%s-args' % name, attr=True)
+            return SubCommand.run_hook(
+                hook, args,
+                SubCommand.get_absolute_working_dir(option),
+                tryrun=tryrun)
+
+        hook = None
+        # try hook-dir with the hook name then
+        if option.hook_dir:
+            hook = os.path.join(option.hook_dir, name)
+        elif 'KREP_HOOK_PATH' in os.environ:
+            hook = os.path.join(os.environ['KREP_HOOK_PATH'], name)
+
+        if hook:
+            return SubCommand.run_hook(
+                hook, None,
+                SubCommand.get_absolute_working_dir(option),
+                tryrun=tryrun)
+        else:
+            return 1
 
     @staticmethod
     def run_hook(hook, hargs, cwd=None, tryrun=False, *args, **kws):
