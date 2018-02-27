@@ -37,6 +37,8 @@ class Values(optparse.Values):
             return int(sval, 8)
         elif re.match(r'^[0-9]+$', sval):
             return int(sval)
+        elif re.match(r'0b[01]+$', sval):
+            return int(sval, 2)
         else:
             return val
 
