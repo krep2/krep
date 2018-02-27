@@ -10,12 +10,15 @@ from synchronize import synchronized
 from topics import ConfigFile, FileUtils, KrepError, Logger
 
 
+VERSION = '0.2'
+
+
 def _global_options(cmd=None):
     global_options = OptionParser(usage='''\
 %prog [OPTIONS] subcmd ...
 
 Execute the specified sub-commands, which can be listed with the command
-"%prog help"''')
+"%prog help"''', version=VERSION)
 
     # File options
     group = global_options.add_option_group('Global file options')
