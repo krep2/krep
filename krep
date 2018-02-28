@@ -50,12 +50,18 @@ Execute the specified sub-commands, which can be listed with the command
         '--force',
         dest='force', action='store_true', default=False,
         help='force to execute the operations')
+    if cmd is None or cmd.support_extra():
+        group.add_option(
+            '--extra-option',
+            dest='extra_option', action='append',
+            help='extra options in internal group with prefix. The format '
+                 'could be group:option[=value]')
     if cmd is None or cmd.support_inject():
         group.add_option(
             '--inject-option',
             dest='inject_option', action='append',
-            help='inject implict sub-command options. The format could be '
-                 '[cmd:][--]inject-option')
+            help='extra options passed to running sub-command with the '
+                 'format like "extra-option"')
 
     return global_options
 
@@ -137,14 +143,9 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             optparse.join(lopts)
 
             # inject options
-            for opt in lopts.pop('inject_option') or list():
-                if opt.find(':') > 0:
-                    oname = opt[:opt.find(':')]
-                    if oname in all_commands and oname != name:
-                        continue
-
-                if opt.startswith('%s:' % name):
-                    opt = opt[len(name) + 1:]
+            injects = lopts.extra('inject_option', name) + \
+                      lopts.extra('inject_option')
+            for opt in injects:
                 if not opt.startswith('-'):
                     opt = '--%s' % opt
 
