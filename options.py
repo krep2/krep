@@ -156,6 +156,20 @@ class Values(optparse.Values):
 
             return self._normalize(values)
 
+    def extra(self, option, prefix=None):
+        ret = list()
+
+        for value in self.__dict__.get(_ensure_attr(option)) or list():
+            if ':' in value:
+                if prefix:
+                    name, extra = value.split(':', 1)
+                    if name == prefix:
+                        ret.append(extra)
+            elif not prefix:
+                ret.append(value)
+
+        return ret
+
 
 class OptionParser(optparse.OptionParser):
     def __init__(self,  # pylint: disable=R0913
