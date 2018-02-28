@@ -28,19 +28,19 @@ class Values(optparse.Values):
     def _handle_value(val, boolean=False):
         sval = str(val).lower()
         if boolean and sval in ('true', 't', 'yes', 'y', '1'):
-            return True
+            val = True
         elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
-            return False
+            val = False
         elif re.match(r'^0x[a-f0-9]+$', sval):
-            return int(sval, 16)
+            val = int(sval, 16)
         elif re.match(r'^0[0-7]+$', sval):
-            return int(sval, 8)
+            val = int(sval, 8)
         elif re.match(r'^[0-9]+$', sval):
-            return int(sval)
+            val = int(sval)
         elif re.match(r'0b[01]+$', sval):
-            return int(sval, 2)
-        else:
-            return val
+            val = int(sval, 2)
+
+        return val
 
     @staticmethod
     def _getopt(option, attr):
