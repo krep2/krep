@@ -97,8 +97,8 @@ this command.
                 dest='print_new_projects', action='store_true',
                 help='Print the new projects which isn\'t managed by Gerrit')
 
-            options = optparse.get_option_group('--force') or \
-                optparse.add_option_group('Other options')
+            options = optparse.get_option_group('--hook-dir') or \
+                optparse.add_option_group('File options')
             options.add_option(
                 '--output-xml-file',
                 dest='output_xml_file', action='store', metavar='FILE',
