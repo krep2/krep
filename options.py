@@ -221,7 +221,7 @@ class OptionParser(optparse.OptionParser):
                     group.add_option(
                         arg, dest=option.dest,
                         action='store_false',
-                        help='Pseduo non-option for %s' % opt)
+                        help=optparse.SUPPRESS_HELP)
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
