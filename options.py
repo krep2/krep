@@ -186,7 +186,7 @@ class Values(optparse.Values):
                 opt, arg = value.split(' ', 1)
                 rets[_ensure_attr(opt)] = arg
             else:
-                rets[_ensure_attr(opt)] = 'true'
+                rets[_ensure_attr(value)] = 'true'
 
         return Values(rets)
 
