@@ -108,15 +108,17 @@ implicitly."""
         logger = Logger.get_logger('Gerrit')
 
         project = project.strip()
+        optcp = options or options.extra_values(
+            options.extra_option, 'gerrit-cp')
         if project not in self.ls_projects():
             args = list()
-            if initial_commit or (options and options.empty_commit):
+            if initial_commit or (optcp and optcp.empty_commit):
                 args.append('--empty-commit')
 
             # description=False means --no-description to suppress the function
-            if options and options.description:
+            if optcp and optcp.description:
                 args.append('--description')
-                args.append("'%s'" % options.description.strip("'\""))
+                args.append("'%s'" % optcp.description.strip("'\""))
             elif not description == False:
                 if not description:
                     description = "Mirror of %url"
@@ -130,16 +132,16 @@ implicitly."""
                     args.append('--description')
                     args.append("'%s'" % description.strip("'\""))
 
-            if options:
-                if options.branch:
+            if optcp:
+                if optcp.branch:
                     args.append('--branch')
-                    args.append(options.branch)
-                if options.owner:
+                    args.append(optcp.branch)
+                if optcp.owner:
                     args.append('--owner')
-                    args.append(options.owner)
-                if options.parent:
+                    args.append(optcp.owner)
+                if optcp.parent:
                     args.append('--parent')
-                    args.append(options.parent)
+                    args.append(optcp.parent)
 
             args.append(project)
             ret = self._execute('create-project', *args)
