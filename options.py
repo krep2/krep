@@ -179,6 +179,7 @@ class Values(optparse.Values):
         rets = dict()
 
         for value in Values.extra(option, prefix):
+            value = value.lstrip('-')
             if '=' in value:
                 opt, arg = value.split('=', 1)
                 rets[_ensure_attr(opt)] = arg
@@ -186,7 +187,7 @@ class Values(optparse.Values):
                 opt, arg = value.split(' ', 1)
                 rets[_ensure_attr(opt)] = arg
             else:
-                rets[_ensure_attr(opt)] = 'true'
+                rets[_ensure_attr(value)] = 'true'
 
         return Values(rets)
 
