@@ -32,6 +32,12 @@ class SubCommand(object):
     def options(self, optparse, option_remote=False, option_import=False,
                 *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
+        options = optparse.add_option_group('File options')
+        options.add_option(
+            '--hook-dir',
+            dest='hook_dir', action='store',
+            help='Indicates the directory with the preinstalled hooks')
+
         if option_remote:
             self.options_remote(optparse)
         if option_import:
@@ -39,7 +45,8 @@ class SubCommand(object):
 
         self._options_jobs(optparse)
         # load options from the imported classes
-        self._options_loaded(optparse, kws.get('modules'))
+        extra_list = self._options_loaded(optparse, kws.get('modules'))
+        self._option_extra(optparse, extra_list)
 
     def options_remote(self, optparse):
         options = optparse.get_option_group('--force') or \
@@ -98,17 +105,64 @@ class SubCommand(object):
                 dest='job', action='store', type='int',
                 help='jobs to run with specified threads in parallel')
 
-    def _options_loaded(self, optparse, modules):
-        logger = self.get_logger()
+    def _option_extra(self, optparse, extra_list=None):
+        def _format_list(extra_items):
+            item_list = list()
+
+            if extra_items:
+                items = list()
+
+                # re-arrange the extra list with a flat format
+                for opt, item in extra_items:
+                    if not isinstance(item, (list, tuple)):
+                        items.append((opt, item))
+                    else:
+                        items.append(opt)
+                        items.extend(item[:])
+
+                length = max([len(it[0]) for it in items if len(it) == 2])
+                fmt = '  %%-%ds  %%s' % (length + 2)
+                for item in items:
+                    if len(item) == 2:
+                        item_list.append(fmt % (item[0], item[1]))
+                    else:
+                        item_list.append('')
+                        item_list.append(item)
+
+            return '\n'.join(item_list)
+
+        if extra_list or self.support_extra():
+            item = _format_list(extra_list or [])
+
+            options = optparse.get_option_group('--force') or \
+                optparse.add_option_group('Other options')
+
+            options.add_option(
+                '--extra-option',
+                dest='extra_option', action='append',
+                help='extra options in internal group with prefix. '
+                     'The format is like "inject-option"%s' % (
+                         ':\n%s' % item if item else ''))
+
+    @staticmethod
+    def _options_loaded(optparse=None, modules=None):
+        extra_list = list()
+
+        logger = SubCommand.get_logger()
         # search the imported class to load the options
         for name, clazz in (modules or dict()).items():
             if isinstance(clazz, (types.ClassType, types.TypeType)):
-                if hasattr(clazz, 'options'):
+                if optparse and hasattr(clazz, 'options'):
                     try:
                         logger.debug('Load %s', name)
                         clazz.options(optparse)
                     except TypeError:
                         pass
+
+                if hasattr(clazz, 'extra_items'):
+                    extra_list.extend(clazz.extra_items)
+
+        return extra_list
 
     @staticmethod
     def get_logger(name=None, level=0):
@@ -137,10 +191,40 @@ class SubCommand(object):
         """Indicates if the command supports the injection option."""
         return False
 
+    def support_extra(self):  # pylint: disable=W0613
+        """Indicates if the command supports the extra option."""
+        return False
+
     @staticmethod
     def override_value(va, vb=None):
         """Overrides the late values if it's not a boolean value."""
         return vb if vb is not None else va
+
+    @staticmethod
+    def do_hook(name, option, tryrun=False):
+        # try option.hook-name first to support xml configurations
+        hook = option.pop('hook-%s' % name)
+        if hook:
+            args = option.normalize('hook-%s-args' % name, attr=True)
+            return SubCommand.run_hook(
+                hook, args,
+                SubCommand.get_absolute_working_dir(option),
+                tryrun=tryrun)
+
+        hook = None
+        # try hook-dir with the hook name then
+        if option.hook_dir:
+            hook = os.path.join(option.hook_dir, name)
+        elif 'KREP_HOOK_PATH' in os.environ:
+            hook = os.path.join(os.environ['KREP_HOOK_PATH'], name)
+
+        if hook:
+            return SubCommand.run_hook(
+                hook, None,
+                SubCommand.get_absolute_working_dir(option),
+                tryrun=tryrun)
+        else:
+            return 1
 
     @staticmethod
     def run_hook(hook, hargs, cwd=None, tryrun=False, *args, **kws):
