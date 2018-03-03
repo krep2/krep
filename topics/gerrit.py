@@ -23,6 +23,16 @@ required commands have been implemented with specific handling:
 Other unimplemented command can be accessed with __call__ method
 implicitly."""
 
+    extra_items = (
+        ('Gerrit options for create-project:', (
+            ('gerrit-cp:branch', 'initial branch name'),
+            ('gerrit-cp:empty-commit', 'to create initial empty commit'),
+            ('gerrit-cp:description', 'description of project'),
+            ('gerrit-cp:owner', 'owner(s) of the project'),
+            ('gerrit-cp:parent', 'parent project'),
+        )),
+    )
+
     def __init__(self, server, enable=True):
         Command.__init__(self)
 
@@ -95,7 +105,7 @@ implicitly."""
 
     @synchronized
     def create_project(self, project, initial_commit=True, description=None,
-                       source=None):
+                       source=None, options=None):
         if not self.enable:
             return
 
@@ -104,11 +114,14 @@ implicitly."""
         project = project.strip()
         if project not in self.ls_projects():
             args = list()
-            if initial_commit:
+            if initial_commit or (options and options.empty_commit):
                 args.append('--empty-commit')
 
             # description=False means --no-description to suppress the function
-            if not description == False:
+            if options and options.description:
+                args.append('--description')
+                args.append("'%s'" % options.description.strip("'\""))
+            elif not description == False:
                 if not description:
                     description = "Mirror of %url"
 
@@ -120,6 +133,17 @@ implicitly."""
                 else:
                     args.append('--description')
                     args.append("'%s'" % description.strip("'\""))
+
+            if options:
+                if options.branch:
+                    args.append('--branch')
+                    args.append(options.branch)
+                if options.owner:
+                    args.append('--owner')
+                    args.append(options.owner)
+                if options.parent:
+                    args.append('--parent')
+                    args.append(options.parent)
 
             args.append(project)
             ret = self._execute('create-project', *args)
