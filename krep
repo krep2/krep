@@ -143,8 +143,8 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             optparse.join(lopts)
 
             # inject options
-            injects = lopts.extra('inject_option', name) + \
-                      lopts.extra('inject_option')
+            injects = lopts.extra(lopts.inject_option, name) + \
+                      lopts.extra(lopts.inject_option)
             for opt in injects:
                 if not opt.startswith('-'):
                     opt = '--%s' % opt

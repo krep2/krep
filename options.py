@@ -80,6 +80,9 @@ class Values(optparse.Values):
                         attr, Values._handle_value(
                             getattr(values, attr), boolean=st_b))
 
+    def __nonzero__(self):
+        return len(self.__dict__) != 0
+
     def __getattr__(self, attr):
         nattr = _ensure_attr(attr)
         if nattr in self.__dict__:
@@ -156,19 +159,36 @@ class Values(optparse.Values):
 
             return self._normalize(values)
 
-    def extra(self, option, prefix=None):
+    @staticmethod
+    def extra(option, prefix=None):
         ret = list()
 
-        for value in self.__dict__.get(_ensure_attr(option)) or list():
-            if ':' in value:
-                if prefix:
-                    name, extra = value.split(':', 1)
-                    if name == prefix:
-                        ret.append(extra)
-            elif not prefix:
+        for value in option or list():
+            if ':' in value and prefix:
+                name, extra = value.split(':', 1)
+                if name == prefix:
+                    ret.append(extra)
+            else:
                 ret.append(value)
 
         return ret
+
+    @staticmethod
+    def extra_values(option, prefix=None):
+        rets = dict()
+
+        for value in Values.extra(option, prefix):
+            if '=' in value:
+                opt, arg = value.split('=', 1)
+                rets[_ensure_attr(opt)] = arg
+            elif ' ' in value:
+                opt, arg = value.split(' ', 1)
+                rets[_ensure_attr(opt)] = arg
+            else:
+                rets[_ensure_attr(opt)] = 'true'
+
+        return Values(rets)
+
 
 
 class OptionParser(optparse.OptionParser):
