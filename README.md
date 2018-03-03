@@ -56,6 +56,7 @@ environment variables, which works like the environment variable `PATH`:
 | Variable | Description |
 |----------------|-----------------------------------------------------------------|
 | `KREP_EXTRA_PATH` | Directories containing the subdirectories `topics` and `subcmd` |
+| `KREP_HOOK_PATH` | Directories containin the hooks |
 | `KREP_TOPIC_PATH` | Directories containing the `topic` files |
 | `KREP_SUBCMD_PATH` | Directories containing the sub-commands |
 
