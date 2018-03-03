@@ -1,5 +1,4 @@
 
-import re
 import os
 import urlparse
 
@@ -48,6 +47,30 @@ Not like the sub-command "repo-mirror", the manifest git would be handled with
 this command.
 """
 
+    extra_items = (
+        ('Repo options for repo init:', (
+            ('repo-init:platform',
+             'restrict manifest projects to one platform'),
+            ('repo-init:reference', 'location of mirror directory'),
+            ('repo-init:no-clone-bundle',
+             'disable use of /clone.bundle on HTTP/HTTPS'),
+            ('repo-init:repo-url', 'repo repository location'),
+            ('repo-init:repo-branch', 'repo branch or revision'),
+            ('repo-init:no-repo-verify', 'do not verify repo source code'),
+        )),
+        ('Repo options for repo sync:', (
+            ('repo-sync:force-broken',
+             'continue sync even if a project fails'),
+            ('repo-sync:current-branch', 'fetch only current branch'),
+            ('repo-sync:jobs', 'rojects to fetch simultaneously'),
+            ('repo-sync:no-repo-verify', 'do not verify repo source code'),
+            ('repo-sync:fetch-submodules', 'fetch submodules from server'),
+            ('repo-sync:optimized-fetch', 'only fetch project fixed to sha1'),
+            ('repo-sync:prune', 'delete refs that no longer exist on remote'),
+            ('repo-sync:no-repo-verify', 'do not verify repo source code'),
+        ))
+    )
+
     def options(self, optparse, inherited=False):
         SubCommandWithThread.options(self, optparse, option_remote=True,
                                      option_import=True, modules=globals())
@@ -69,15 +92,6 @@ this command.
             '--mirror',
             dest='mirror', action='store_true', default=False,
             help='Create a replica of the remote repositories')
-        options.add_option(
-            '--reference',
-            dest='reference', metavar='REFERENCE',
-            help='Set the local project mirror')
-        options.add_option(
-            '--repo-options',
-            dest='repo_options', action='append', metavar='OPTIONS',
-            help='Provides options to repo command. sub-command prefix with '
-                 'colon can be used to provide the option to the command only')
 
         if not inherited:
             options = optparse.get_option_group('--refs') or \
@@ -165,19 +179,6 @@ this command.
         return projects
 
     def init_and_sync(self, options):
-        def _repo_options(cli, subcmd):
-            if options.repo_options is not None and \
-                    not isinstance(options.repo_options, list):
-                options.repo_options = [options.repo_options]
-
-            for opts in options.repo_options or list():
-                for opt in opts.split(' '):
-                    prefix = opt.split(':', 1)
-                    if prefix[0] == subcmd and len(prefix) > 1:
-                        cli.add_args(prefix[1])
-                    elif prefix[0] == opt:
-                        cli.add_args(opt)
-
         self.do_hook(  # pylint: disable=E1101
             'pre-init', options, tryrun=options.tryrun)
 
@@ -191,9 +192,22 @@ this command.
             repo.add_args(options.manifest_branch, before='-b')
             repo.add_args(options.manifest_name, before='-m')
             repo.add_args('--mirror', condition=options.mirror)
-            repo.add_args(options.reference, before='--reference')
             # pylint: enable=E1101
-            _repo_options(repo, 'init')
+
+            opti = options.extra_values(options.extra_option, 'repo-init')
+            if opti:
+                # pylint: disable=E1101
+                repo.add_args(opti.reference, before='--reference')
+                repo.add_args(opti.platform, before='--platform')
+                repo.add_args(
+                    '--no-clone-bundle', condition=opti.no_clone_bundle)
+
+                repo.add_args(opti.repo_url, before='--repo-url')
+                repo.add_args(opti.repo_branch, before='--repo-branch')
+                repo.add_args(
+                    '--no-repo-verify', condition=opti.no_repo_verify)
+                # pylint: enable=E1101
+
             res = repo.init()
 
         if res:
@@ -206,8 +220,28 @@ this command.
         # pylint: enable=E1101
 
         repo = RepoCommand()
-        repo.add_args(options.job, before='-j')   # pylint: disable=E1101
-        _repo_options(repo, 'sync')
+        opts = options.extra_values(options.extra_option, 'repo-sync')
+        # pylint: disable=E1101
+        if opts:
+            repo.add_args(
+                '--current-branch', condition=opts.current_branch)
+            repo.add_args(
+                '--force-broken', condition=opts.force_broken)
+            repo.add_args(
+                '--fetch-submodules', condition=opts.fetch_submodules)
+            repo.add_args(
+                '--optimized-fetch', condition=opts.optimized_fetch)
+            repo.add_args('--prune', condition=opts.prune)
+            repo.add_args(
+                '--no-clone-bundle', condition=opts.no_clone_bundle)
+            if opts.jobs:
+                repo.add_args(opts.jobs, before='-j')
+            else:
+                repo.add_args(options.job, before='-j')
+        else:
+            repo.add_args(options.job, before='-j')   # pylint: disable=E1101
+        # pylint: enable=E1101
+
         res = repo.sync()
         if res:
             if options.force:
