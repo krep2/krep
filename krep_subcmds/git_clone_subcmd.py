@@ -112,7 +112,8 @@ replaced by GIT_URL."""
                 gerrit.create_project(
                     ulp.path.strip('/'),
                     description=options.description,
-                    source=options.git)
+                    source=options.git,
+                    options=options)
         else:
             raise ProcessingError(
                 '%s: unknown scheme for remote "%s"' % (project, remote))

@@ -295,7 +295,8 @@ The escaped variants are supported for the imported files including:
             gerrit = Gerrit(options.remote)
             gerrit.create_project(
                 options.name,
-                description=options.description or False)
+                description=options.description or False,
+                options=options)
 
         branch = options.branch or 'master'
 
