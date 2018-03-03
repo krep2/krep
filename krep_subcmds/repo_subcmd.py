@@ -80,7 +80,7 @@ this command.
                  'colon can be used to provide the option to the command only')
 
         if not inherited:
-            options = optparse.get_option_group('--remote') or \
+            options = optparse.get_option_group('--refs') or \
                 optparse.add_option_group('Remote options')
             options.add_option(
                 '--prefix',
