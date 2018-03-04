@@ -190,7 +190,7 @@ class GitProject(Project, GitCommand):
 
     @staticmethod
     def is_sha1(sha1):
-        return re.match('^[0-9a-z]{6,40}$', sha1)
+        return re.match('^[0-9a-f]{6,40}$', sha1)
 
     def rev_existed(self, rev):
         ret, _ = self.rev_parse(rev, capture_stderr=False)
