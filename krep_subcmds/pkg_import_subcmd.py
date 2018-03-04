@@ -139,7 +139,7 @@ The escaped variants are supported for the imported files including:
 
     def options(self, optparse):
         SubCommand.options(self, optparse, option_import=True,
-                           option_remote=True)
+                           option_remote=True, modules=globals())
 
         options = optparse.get_option_group('--refs') or \
             optparse.add_option_group('Remote options')
