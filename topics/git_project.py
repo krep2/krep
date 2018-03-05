@@ -362,17 +362,8 @@ class GitProject(Project, GitCommand):
         elif self.remote:
             logger.info('Clone %s', self)
 
-            _, localbrs = self.get_local_heads(local=True)
             ret, branches = self.get_remote_heads()
-
-            has_local = False
-            for branch in localbrs:
-                if branch in branches or \
-                        ('refs/heads/%s' % branch) in branches:
-                    has_local = True
-                    break
-
-            if ret == 0 and not has_local:
+            if ret == 0:
                 for branch in branches:
                     if branch in (revision, 'refs/heads/%s' % revision):
                         ret = self.download(
