@@ -9,9 +9,9 @@ One is the XML format to define the elements mapping to the options. It's
 defined by the following DTD:
 
   <!DOCTYPE projects [
-    <!ELEMENT global_option (EMPTY)>
-    <!ATTLIST global_option name   ID    #REQUIRED>
-    <!ATTLIST global_option value  CDATA #IMPLIED>
+    <!ELEMENT global-option (EMPTY)>
+    <!ATTLIST global-option name   ID    #REQUIRED>
+    <!ATTLIST global-option value  CDATA #IMPLIED>
 
     <!ELEMENT project (name?, args*)>
     <!ATTLIST project name         ID    #REQUIRED>
@@ -33,7 +33,7 @@ defined by the following DTD:
   ]>
 
 The other is similar like the ini file with an extension to support global
-variables without the section, which is the equilivalent with global_option.
+variables without the section, which is the equilivalent with global-option.
 
 A sample for the function is:
 
@@ -302,7 +302,7 @@ class _XmlConfigFile(_ConfigFile):
                     cfg.join(pi, override=False)
 
             for node in proj.childNodes:
-                if node.nodeName == 'global_option':
+                if node.nodeName in ('global_option', 'global-option'):
                     _parse_global(node)
                 elif node.nodeName == 'project':
                     _parse_project(node)
