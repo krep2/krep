@@ -1,6 +1,7 @@
 
 import re
 import sys
+import textwrap
 import optparse
 
 
@@ -28,17 +29,19 @@ class Values(optparse.Values):
     def _handle_value(val, boolean=False):
         sval = str(val).lower()
         if boolean and sval in ('true', 't', 'yes', 'y', '1'):
-            return True
+            val = True
         elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
-            return False
+            val = False
         elif re.match(r'^0x[a-f0-9]+$', sval):
-            return int(sval, 16)
+            val = int(sval, 16)
         elif re.match(r'^0[0-7]+$', sval):
-            return int(sval, 8)
+            val = int(sval, 8)
         elif re.match(r'^[0-9]+$', sval):
-            return int(sval)
-        else:
-            return val
+            val = int(sval)
+        elif re.match(r'0b[01]+$', sval):
+            val = int(sval, 2)
+
+        return val
 
     @staticmethod
     def _getopt(option, attr):
@@ -77,6 +80,9 @@ class Values(optparse.Values):
                     self.ensure_value(
                         attr, Values._handle_value(
                             getattr(values, attr), boolean=st_b))
+
+    def __nonzero__(self):
+        return len(self.__dict__) != 0
 
     def __getattr__(self, attr):
         nattr = _ensure_attr(attr)
@@ -154,6 +160,66 @@ class Values(optparse.Values):
 
             return self._normalize(values)
 
+    @staticmethod
+    def extra(option, prefix=None):
+        ret = list()
+
+        for value in option or list():
+            if ':' in value and prefix:
+                name, extra = value.split(':', 1)
+                if name == prefix:
+                    ret.append(extra)
+            else:
+                ret.append(value)
+
+        return ret
+
+    @staticmethod
+    def extra_values(option, prefix=None):
+        rets = dict()
+
+        for value in Values.extra(option, prefix):
+            value = value.lstrip('-')
+            if '=' in value:
+                opt, arg = value.split('=', 1)
+                rets[_ensure_attr(opt)] = arg
+            elif ' ' in value:
+                opt, arg = value.split(' ', 1)
+                rets[_ensure_attr(opt)] = arg
+            else:
+                rets[_ensure_attr(value)] = 'true'
+
+        return Values(rets)
+
+
+class IndentedHelpFormatterWithLf(optparse.IndentedHelpFormatter):
+    def format_option(self, option):
+        if option.help:
+            help_text = self.expand_default(option)
+            if '\n' not in help_text:
+                return optparse.IndentedHelpFormatter.format_option(
+                    self, option)
+
+        result = list()
+        opts = self.option_strings[option]
+        opt_width = self.help_position - self.current_indent - 2
+        if len(opts) > opt_width:
+            opts = "%*s%s\n" % (self.current_indent, "", opts)
+            indent_first = self.help_position
+        else:                       # start help on same line as opts
+            opts = "%*s%-*s  " % (self.current_indent, "", opt_width, opts)
+            indent_first = 0
+        result.append(opts)
+
+        help_texts = self.expand_default(option).split('\n')
+        help_lines = textwrap.wrap(help_texts[0], self.help_width) + \
+                     help_texts[1:]
+        result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
+        result.extend(["%*s%s\n" % (self.help_position, "", line)
+                       for line in help_lines[1:]])
+
+        return "".join(result)
+
 
 class OptionParser(optparse.OptionParser):
     def __init__(self,  # pylint: disable=R0913
@@ -163,7 +229,6 @@ class OptionParser(optparse.OptionParser):
                  version=None,
                  conflict_handler="error",
                  description=None,
-                 formatter=None,
                  add_help_option=True,
                  prog=None,
                  epilog=None):
@@ -174,7 +239,7 @@ class OptionParser(optparse.OptionParser):
             version=version,
             conflict_handler=conflict_handler,
             description=description,
-            formatter=formatter,
+            formatter=IndentedHelpFormatterWithLf(),
             add_help_option=add_help_option,
             prog=prog,
             epilog=epilog)
@@ -195,8 +260,7 @@ class OptionParser(optparse.OptionParser):
 
         for arg in args or sys.argv[1:]:
             if arg.startswith('--no-') or arg.startswith('--not-'):
-                off = 5 if arg.startswith('--no-') else 6
-                opt = '--%s' % arg[off:]
+                opt = '--%s' % arg[arg.find('-', 4) + 1:]
                 if opt in self._long_opt:
                     if not group:
                         group = self.add_option_group('Pseduo options')
@@ -206,7 +270,7 @@ class OptionParser(optparse.OptionParser):
                     group.add_option(
                         arg, dest=option.dest,
                         action='store_false',
-                        help='Pseduo non-option for %s' % opt)
+                        help=optparse.SUPPRESS_HELP)
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
