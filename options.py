@@ -155,7 +155,7 @@ class Values(optparse.Values):
                 values = self.__dict__.get(_ensure_attr(values))
                 if isinstance(values, (list, tuple)):
                     return self.normalize(values, attr=False)
-                elif not isinstance(values, (str, unicode)):
+                elif not isinstance(values, str):
                     return values
 
             return self._normalize(values)

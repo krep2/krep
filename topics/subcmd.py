@@ -264,7 +264,7 @@ class SubCommandWithThread(SubCommand):
             except KeyboardInterrupt:
                 if event:
                     event.set()
-            except Exception, e:  # pylint: disable=W0703
+            except Exception as e:  # pylint: disable=W0703
                 self.get_logger().exception(e)
                 event.set()
             finally:
