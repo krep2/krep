@@ -150,33 +150,34 @@ The format of the plain-text configuration file can refer to the topic
                     else:
                         dicta[key] = 1
 
-                print '\nFile: %s' % batch
-                print '=================================='
+                print('\nFile: %s' % batch)
+                print('==================================')
                 if len(nprojs):
-                    print 'Parallel projects with %s job(s)' % (options.job or 1)
-                    print '---------------------------------'
+                    print('Parallel projects with %s job(s)' % (
+                          options.job or 1))
+                    print('---------------------------------')
                     results = dict()
                     for project in nprojs:
                         _inc(results, '[%s] %s' % (
                             project.schema, project.name))
 
                     for k, result in enumerate(sorted(results.keys())):
-                        print '  %2d. %s' % (k + 1, result)
+                        print('  %2d. %s' % (k + 1, result))
 
                 if len(projs):
-                    print '\nNon-parallel projects'
-                    print '---------------------------------'
+                    print('\nNon-parallel projects')
+                    print('---------------------------------')
                     results = dict()
                     for project in projs:
                         _inc(results, '[%s] %s' % (
                             project.schema, project.name))
 
                     for k, result in enumerate(sorted(results.keys())):
-                        print '  %2d. %s%s' % (
+                        print('  %2d. %s%s' % (
                             k + 1, result, ' (%d)' % results[result]
-                            if results[result] > 1 else '')
+                            if results[result] > 1 else ''))
 
-                print
+                print('')
                 return True
             else:
                 ret = self.run_with_thread(  # pylint: disable=E1101

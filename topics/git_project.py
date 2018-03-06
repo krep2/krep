@@ -1,7 +1,11 @@
 
 import os
 import re
-import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from error import DownloadError, ProcessingError
 from git_cmd import GitCommand
@@ -18,7 +22,7 @@ def _sha1_equals(sha, shb):
 
 def _ensure_remote(url):
     if url:
-        ulp = urlparse.urlparse(url)
+        ulp = urlparse(url)
         if not ulp.scheme:
             url = 'git://' + url
 
