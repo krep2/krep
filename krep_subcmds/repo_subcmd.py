@@ -389,6 +389,9 @@ this command.
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
 
+        RaiseExceptionIfOptionMissed(
+            options.remote, 'remote (--remote) is not set')
+
         if options.prefix and not options.endswith('/'):
             options.prefix += '/'
 
