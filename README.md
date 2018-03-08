@@ -1,5 +1,4 @@
-krep: Tool framework for extension
-==================================
+# krep: Tool framework for extension
 
 The `krep` project on the branch contains the elemental construction to build
 an extensible tool.
@@ -13,8 +12,7 @@ exported `class` from exported `topic` classes, which are guaranteed to be
 used continuously. Other classes might be visited but not encouraged to use at
 all.
 
-Topic
------
+## Topic
 
 The directory `topics` can contain any of Python files with implemented classes.
 Only the classes listed in the string `TOPIC_ENTRY` with comma as the delimiter
@@ -27,8 +25,7 @@ imported like:
 from topics import SubCommand
 ```
 
-Sub-command
------------
+## Sub-command
 
 Sub-command is implemented to support specified activities, which can use the
 common functions provided by Python libraries and extra functions by `topics`.
@@ -38,17 +35,12 @@ As all commands are dynamically loaded, the framework can be easily implemented
 with different purpose.
 
 
-Development
------------
+# Development
 
 With the framework, it's quite easy to implement the owned toolkit.
 
 The basic sense is to implement the common API classes as `topic`s and write
 the singleton sub-commands using the `topic`s.
-
-*NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
-contribute the fixes and the ideas to improve the tool but it's not mandatory to
-open source of the plug-ins.
 
 The framework provides to load the `topics` and subcommands with specified
 environment variables, which works like the environment variable `PATH`:
@@ -65,8 +57,7 @@ executed. [repo-diff] is a demonstrated and workable project as `krep` plug-in,
 which explained how to use the environmental variables to load the `topic` and
 `subcommand`s.
 
-options
-=======
+## options
 
 The framework provides a quite convenient way to add sub-command options beyond
 the actual running commands. The base class `SubCmd` will enumerate each loaded
@@ -78,8 +69,7 @@ for the functions, which may call external commands with complicated options and
 arguments. To implement the function, just a list named `extra_items` need be
 created. For instance, [gerrit.py] can be referred.
 
-hooks
-=====
+## hooks
 
 Like many tools work in phrase, *hook* is supported by the framework, a option
 "hook-dir" is provided to indicate the locations for `subcommand` hooks. The
@@ -94,6 +84,36 @@ hook could be invoked with the line:
 ```python
 SubCmd.do_hook(hook_name, options, tryrun=options.tryrun)
 ```
+
+## configurations
+
+The framework tries to load two default configuration files if they're existed:
+
+```
+/etc/default/krepconfig
+~/.krepconfig
+```
+
+Users can provide the configurable items from the command line. The late ones
+will override the items in the previous file.
+
+And two file formats are support:
+
+- [git-config file format](https://git-scm.com/docs/git-config/2.16.0#_configuration_file)
+- XML format
+
+within the XML format, many patterns to include (positive) or exclude (negative)
+rules are supports. These patterns can help to create the specific rule when
+building sub-commands with the framework.
+
+## multi-threading
+
+`sub-command` supports multi-threading with the method
+`SubCommandWithThread.run_with_thread`.
+
+> *NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
+> contribute the fixes and the ideas to improve the tool but it's not mandatory to
+> open source of the plug-ins.
 
 [gerrit.py]: https://github.com/cadappl/krep/blob/cm/topics/gerrit.py
 [git-repo]: https://gerrit.googlesource.com/git-repo
