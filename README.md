@@ -3,20 +3,19 @@
 The `krep` project on the branch contains the elemental construction to build
 an extensible tool.
 
-The main idea for the loaded sub-command refers to Google tool [git-repo].
-
 It relies on the dynamic language Python to load the components named `topic` in
 directory `topics`, and the sub-commands in directory `krep_subcmd`.
 The implemented sub-commands prefer to use the standard Python libraries and the
-exported `class` from exported `topic` classes, which are guaranteed to be
-used continuously. Other classes might be visited but not encouraged to use at
-all.
+exported `class` from exported `topic` entries, which are guaranteed to be
+used continuously. Other classes might be accessible but not encouraged to use
+at all.
 
 ## Topic
 
-The directory `topics` can contain any of Python files with implemented classes.
+The directory `topics` can contain Python files as implemented classes.
 Only the classes listed in the string `TOPIC_ENTRY` with comma as the delimiter
-will be loaded and exported to the run-time system under the module `topic`.
+will be exported to the run-time system under the module `topic` to be used by
+sub-commands.
 
 For example, `SubCommand` is the parent class for all sub-commands. It can be
 imported like:
@@ -25,7 +24,12 @@ imported like:
 from topics import SubCommand
 ```
 
+The implemented sub-command class needn't know where `SubCommand` is implemented
+in the exported list.
+
 ## Sub-command
+
+The main idea for the loaded sub-command refers to Google tool [git-repo].
 
 Sub-command is implemented to support specified activities, which can use the
 common functions provided by Python libraries and extra functions by `topics`.
@@ -34,16 +38,10 @@ It can be executed from the command line.
 As all commands are dynamically loaded, the framework can be easily implemented
 with different purpose.
 
-
 # Development
 
-With the framework, it's quite easy to implement the owned toolkit.
-
-The basic sense is to implement the common API classes as `topic`s and write
-the singleton sub-commands using the `topic`s.
-
-The framework provides to load the `topics` and subcommands with specified
-environment variables, which works like the environment variable `PATH`:
+With the framework, it's quite easy to implement the owned toolkit. Following
+defined environment variables will impact the program with the framework.
 
 | Variable | Description |
 |----------------|-----------------------------------------------------------------|
@@ -52,16 +50,27 @@ environment variables, which works like the environment variable `PATH`:
 | `KREP_TOPIC_PATH` | Directories containing the `topic` files |
 | `KREP_SUBCMD_PATH` | Directories containing the sub-commands |
 
+## sub-commands and topics
+
+The basic sense is to implement the common API classes as `topic`s and write
+sub-commands using the `topic`s.
+
+The framework provides to load the `topics` and subcommands with specified
+environment variables, which work like the environment variable `PATH`. Not like
+the default directories in the code, only one-level directory will be detected
+to load the files. 
+
 With these variables, external `topic`s and `subcommand`s can be loaded and
 executed. [repo-diff] is a demonstrated and workable project as `krep` plug-in,
-which explained how to use the environmental variables to load the `topic` and
+which explained how to use the environment variables to load both `topic` and
 `subcommand`s.
 
 ## options
 
 The framework provides a quite convenient way to add sub-command options beyond
-the actual running commands. The base class `SubCmd` will enumerate each loaded
-class and check if the method `options` existed to load the functional options.
+the actual running commands. The base class `SubCommand` will enumerate each
+loaded class and check if the method `options` existed to load the functional
+options.
 
 With the implementation, every big function can provide its option. What's more,
 an extra implementation with the option "extra-option" can supply the options
@@ -72,8 +81,10 @@ created. For instance, [gerrit.py] can be referred.
 ## hooks
 
 Like many tools work in phrase, *hook* is supported by the framework, a option
-"hook-dir" is provided to indicate the locations for `subcommand` hooks. The
-environmental variable `KREP_HOOK_PATH` indicates the directory either.
+"hook-dir" is provided to indicate the locations of hooks for running
+`subcommand`. The environment variable `KREP_HOOK_PATH` indicates the directory
+either for all sub-commands. all hooks named by the phrases will be loaded and
+executed from the directories.
 
 If the sub-command uses an XML configurable file, element `hook` could specify
 the named hook for delicated phrases explicitly.
@@ -82,17 +93,18 @@ The subcommand can define its own phrase with a named string. The corresponding
 hook could be invoked with the line:
 
 ```python
-SubCmd.do_hook(hook_name, options, tryrun=options.tryrun)
+SubCommand.do_hook(hook_name, options, tryrun=options.tryrun)
 ```
+
+What's more, an alternative method `SubCommand.run_hook` can be used to execute
+an external command as a hook when implementing a sub-command.
 
 ## configurations
 
 The framework tries to load two default configuration files if they're existed:
 
-```
-/etc/default/krepconfig
-~/.krepconfig
-```
+- /etc/default/krepconfig
+- ~/.krepconfig
 
 Users can provide the configurable items from the command line. The late ones
 will override the items in the previous file.
@@ -109,7 +121,8 @@ building sub-commands with the framework.
 ## multi-threading
 
 `sub-command` supports multi-threading with the method
-`SubCommandWithThread.run_with_thread`.
+`SubCommandWithThread.run_with_thread`. The thread number is decided by the
+option `jobs`.
 
 > *NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
 > contribute the fixes and the ideas to improve the tool but it's not mandatory to
