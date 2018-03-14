@@ -197,13 +197,14 @@ class GitProject(Project, GitCommand):
 
         return ret == 0
 
-    def push_heads(self, branch=None, refs=None, push_all=False,
-                   fullname=False, force=False, *args, **kws):
+    def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
+                   fullname=False, force=False, sha1tag=None, *args, **kws):
         logger = Logger.get_logger()
 
         refs = refs and '%s/' % refs.rstrip('/')
         ret, local_heads = self.get_local_heads(local=True)
         ret, remote_heads = self.get_remote_heads()
+        ret, remote_tags = self.get_remote_tags()
 
         if not push_all:
             local_heads = {
@@ -254,23 +255,39 @@ class GitProject(Project, GitCommand):
                     'r,rev,revision', '%s%s' % (refs or '', head),
                     name=self.uri)
 
+            skip = False
             sha1 = local_heads[origin]
             remote_ref = 'refs/heads/%s' % rhead
             if os.path.basename(remote_ref) == sha1:
                 logger.warning(
                     "remote branch %s equals to an existed SHA-1, which "
                     "isn't normal. Ignoring ...", remote_ref)
-                continue
-
-            if _sha1_equals(remote_heads.get(remote_ref), sha1):
+                skip = True
+            elif _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
-                continue
+                skip = True
 
-            ret = self.push(
-                self.remote,
-                '%s%s:%s' % (
-                    '+' if force else '', local_ref, remote_ref),
-                *args, **kws)
+            ret = 0
+            if not skip:
+                ret = self.push(
+                    self.remote,
+                    '%s%s:%s' % (
+                        '+' if force else '', local_ref, remote_ref),
+                    *args, **kws)
+
+            if ret == 0 and not push_all and (
+                    sha1tag and self.is_sha1(origin)):
+                equals = False
+                if sha1tag in remote_tags:
+                    sha1 = remote_tags[sha1tag]
+                    equals = _sha1_equals(sha1, origin)
+
+                if not equals or force:
+                    ret = self.push(
+                        self.remote,
+                        '%s%s:refs/tags/%s' % (
+                            '+' if force else '', local_ref, sha1tag),
+                        *args, **kws)
 
             if ret != 0:
                 logger.error('error to execute git push to %s', self.remote)
