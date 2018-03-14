@@ -210,16 +210,7 @@ class GitProject(Project, GitCommand):
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
 
-        # put 'master' to end of the list
-        def rev_sort(rev1, rev2):
-            if rev1 == 'master':
-                return 1
-            elif rev2 == 'master':
-                return -1
-            else:
-                return cmp(rev1, rev2)
-
-        for origin in sorted(local_heads, rev_sort):
+        for origin in local_heads:
             head = _secure_head_name(origin)
             if not fullname:
                 head = os.path.basename(head)
