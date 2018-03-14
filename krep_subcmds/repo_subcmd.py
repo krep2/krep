@@ -98,8 +98,13 @@ this command.
                 optparse.add_option_group('Remote options')
             options.add_option(
                 '--prefix',
-                dest='prefix', metavar='PREFIX',
+                dest='prefix', action='store', metavar='PREFIX',
                 help='prefix on the remote location')
+            options.add_option(
+                '--sha1-tag',
+                dest='sha1_tag', action='store', metavar='TAG',
+                help='Push named tag for the SHA-1 to the remote. It works '
+                     'without the option "--all"')
 
             options = optparse.add_option_group('Debug options')
             options.add_option(
@@ -277,6 +282,7 @@ this command.
                 push_all=options.all,
                 fullname=options.keep_name,
                 force=options.force,
+                sha1tag=options.sha1_tag,
                 tryrun=options.tryrun)
             if res != 0:
                 logger.error('failed to push heads')
