@@ -40,6 +40,25 @@ It can be executed from the command line.
 As all commands are dynamically loaded, the framework can be easily implemented
 with different purpose.
 
+# SCM extension
+
+## [git]
+
+[git] is a famous free and distributed version control system, used by lots of
+open source projects.
+
+The framework encapsulates the common git commands, and creates several methods
+to complete the function with some git commands.
+
+Now it's the only support version control system.
+
+## [gerrit]
+
+[gerrit] works as a code review system for [git]. A class supports the gerrit
+commands `ls-project` and `create-project`, which are used to detect the
+existence of git repositories remotely, and create the project with
+`extra-option` options if provided.
+
 # Development
 
 With the framework, it's quite easy to implement the owned toolkit. Following
@@ -141,6 +160,8 @@ before the option `verbose` has been handled and set to `logging`.
 > contribute the fixes and the ideas to improve the tool but it's not mandatory to
 > open source of the plug-ins.
 
+[gerrit]: https://www.gerritcodereview.com
 [gerrit.py]: https://github.com/cadappl/krep/blob/cm/topics/gerrit.py
+[git]: https://git-scm.com/
 [git-repo]: https://gerrit.googlesource.com/git-repo
 [repo-diff]: https://github.com/cadappl/krep_plugin_git_diff
