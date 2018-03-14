@@ -45,6 +45,7 @@ defined environment variables will impact the program with the framework.
 
 | Variable | Description |
 |----------------|-----------------------------------------------------------------|
+| `KREP_VERBOSE` | The default verbose for logging |
 | `KREP_EXTRA_PATH` | Directories containing the subdirectories `topics` and `subcmd` |
 | `KREP_HOOK_PATH` | Directories containin the hooks |
 | `KREP_TOPIC_PATH` | Directories containing the `topic` files |
@@ -123,6 +124,16 @@ building sub-commands with the framework.
 `sub-command` supports multi-threading with the method
 `SubCommandWithThread.run_with_thread`. The thread number is decided by the
 option `jobs`.
+
+## logging
+
+Python provides its `logging` method. As `krep` framework can run in
+multi-threading method, a specific implementation has been done to run named
+logger with thread. Each sub-command can has its own logger named with the
+sub-command or the project name if it's set.
+
+`KREP_VERBOSE` could be set to the expected level to debug the loading process
+before the option `verbose` has been handled and set to `logging`.
 
 > *NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
 > contribute the fixes and the ideas to improve the tool but it's not mandatory to
