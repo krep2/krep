@@ -1,5 +1,4 @@
-krep: Tool to manage git repository immigration
-================================================
+# krep: Tool to manage git repository immigration
 
 The `krep` project on the branch contains the stuffs on the upstream `cm`
 branch and was implemented as a workable toolkit with several sub-commands to
@@ -30,13 +29,12 @@ The commands of krep are:
 See more info with "krep help <command>"
 ```
 
-Though the main idea comes from [git-repo][], it extends to load the component
+Though the main idea comes from [git-repo], it extends to load the component
 named `topic` in the directory `topics`, and the sub-commands in the directory
 `krep_subcmds`. The implemented sub-commands prefer to use the standard Python
 libraries and the exported `class` from the exported `topic` classes, which are
 guaranteed to be used continuously. Other classes might be visited but not
 encouraged to use at all.
-
 The tool can also support to immigrate the git into a git or gerrit server, for
 example, to immigrate the official linux git repository:
 
@@ -94,9 +92,9 @@ job = 8
 remote = git://some-git-server
 ```
 
-*NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
-contribute the fixes and the ideas to improve the tool but it's not mandatory to
-open source of the plug-ins.
+> *NOTE:* The project updates to use *LGPL v3* as the license. It's appreciated to
+> contribute the fixes and the ideas to improve the tool but it's not mandatory to
+> open source of the plug-ins.
 
 [AOSP]: https://source.android.com
 [gerrit]: https://www.gerritcodereview.com
