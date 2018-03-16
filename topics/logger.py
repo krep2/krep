@@ -66,22 +66,26 @@ class Logger(object):
         if _level < 0:
             Logger.set()
 
-        if name is None:
-            if hasattr(_ldata, 'name'):
-                name = _ldata.name
-        else:
-            if hasattr(_ldata, 'level'):
-                lvl = _ldata.level
-            else:
-                lvl = 0
+        if name is None and hasattr(_ldata, 'name'):
+            name = _ldata.name
 
-            if level >= lvl or not hasattr(_ldata, 'name'):
-                _ldata.name = name
-                _ldata.level = level
+        if hasattr(_ldata, 'level'):
+            oldlevel = _ldata.level
+        else:
+            oldlevel = _level
+
+        if name and not hasattr(_ldata, 'name'):
+            _ldata.name = name
+
+        if 0 <= level <= oldlevel:
+            _ldata.level = level
+
+        if level == -1:
+            level = oldlevel
 
         logger = logging.getLogger(name or 'root')
-        if logger.getEffectiveLevel() > _level:
-            logger.setLevel(_level)
+        if logger.getEffectiveLevel() > level:
+            logger.setLevel(level)
 
         return logger
 
