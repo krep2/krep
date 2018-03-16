@@ -20,12 +20,10 @@ class Logger(object):
     NOTSET = logging.NOTSET
 
     LEVEL_MAP = {
-        0: CRITICAL,
-        1: ERROR,
-        2: WARNING,
-        3: INFO,
-        4: DEBUG,
-        5: NOTSET
+        0: WARNING,
+        1: INFO,
+        2: DEBUG,
+        3: NOTSET
     }
 
     @staticmethod
@@ -40,7 +38,7 @@ class Logger(object):
                 verbose = int(krep_verbose)
 
         if verbose is not None and verbose > -1:
-            newlevel = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+            newlevel = Logger.LEVEL_MAP.get(verbose, Logger.NOTSET)
             if newlevel < level:
                 level = newlevel
 
@@ -64,7 +62,7 @@ class Logger(object):
         return logger
 
     @staticmethod
-    def get_logger(name=None, level=False):
+    def get_logger(name=None, level=-1):
         if _level < 0:
             Logger.set()
 
