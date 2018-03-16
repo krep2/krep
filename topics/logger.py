@@ -31,24 +31,31 @@ class Logger(object):
     @staticmethod
     def set(verbose=None, level=None, name=None, newformat=None):
         global _level  # pylint: disable=C0103,W0603
-        if verbose is None and _level < 0:
+        if level is None:
+            level = _level
+
+        if verbose is None:
             krep_verbose = os.environ.get('KREP_VERBOSE', '')
             if re.match(r'-?\d+', krep_verbose):
                 verbose = int(krep_verbose)
 
         if verbose is not None and verbose > -1:
-            level = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+            newlevel = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+            if newlevel < level:
+                level = newlevel
+
+        if _level < 0:
+            if level > _level:
+                _level = level
+            else:
+                _level = Logger.ERROR
+        elif level < _level:
+            _level = level
 
         if newformat:
             logging.basicConfig(format=newformat, level=level)
         else:
             logging.basicConfig(format='%(name)s: %(message)s', level=level)
-
-        if _level < 0 or (verbose > 0 and level < _level):
-            _level = level or logging.ERROR
-
-        if level is None:
-            level = _level
 
         logger = Logger.get_logger(name or 'root')
         if level is not None:
