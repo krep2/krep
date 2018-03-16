@@ -91,7 +91,7 @@ this command.
         options.add_option(
             '--mirror',
             dest='mirror', action='store_true', default=False,
-            help='Create a replica of the remote repositories')
+            help=optparse.SUPPRESS_HELP)
 
         if not inherited:
             options = optparse.get_option_group('--refs') or \
