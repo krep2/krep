@@ -193,15 +193,15 @@ class _XmlConfigFile(_ConfigFile):
 
         proj = root.childNodes[0]
         if proj and proj.nodeName == 'projects':
-            def _getattr(node, name):
+            def _getattr(node, name, default=None):
                 if node.hasAttribute(name):
                     return node.getAttribute(name)
                 else:
-                    return None
+                    return default
 
             def _parse_global(node):
                 _setattr(default, _getattr(node, 'name'),
-                         _getattr(node, 'value'))
+                         _getattr(node, 'value', 'true'))
 
             def _parse_include(node):
                 name = _getattr(node, 'name')
