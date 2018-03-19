@@ -24,25 +24,23 @@ Execute the specified sub-commands, which can be listed with the command
     group = global_options.add_option_group('Global file options')
     group.add_option(
         '-w', '--working-dir',
-        dest='working_dir', metavar='WORKING_DIR', default=os.getcwd(),
-        help='Set the working directory, or current directory would be used. '
-             'default: %default')
+        dest='working_dir', action='store', metavar='DIR', default=os.getcwd(),
+        help='Set the working directory. default: %default')
     group.add_option(
         '--relative-dir',
-        dest='relative_dir', metavar='RELATIVE_DIR',
+        dest='relative_dir', action='store', metavar='DIR',
         help=global_options.SUPPRESS_HELP)
 
     # Debug options
     group = global_options.add_option_group('Global debugging options')
     group.add_option(
-        '-T', '--tryrun',
+        '-T', '--dryrun',
         dest='tryrun', action='store_true', default=False,
-        help='try running the command without actual changes to the local '
-             'repository and the remote server')
+        help='try running the command without actual execution of commands')
     group.add_option(
         '-v', '--verbose',
         dest='verbose', action='count', default=-1,
-        help='set repeatedly to output debug info')
+        help='set repeatedly to output debugging info')
 
     # Other options
     group = global_options.add_option_group('Global other options')
@@ -56,7 +54,7 @@ Execute the specified sub-commands, which can be listed with the command
             '--inject-option',
             dest='inject_option', action='append',
             help='extra options passed to running sub-command with the '
-                 'format like The format could be group:option[=value]')
+                 'format group:[--]option[=value]')
 
     return global_options
 
