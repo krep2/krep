@@ -225,6 +225,8 @@ class IndentedHelpFormatterWithLf(optparse.IndentedHelpFormatter):
 
 
 class OptionParser(optparse.OptionParser):
+    SUPPRESS_HELP = optparse.SUPPRESS_HELP
+
     def __init__(self,  # pylint: disable=R0913
                  usage=None,
                  option_list=None,

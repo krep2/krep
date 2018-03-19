@@ -165,7 +165,7 @@ class SubCommand(object):
         return extra_list
 
     @staticmethod
-    def get_logger(name=None, level=0):
+    def get_logger(name=None, level=-1):
         """Returns the encapusulated logger for subcommands."""
         return Logger.get_logger(name, level)
 
@@ -244,7 +244,7 @@ class SubCommand(object):
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
         # set the logger name at the beggining
-        self.get_logger(self.get_name(options), level=1)
+        self.get_logger(self.get_name(options))
 
         return True
 
