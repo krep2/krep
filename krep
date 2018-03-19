@@ -30,7 +30,7 @@ Execute the specified sub-commands, which can be listed with the command
     group.add_option(
         '--relative-dir',
         dest='relative_dir', metavar='RELATIVE_DIR',
-        help='Set the relative directory following working_dir if specified')
+        help=global_options.SUPPRESS_HELP)
 
     # Debug options
     group = global_options.add_option_group('Global debugging options')
