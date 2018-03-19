@@ -115,7 +115,7 @@ class Command(object):  # pylint: disable=R0902
 
     @staticmethod
     def normalize(command):
-        return command.replace('-', '_')
+        return command.replace('_', '-')
 
     def get_output(self):
         return self.stdout and self.stdout.strip()
