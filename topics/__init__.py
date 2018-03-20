@@ -12,6 +12,7 @@ def _register_topic(topic, doc):
     if topic in all_topics:
         raise SyntaxError("%s is duplicated" % topic)
 
+    __all__.append(topic)
     all_topics[topic] = doc
 
 
@@ -44,9 +45,8 @@ def _load_python_file(pyname):
                     lambda member: inspect.isclass(member))  # pylint: disable=W0108
 
                 for m in members or list():
-                    globals().update({m[0]: m[1]})
                     if m[0] == clazz:
-                        __all__.append(m[0])
+                        globals().update({m[0]: m[1]})
 
                         _register_topic(
                             clazz,
