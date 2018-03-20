@@ -239,12 +239,11 @@ this command.
             repo.add_args('--prune', condition=opts.prune)
             repo.add_args(
                 '--no-clone-bundle', condition=opts.no_clone_bundle)
-            if opts.jobs:
-                repo.add_args(opts.jobs, before='-j')
-            else:
-                repo.add_args(options.job, before='-j')
+
+        if opts.jobs:
+            repo.add_args(opts.jobs, before='-j')
         else:
-            repo.add_args(options.job, before='-j')   # pylint: disable=E1101
+            repo.add_args(options.job, before='-j')
         # pylint: enable=E1101
 
         res = repo.sync()
