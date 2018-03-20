@@ -39,7 +39,7 @@ Execute the specified sub-commands, which can be listed with the command
         help='try running the command without actual execution of commands')
     group.add_option(
         '-v', '--verbose',
-        dest='verbose', action='count', default=-1,
+        dest='verbose', action='count', default=0,
         help='set repeatedly to output debugging info')
 
     # Other options
@@ -125,8 +125,8 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
         cmd._cmd = _get_named_command  # pylint: disable=W0212
         cmd._cmdopt = _get_named_options  # pylint: disable=W0212
 
-        logger = Logger.set(
-            verbose=lopts.pop('verbose'), name=cmd.get_name(lopts))
+        logger = cmd.get_logger(
+            name=cmd.get_name(lopts), verbose=lopts.pop('verbose'))
 
         # sub-command
         if optparse is None:
@@ -174,7 +174,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
 def main(argv):
     dopts = _load_default_option()
-    Logger.set(level=Logger.ERROR, verbose=dopts.verbose)
+    Logger.set(level=Logger.ERROR, verbose=dopts.verbose or 0)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
