@@ -161,16 +161,15 @@ class SubCommand(object):
         logger = SubCommand.get_logger()
         # search the imported class to load the options
         for name, clazz in (modules or dict()).items():
-            if isinstance(clazz, (types.ClassType, types.TypeType)):
-                if optparse and hasattr(clazz, 'options'):
-                    try:
-                        logger.debug('Load %s', name)
-                        clazz.options(optparse)
-                    except TypeError:
-                        pass
+            if optparse and hasattr(clazz, 'options'):
+                try:
+                    logger.debug('Load %s', name)
+                    clazz.options(optparse)
+                except TypeError:
+                    pass
 
-                if hasattr(clazz, 'extra_items'):
-                    extra_list.extend(clazz.extra_items)
+            if hasattr(clazz, 'extra_items'):
+                extra_list.extend(clazz.extra_items)
 
         return extra_list
 
@@ -281,7 +280,7 @@ class SubCommandWithThread(SubCommand):
                 sem.release()
 
         ret = True
-        if jobs > 1:
+        if jobs and jobs > 1:
             threads = set()
             sem = threading.Semaphore(jobs)
             event = threading.Event()

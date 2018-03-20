@@ -275,10 +275,10 @@ The escaped variants are supported for the imported files including:
             pkgs.sort(_pkg_sort)
 
         if options.show_order or options.verbose > 0:
-            print 'Effective packages (%d)' % len(pkgs)
-            print '----------------------------'
+            print('Effective packages (%d)' % len(pkgs))
+            print('----------------------------')
             for pkg, pkgname, revision in pkgs:
-                print '%s %-15s %s' % (pkgname, '[v%s]' % revision, pkg)
+                print('%s %-15s %s' % (pkgname, '[v%s]' % revision, pkg))
             print
 
             if options.show_order:
@@ -427,7 +427,7 @@ The escaped variants are supported for the imported files including:
             if os.path.lexists(temp):
                 try:
                     shutil.rmtree(temp)
-                except OSError, e:
+                except OSError as e:
                     logger.exception(e)
 
         # push the branches

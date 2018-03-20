@@ -1,5 +1,5 @@
 
-from topics import SubCommand
+from topics import key_compare, SubCommand
 
 
 class HelpSubcmd(SubCommand):
@@ -30,7 +30,7 @@ The argument "all" indicats to list all sub-commands implicitly.'''
 
             lines.append('  %-15s%s' % (name, summary))
 
-        def _sort(linea, lineb):
+        def sort_help(linea, lineb):
             def _is_help_command(line):
                 return line.lstrip().startswith('help')
 
@@ -39,32 +39,10 @@ The argument "all" indicats to list all sub-commands implicitly.'''
             elif _is_help_command(lineb):
                 return 1
 
-            return cmp(linea, lineb)
-
-        class _cmp3:
-            def __init__(self, obj, *args):
-                self.obj = obj
-
-            def __lt__(self, other):
-                return _sort(self.obj, other.obj) < 0
-
-            def __gt__(self, other):
-                return _sort(self.obj, other.obj) > 0
-
-            def __eq__(self, other):
-                return _sort(self.obj, other.obj) == 0
-
-            def __le__(self, other):
-                return _sort(self.obj, other.obj) <= 0
-
-            def __ge__(self, other):
-                return _sort(self.obj, other.obj) >= 0
-
-            def __ne__(self, other):
-                return _sort(self, obj, other.obj) != 0
+            return (linea > lineb) - (linea < lineb) # cmp(linea, lineb)
 
         # put help command on the top
-        lines.sort(key=_cmp3)
+        lines.sort(key=key_compare(sort_help))
         print('\n'.join(lines))
         print('\nSee more info with "krep help <command>"')
 

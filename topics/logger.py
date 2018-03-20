@@ -55,12 +55,6 @@ class Logger(object):
         else:
             logging.basicConfig(format='%(name)s: %(message)s', level=level)
 
-        if _level < 0 or ((verbose or -1) > 0 and (level or -1) < _level):
-            _level = level or logging.ERROR
-
-        if level is None:
-            level = _level
-
         logger = Logger.get_logger(name or 'root')
         logger.setLevel(level)
 

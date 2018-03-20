@@ -82,7 +82,7 @@ class Values(optparse.Values):
                             getattr(values, attr), boolean=st_b))
 
     def __nonzero__(self):
-        return self.__bool__(self)
+        return self.__bool__()
 
     def __bool__(self):
         return len(self.__dict__) != 0

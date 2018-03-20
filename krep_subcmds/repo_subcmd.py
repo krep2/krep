@@ -1,6 +1,10 @@
 
 import os
-import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
     ManifestBuilder, Pattern, SubCommandWithThread, DownloadError, \
@@ -62,7 +66,7 @@ this command.
             ('repo-sync:force-broken',
              'continue sync even if a project fails'),
             ('repo-sync:current-branch', 'fetch only current branch'),
-            ('repo-sync:jobs', 'rojects to fetch simultaneously'),
+            ('repo-sync:jobs', 'projects to fetch simultaneously'),
             ('repo-sync:no-repo-verify', 'do not verify repo source code'),
             ('repo-sync:fetch-submodules', 'fetch submodules from server'),
             ('repo-sync:optimized-fetch', 'only fetch project fixed to sha1'),
@@ -250,7 +254,8 @@ this command.
         res = repo.sync()
         if res:
             if options.force:
-                print 'Failed to sync "%s"' % options.manifest
+                self.get_logger().error(
+                    'Failed to sync "%s"' % options.manifest)
             else:
                 raise DownloadError(
                     'Failed to sync "%s"' % options.manifest)
@@ -347,8 +352,8 @@ this command.
 
         lsrc, luri = 0, 0
         if options.dump_projects:
-            print 'IMPORTED PROJECTS'
-            print '====================='
+            print('IMPORTED PROJECTS')
+            print('=====================')
             for p in projects:
                 if len(p.source) > lsrc:
                     lsrc = len(p.source)
@@ -357,17 +362,17 @@ this command.
 
             sfmt = ' %%-%ds %%s> %%-%ds%%s' % (lsrc, luri)
             for project in sorted(projects, _cmp):
-                print (
+                print((
                     sfmt % (
                         project.source,
                         '=' if project.source == project.uri else '-',
                         project.uri,
                         ' [NEW]' if options.print_new_projects and
-                        project in nprojects else '')).rstrip()
+                        project in nprojects else '')).rstrip())
         elif options.print_new_projects:
             if nprojects:
-                print 'NEW PROJECTS'
-                print '================'
+                print('NEW PROJECTS')
+                print('================')
                 for p in nprojects:
                     if len(p.source) > lsrc:
                         lsrc = len(p.source)
@@ -376,21 +381,21 @@ this command.
 
                 sfmt = ' %%-%ds %%s> %%-%ds' % (lsrc, luri)
                 for project in sorted(nprojects, _cmp):
-                    print (
+                    print((
                         sfmt % (
                             project.source,
                             '=' if project.source == project.uri else '-',
-                            project.uri)).rstrip()
+                            project.uri)).rstrip())
             else:
-                print 'No new project found'
+                print('No new project found')
         elif not options.repo_create and len(nprojects) > 0:
-            print 'Exit with following new projects:'
+            print('Exit with following new projects:')
             for project in sorted(nprojects, _cmp):
-                print ' %s' % project.source,
+                line = ' %s' % project.source
                 if project.source != project.uri:
-                    print ' (%s)' % project.uri
-                else:
-                    print
+                    line += ' (%s)' % project.uri
+
+                print(line)
 
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
@@ -405,7 +410,7 @@ this command.
             self.init_and_sync(options)
 
         # handle the schema of the remote
-        ulp = urlparse.urlparse(options.remote)
+        ulp = urlparse(options.remote)
         if not ulp.scheme:
             remote = options.remote
             options.remote = 'git://%s' % options.remote
