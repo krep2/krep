@@ -112,9 +112,9 @@ class SubCommand(object):
         return extra_list
 
     @staticmethod
-    def get_logger(name=None, level=-1):
+    def get_logger(name=None, level=-1, verbose=-1):
         """Returns the encapusulated logger for subcommands."""
-        return Logger.get_logger(name, level)
+        return Logger.get_logger(name, level, verbose)
 
     @staticmethod
     def get_absolute_working_dir(options):

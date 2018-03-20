@@ -5,7 +5,7 @@ import re
 import threading
 
 
-_level = -1  # pylint: disable=C0103
+_level = 0  # pylint: disable=C0103
 _ldata = threading.local()  # pylint: disable=C0103
 
 
@@ -20,34 +20,34 @@ class Logger(object):
     NOTSET = logging.NOTSET
 
     LEVEL_MAP = {
-        0: WARNING,
-        1: INFO,
-        2: DEBUG,
-        3: NOTSET
+        0: NOTSET,
+        1: ERROR,
+        2: WARNING,
+        3: INFO,
+        4: DEBUG
     }
 
     @staticmethod
-    def set(verbose=None, level=None, name=None, newformat=None):
+    def set(verbose=0, level=0, name=None, newformat=None):
         global _level  # pylint: disable=C0103,W0603
-        if level is None:
+        if level == 0:
             level = _level
 
-        if verbose is None:
+        if verbose == 0:
             krep_verbose = os.environ.get('KREP_VERBOSE', '')
             if re.match(r'-?\d+', krep_verbose):
                 verbose = int(krep_verbose)
 
-        if verbose is not None and verbose > -1:
-            newlevel = Logger.LEVEL_MAP.get(verbose, Logger.NOTSET)
-            if newlevel < level:
-                level = newlevel
+        newlevel = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+        if 0 < newlevel < level:
+            level = newlevel
 
-        if _level < 0:
+        if _level <= 0:
             if level > _level:
                 _level = level
             else:
                 _level = Logger.ERROR
-        elif level < _level:
+        elif 0 < level < _level:
             _level = level
 
         if newformat:
@@ -56,15 +56,17 @@ class Logger(object):
             logging.basicConfig(format='%(name)s: %(message)s', level=level)
 
         logger = Logger.get_logger(name or 'root')
-        if level is not None:
-            logger.setLevel(level)
+        logger.setLevel(level)
 
         return logger
 
     @staticmethod
-    def get_logger(name=None, level=-1):
+    def get_logger(name=None, level=0, verbose=0):
         if _level < 0:
             Logger.set()
+
+        if level == 0 and verbose > 0:
+            level = Logger.LEVEL_MAP.get(verbose, Logger.NOTSET)
 
         if name is None and hasattr(_ldata, 'name'):
             name = _ldata.name
@@ -80,7 +82,7 @@ class Logger(object):
         if 0 <= level <= oldlevel:
             _ldata.level = level
 
-        if level == -1:
+        if level == 0:
             level = oldlevel
 
         logger = logging.getLogger(name or 'root')
