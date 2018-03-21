@@ -5,7 +5,7 @@ import re
 import threading
 
 
-_level = 0  # pylint: disable=C0103
+_level = logging.ERROR  # pylint: disable=C0103
 _ldata = threading.local()  # pylint: disable=C0103
 
 
@@ -20,11 +20,11 @@ class Logger(object):
     NOTSET = logging.NOTSET
 
     LEVEL_MAP = {
-        0: NOTSET,
-        1: ERROR,
-        2: WARNING,
-        3: INFO,
-        4: DEBUG
+        0: ERROR,
+        1: WARNING,
+        2: INFO,
+        3: DEBUG,
+        4: NOTSET,
     }
 
     @staticmethod
@@ -39,26 +39,20 @@ class Logger(object):
                 verbose = int(krep_verbose)
 
         newlevel = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
-        if 0 < newlevel < level:
+        if 0 <= newlevel <= level:
             level = newlevel
+            if newlevel == 0:
+                _level = newlevel
 
-        if _level <= 0:
-            if level > _level:
-                _level = level
-            else:
-                _level = Logger.ERROR
-        elif 0 < level < _level:
+        if 0 < level < _level:
             _level = level
 
         if newformat:
-            logging.basicConfig(format=newformat, level=level)
+            logging.basicConfig(format=newformat, level=_level)
         else:
-            logging.basicConfig(format='%(name)s: %(message)s', level=level)
+            logging.basicConfig(format='%(name)s: %(message)s', level=_level)
 
-        logger = Logger.get_logger(name or 'root')
-        logger.setLevel(level)
-
-        return logger
+        return Logger.get_logger(name, level=_level)
 
     @staticmethod
     def get_logger(name=None, level=0, verbose=0):
@@ -85,8 +79,8 @@ class Logger(object):
         if level == 0:
             level = oldlevel
 
-        logger = logging.getLogger(name or 'root')
-        if logger.getEffectiveLevel() > level:
+        logger = logging.getLogger(name)
+        if logger.getEffectiveLevel() > level > 0 or name is None:
             logger.setLevel(level)
 
         return logger

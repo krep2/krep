@@ -126,7 +126,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
         cmd._cmdopt = _get_named_options  # pylint: disable=W0212
 
         logger = cmd.get_logger(
-            name=cmd.get_name(lopts), verbose=lopts.pop('verbose'))
+            name=cmd.get_name(lopts), verbose=lopts.pop('verbose') or 0)
 
         # sub-command
         if optparse is None:
@@ -174,7 +174,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
 def main(argv):
     dopts = _load_default_option()
-    Logger.set(level=Logger.ERROR, verbose=dopts.verbose or 0)
+    Logger.set(verbose=dopts.verbose or 0)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)

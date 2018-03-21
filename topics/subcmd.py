@@ -112,7 +112,7 @@ class SubCommand(object):
         return extra_list
 
     @staticmethod
-    def get_logger(name=None, level=-1, verbose=-1):
+    def get_logger(name=None, level=0, verbose=0):
         """Returns the encapusulated logger for subcommands."""
         return Logger.get_logger(name, level, verbose)
 
