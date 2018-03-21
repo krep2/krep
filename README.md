@@ -115,7 +115,7 @@ The subcommand can define its own phrase with a named string. The corresponding
 hook could be invoked with the line:
 
 ```python
-SubCommand.do_hook(hook_name, options, tryrun=options.tryrun)
+SubCommand.do_hook(hook_name, options, dryrun=options.dryrun)
 ```
 
 What's more, an alternative method `SubCommand.run_hook` can be used to execute
