@@ -78,8 +78,8 @@ Supports to wash out the a text file or text files inside a directory.
     CRLF = '\x0d\x0a'
 
     def __init__(self, default_pattern=None, patterns=None,
-                 excluded=None, tryrun=False):
-        self.tryrun = tryrun
+                 excluded=None, dryrun=False):
+        self.dryrun = dryrun
         self.patterns = patterns or dict()
         self.excluded = excluded or list()
         self.defaultp = default_pattern
@@ -239,7 +239,7 @@ Supports to wash out the a text file or text files inside a directory.
                 changed = changed or (origin != line)
                 text.write(line)
 
-        if not self.tryrun and changed:
+        if not self.dryrun and changed:
             if (sta.st_mode & stat.S_IWUSR) == 0:
                 os.chmod(filename, stat.S_IWUSR)
 
