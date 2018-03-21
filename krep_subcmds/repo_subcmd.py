@@ -11,6 +11,14 @@ from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
     RaiseExceptionIfOptionMissed
 
 
+def sort_project(project):
+    return project.source
+
+
+def sort_project_path(project):
+    return project.path
+
+
 class RepoCommand(Command):
     """Executes a repo sub-command with specified parameters"""
     def __init__(self, *args, **kws):
@@ -330,7 +338,7 @@ this command.
             builder.append(remote)
 
         if sort:
-            projects.sort(lambda prja, prjb: cmp(prja.path, prjb.path))
+            projects.sort(key=sort_project_path)
 
         for project in projects:
             path, groups = project.path, None
@@ -347,9 +355,6 @@ this command.
 
     @staticmethod
     def dump_projects(options, projects, nprojects):
-        def _cmp(prja, prjb):
-            return cmp(prja.source, prjb.source)
-
         lsrc, luri = 0, 0
         if options.dump_projects:
             print('IMPORTED PROJECTS')
@@ -361,7 +366,7 @@ this command.
                     luri = len(p.uri)
 
             sfmt = ' %%-%ds %%s> %%-%ds%%s' % (lsrc, luri)
-            for project in sorted(projects, _cmp):
+            for project in sorted(projects, key=sort_project):
                 print((
                     sfmt % (
                         project.source,
@@ -380,7 +385,7 @@ this command.
                         luri = len(p.uri)
 
                 sfmt = ' %%-%ds %%s> %%-%ds' % (lsrc, luri)
-                for project in sorted(nprojects, _cmp):
+                for project in sorted(nprojects, key=sort_project):
                     print((
                         sfmt % (
                             project.source,
@@ -390,7 +395,7 @@ this command.
                 print('No new project found')
         elif not options.repo_create and len(nprojects) > 0:
             print('Exit with following new projects:')
-            for project in sorted(nprojects, _cmp):
+            for project in sorted(nprojects, key=sort_project):
                 line = ' %s' % project.source
                 if project.source != project.uri:
                     line += ' (%s)' % project.uri

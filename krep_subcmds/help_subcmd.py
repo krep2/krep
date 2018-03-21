@@ -39,7 +39,7 @@ The argument "all" indicats to list all sub-commands implicitly.'''
             elif _is_help_command(lineb):
                 return 1
 
-            return (linea > lineb) - (linea < lineb) # cmp(linea, lineb)
+            return (linea > lineb) - (linea < lineb)  # cmp(linea, lineb)
 
         # put help command on the top
         lines.sort(key=key_compare(sort_help))
