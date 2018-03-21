@@ -35,7 +35,7 @@ Execute the specified sub-commands, which can be listed with the command
     group = global_options.add_option_group('Global debugging options')
     group.add_option(
         '-T', '--dryrun',
-        dest='tryrun', action='store_true', default=False,
+        dest='dryrun', action='store_true', default=False,
         help='try running the command without actual execution of commands')
     group.add_option(
         '-v', '--verbose',
