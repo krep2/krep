@@ -35,8 +35,8 @@ Execute the specified sub-commands, which can be listed with the command
     # Debug options
     group = global_options.add_option_group('Global debugging options')
     group.add_option(
-        '-T', '--tryrun',
-        dest='tryrun', action='store_true', default=False,
+        '-T', '--dryrun',
+        dest='dryrun', action='store_true', default=False,
         help='try running the command without actual changes to the local '
              'repository and the remote server')
     group.add_option(

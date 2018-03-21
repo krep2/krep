@@ -107,7 +107,7 @@ replaced by GIT_URL."""
         ulp = urlparse.urlparse(remote)
         # creat the project in the remote
         if ulp.scheme in ('ssh', 'git'):
-            if not options.tryrun and options.remote and options.repo_create:
+            if not options.dryrun and options.remote and options.repo_create:
                 gerrit = Gerrit(options.remote)
                 gerrit.create_project(
                     ulp.path.strip('/'),
@@ -119,7 +119,7 @@ replaced by GIT_URL."""
                 '%s: unknown scheme for remote "%s"' % (project, remote))
 
         self.do_hook(  # pylint: disable=E1101
-            'pre-push', options, tryrun=options.tryrun)
+            'pre-push', options, dryrun=options.dryrun)
 
         # push the branches
         if self.override_value(  # pylint: disable=E1101
@@ -131,7 +131,7 @@ replaced by GIT_URL."""
                 push_all=options.all,
                 fullname=options.keep_name,
                 force=options.force,
-                tryrun=options.tryrun)
+                dryrun=options.dryrun)
 
             ret |= res
             if res:
@@ -146,13 +146,13 @@ replaced by GIT_URL."""
                     options.refs, options.tag_refs),
                 fullname=options.keep_name,
                 force=options.force,
-                tryrun=options.tryrun)
+                dryrun=options.dryrun)
 
             ret |= res
             if res:
                 logger.error('Failed to push tags')
 
         self.do_hook(  # pylint: disable=E1101
-            'post-push', options, tryrun=options.tryrun)
+            'post-push', options, dryrun=options.dryrun)
 
         return ret

@@ -291,7 +291,7 @@ The escaped variants are supported for the imported files including:
         RaiseExceptionIfOptionMissed(
             args, "no files or directories are specified to import")
 
-        if not options.tryrun and options.remote:
+        if not options.dryrun and options.remote:
             gerrit = Gerrit(options.remote)
             gerrit.create_project(
                 options.name,
@@ -438,14 +438,14 @@ The escaped variants are supported for the imported files including:
                     branch,
                     self.override_value(  # pylint: disable=E1101
                         options.refs, options.head_refs),
-                    force=options.force, tryrun=options.tryrun)
+                    force=options.force, dryrun=options.dryrun)
             # push the tags
             if tags and self.override_value(  # pylint: disable=E1101
                     options.tags, options.all):
                 ret = project.push_tags(
                     tags, self.override_value(  # pylint: disable=E1101
                         options.refs, options.tag_refs),
-                    fullname=True, force=options.force, tryrun=options.tryrun)
+                    fullname=True, force=options.force, dryrun=options.dryrun)
 
         return ret == 0
 

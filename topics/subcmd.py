@@ -211,7 +211,7 @@ class SubCommand(object):
         return vb if vb is not None else va
 
     @staticmethod
-    def do_hook(name, option, tryrun=False):
+    def do_hook(name, option, dryrun=False):
         # try option.hook-name first to support xml configurations
         hook = option.pop('hook-%s' % name)
         if hook:
@@ -219,7 +219,7 @@ class SubCommand(object):
             return SubCommand.run_hook(
                 hook, args,
                 SubCommand.get_absolute_working_dir(option),
-                tryrun=tryrun)
+                dryrun=dryrun)
 
         hook = None
         # try hook-dir with the hook name then
@@ -232,12 +232,12 @@ class SubCommand(object):
             return SubCommand.run_hook(
                 hook, None,
                 SubCommand.get_absolute_working_dir(option),
-                tryrun=tryrun)
+                dryrun=dryrun)
         else:
             return 1
 
     @staticmethod
-    def run_hook(hook, hargs, cwd=None, tryrun=False, *args, **kws):
+    def run_hook(hook, hargs, cwd=None, dryrun=False, *args, **kws):
         if hook:
             if os.path.exists(hook):
                 cli = list([hook])
@@ -246,7 +246,7 @@ class SubCommand(object):
                 if args:
                     cli.extend(args)
 
-                cmd = Command(cwd=cwd, tryrun=tryrun)
+                cmd = Command(cwd=cwd, dryrun=dryrun)
                 cmd.new_args(*cli)
                 return cmd.wait(**kws)
             else:

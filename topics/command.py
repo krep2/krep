@@ -14,7 +14,7 @@ class Command(object):  # pylint: disable=R0902
     """Executes a local executable command."""
     def __init__(self, cwd=None, provide_stdin=False,  # pylint: disable=R0913
                  capture_stdout=False, capture_stderr=True,
-                 environ=None, tryrun=False, *args, **kws):
+                 environ=None, dryrun=False, *args, **kws):
         self.cwd = cwd
         self.stdout = ''
         self.stderr = ''
@@ -25,7 +25,7 @@ class Command(object):  # pylint: disable=R0902
         self.args = args or list()
         self.kws = kws or dict()
 
-        self.tryrun = tryrun
+        self.dryrun = dryrun
         self.provide_stdin = provide_stdin
         self.capture_stdout = capture_stdout
         self.capture_stderr = capture_stderr
@@ -75,7 +75,7 @@ class Command(object):  # pylint: disable=R0902
         cwd = kws.get('cwd', self.cwd or os.getcwd())
         if not os.path.exists(cwd):
             cwd = os.getcwd()
-        tryrun = kws.get('tryrun', self.tryrun)
+        dryrun = kws.get('dryrun', self.dryrun)
         # the config for the std device may be duplicated
         provide_stdin = kws.get('provide_stdin', self.provide_stdin)
         capture_stdout = kws.get('capture_stdout', self.capture_stdout)
@@ -83,7 +83,7 @@ class Command(object):  # pylint: disable=R0902
 
         logger = Logger.get_logger()
         dbg = '(%s) ' % cwd
-        dbg += '[-] ' if tryrun else ''
+        dbg += '[-] ' if dryrun else ''
         if provide_stdin:
             dbg += '0<| '
         if capture_stdout:
@@ -93,8 +93,8 @@ class Command(object):  # pylint: disable=R0902
 
         logger.info('%s%s', dbg, ' '.join(cli))
 
-        # invoke 'true' instead if tryrun set
-        if tryrun:
+        # invoke 'true' instead if dryrun set
+        if dryrun:
             cli = ['true']
 
         proc = subprocess.Popen(

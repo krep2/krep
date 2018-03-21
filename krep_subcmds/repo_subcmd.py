@@ -185,7 +185,7 @@ this command.
 
     def init_and_sync(self, options):
         self.do_hook(  # pylint: disable=E1101
-            'pre-init', options, tryrun=options.tryrun)
+            'pre-init', options, dryrun=options.dryrun)
 
         res = 0
         if not os.path.exists('.repo'):
@@ -220,8 +220,8 @@ this command.
                 'Failed to init "%s"' % options.manifest)
 
         # pylint: disable=E1101
-        self.do_hook('post-init', options, tryrun=options.tryrun)
-        self.do_hook('pre-sync', options, tryrun=options.tryrun)
+        self.do_hook('post-init', options, dryrun=options.dryrun)
+        self.do_hook('pre-sync', options, dryrun=options.dryrun)
         # pylint: enable=E1101
 
         repo = RepoCommand()
@@ -255,7 +255,7 @@ this command.
                     'Failed to sync "%s"' % options.manifest)
 
         self.do_hook(  # pylint: disable=E1101
-            'post-sync', options, tryrun=options.tryrun)
+            'post-sync', options, dryrun=options.dryrun)
 
     @staticmethod
     def push(project, options, remote):
@@ -264,12 +264,12 @@ this command.
             name=project_name)
 
         logger.info('Start processing ...')
-        if not options.tryrun and remote:
+        if not options.dryrun and remote:
             gerrit = Gerrit(remote)
             gerrit.create_project(project.uri, options=options)
 
         RepoSubcmd.do_hook(  # pylint: disable=E1101
-            'pre-push', options, tryrun=options.tryrun)
+            'pre-push', options, dryrun=options.dryrun)
 
         # push the branches
         if RepoSubcmd.override_value(  # pylint: disable=E1101
@@ -282,7 +282,7 @@ this command.
                 fullname=options.keep_name,
                 force=options.force,
                 sha1tag=options.sha1_tag,
-                tryrun=options.tryrun)
+                dryrun=options.dryrun)
             if res != 0:
                 logger.error('failed to push heads')
 
@@ -294,12 +294,12 @@ this command.
                     options.refs, options.tag_refs),
                 fullname=options.keep_name,
                 force=options.force,
-                tryrun=options.tryrun)
+                dryrun=options.dryrun)
             if res != 0:
                 logger.error('failed to push tags')
 
         RepoSubcmd.do_hook(  # pylint: disable=E1101
-            'post-push', options, tryrun=options.tryrun)
+            'post-push', options, dryrun=options.dryrun)
 
     @staticmethod
     def build_xml_file(options, projects, sort=False):
