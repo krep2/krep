@@ -21,11 +21,7 @@ is the official way to use by the implemented sub-commands."""
 
         topfmt = '%(summary)s'
         if print_name:
-            longest = 0
-            for name in topics:
-                if len(name) > longest:
-                    longest = len(name)
-
+            longest = max([len(topic) for topic in topics])
             topfmt = ' %%(name)-%ds%%(summary)s' % (longest + 2)
 
         for name in topics:
