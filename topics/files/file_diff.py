@@ -227,7 +227,7 @@ class FileDiff(object):
             ret = self._sync(gitcmd=gitcmd, logger=logger)
         else:
             self._timestamp = _timestamp(self.src)
-            print self.sccsp.get_patterns()
+
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
             FileUtils.copy_files(self.src, self.dest)
             if gitcmd:

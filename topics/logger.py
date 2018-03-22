@@ -5,7 +5,7 @@ import re
 import threading
 
 
-_level = -1  # pylint: disable=C0103
+_level = logging.ERROR  # pylint: disable=C0103
 _ldata = threading.local()  # pylint: disable=C0103
 
 
@@ -20,63 +20,68 @@ class Logger(object):
     NOTSET = logging.NOTSET
 
     LEVEL_MAP = {
-        0: CRITICAL,
-        1: ERROR,
-        2: WARNING,
-        3: INFO,
-        4: DEBUG,
-        5: NOTSET
+        0: ERROR,
+        1: WARNING,
+        2: INFO,
+        3: DEBUG,
+        4: NOTSET,
     }
 
     @staticmethod
-    def set(verbose=None, level=None, name=None, newformat=None):
+    def set(verbose=0, level=0, name=None, newformat=None):
         global _level  # pylint: disable=C0103,W0603
-        if verbose is None and _level < 0:
+        if level == 0:
+            level = _level
+
+        if verbose == 0:
             krep_verbose = os.environ.get('KREP_VERBOSE', '')
             if re.match(r'-?\d+', krep_verbose):
                 verbose = int(krep_verbose)
 
-        if verbose is not None and verbose > -1:
-            level = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+        newlevel = Logger.LEVEL_MAP.get(verbose, Logger.DEBUG)
+        if 0 <= newlevel <= level:
+            level = newlevel
+            if newlevel == 0:
+                _level = newlevel
+
+        if 0 < level < _level:
+            _level = level
 
         if newformat:
-            logging.basicConfig(format=newformat, level=level)
+            logging.basicConfig(format=newformat, level=_level)
         else:
-            logging.basicConfig(format='%(name)s: %(message)s', level=level)
+            logging.basicConfig(format='%(name)s: %(message)s', level=_level)
 
-        if _level < 0 or (verbose > 0 and level < _level):
-            _level = level or logging.ERROR
-
-        if level is None:
-            level = _level
-
-        logger = Logger.get_logger(name or 'root')
-        if level is not None:
-            logger.setLevel(level)
-
-        return logger
+        return Logger.get_logger(name, level=_level)
 
     @staticmethod
-    def get_logger(name=None, level=False):
+    def get_logger(name=None, level=0, verbose=0):
         if _level < 0:
             Logger.set()
 
-        if name is None:
-            if hasattr(_ldata, 'name'):
-                name = _ldata.name
+        if level == 0 and verbose > 0:
+            level = Logger.LEVEL_MAP.get(verbose, Logger.NOTSET)
+
+        if name is None and hasattr(_ldata, 'name'):
+            name = _ldata.name
+
+        if hasattr(_ldata, 'level'):
+            oldlevel = _ldata.level
         else:
-            if hasattr(_ldata, 'level'):
-                lvl = _ldata.level
-            else:
-                lvl = 0
+            oldlevel = _level
 
-            if level >= lvl or not hasattr(_ldata, 'name'):
-                _ldata.name = name
-                _ldata.level = level
+        if name and not hasattr(_ldata, 'name'):
+            _ldata.name = name
 
-        logger = logging.getLogger(name or 'root')
-        if logger.getEffectiveLevel() > _level:
-            logger.setLevel(_level)
+        if 0 <= level <= oldlevel:
+            _ldata.level = level
+
+        if level == 0:
+            level = oldlevel
+
+        logger = logging.getLogger(name)
+        if logger.getEffectiveLevel() > level > 0 or name is None:
+            logger.setLevel(level)
 
         return logger
 

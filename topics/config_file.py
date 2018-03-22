@@ -1,49 +1,4 @@
 
-"""
-File formats for the config file.
-
-Two configurable formats could be supported by the program to provide the
-function to the main program and its sub-commands.
-
-One is the XML format to define the elements mapping to the options. It's
-defined by the following DTD:
-
-  <!DOCTYPE projects [
-    <!ELEMENT global-option (EMPTY)>
-    <!ATTLIST global-option name   ID    #REQUIRED>
-    <!ATTLIST global-option value  CDATA #IMPLIED>
-
-    <!ELEMENT project (name?, args*)>
-    <!ATTLIST project name         ID    #REQUIRED>
-    <!ATTLIST project group        CDATA #IMPLIED>
-      <!ELEMENT args (EMPTY)>
-      <!ATTLIST args value         CDATA #REQUIRED>
-
-      <!ELEMENT option (name?, value?)>
-      <!ATTLIST option name        ID    #REQUIRED>
-      <!ATTLIST option value       CDATA #REQUIRED>
-
-      <!ELEMENT pattern (name?, value?)>
-      <!ATTLIST pattern name       ID    #REQUIRED>
-      <!ATTLIST pattern value      CDATA #REQUIRED>
-
-      <!ELEMENT exclude-pattern (name?, value?)>
-      <!ATTLIST exclude-pattern    ID    #REQUIRED>
-      <!ATTLIST exclude-pattern    CDATA #REQUIRED>
-  ]>
-
-The other is similar like the ini file with an extension to support global
-variables without the section, which is the equilivalent with global-option.
-
-A sample for the function is:
-
-bar = blabla
-[section]
-bar = blabla2
-[section "subsection"]
-bar = blabla3
-"""
-
 import os
 import re
 import xml.dom.minidom
@@ -238,15 +193,15 @@ class _XmlConfigFile(_ConfigFile):
 
         proj = root.childNodes[0]
         if proj and proj.nodeName == 'projects':
-            def _getattr(node, name):
+            def _getattr(node, name, default=None):
                 if node.hasAttribute(name):
                     return node.getAttribute(name)
                 else:
-                    return None
+                    return default
 
             def _parse_global(node):
                 _setattr(default, _getattr(node, 'name'),
-                         _getattr(node, 'value'))
+                         _getattr(node, 'value', 'true'))
 
             def _parse_include(node):
                 name = _getattr(node, 'name')

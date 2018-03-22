@@ -24,13 +24,12 @@ Execute the specified sub-commands, which can be listed with the command
     group = global_options.add_option_group('Global file options')
     group.add_option(
         '-w', '--working-dir',
-        dest='working_dir', metavar='WORKING_DIR', default=os.getcwd(),
-        help='Set the working directory, or current directory would be used. '
-             'default: %default')
+        dest='working_dir', action='store', metavar='DIR', default=os.getcwd(),
+        help='Set the working directory. default: %default')
     group.add_option(
         '--relative-dir',
-        dest='relative_dir', metavar='RELATIVE_DIR',
-        help='Set the relative directory following working_dir if specified')
+        dest='relative_dir', action='store', metavar='DIR',
+        help=global_options.SUPPRESS_HELP)
 
     # Debug options
     group = global_options.add_option_group('Global debugging options')
@@ -41,8 +40,8 @@ Execute the specified sub-commands, which can be listed with the command
              'repository and the remote server')
     group.add_option(
         '-v', '--verbose',
-        dest='verbose', action='count', default=-1,
-        help='set repeatedly to output debug info')
+        dest='verbose', action='count', default=0,
+        help='set repeatedly to output debugging info')
 
     # Other options
     group = global_options.add_option_group('Global other options')
@@ -56,7 +55,7 @@ Execute the specified sub-commands, which can be listed with the command
             '--inject-option',
             dest='inject_option', action='append',
             help='extra options passed to running sub-command with the '
-                 'format like The format could be group:option[=value]')
+                 'format group:[--]option[=value]')
 
     return global_options
 
@@ -127,8 +126,8 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
         cmd._cmd = _get_named_command  # pylint: disable=W0212
         cmd._cmdopt = _get_named_options  # pylint: disable=W0212
 
-        logger = Logger.set(
-            verbose=lopts.pop('verbose'), name=cmd.get_name(lopts))
+        logger = cmd.get_logger(
+            name=cmd.get_name(lopts), verbose=lopts.pop('verbose') or 0)
 
         # sub-command
         if optparse is None:
@@ -165,9 +164,9 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             logger.error('Sub-command is unknown to the program')
         else:
             raise
-    except KrepError, e:
+    except KrepError as e:
         logger.error(e)
-    except Exception, e:  # pylint: disable=W0703
+    except Exception as e:  # pylint: disable=W0703
         if ignore_except:
             logger.error(e)
         else:
@@ -176,13 +175,13 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
 def main(argv):
     dopts = _load_default_option()
-    Logger.set(level=Logger.ERROR, verbose=dopts.verbose)
+    Logger.set(verbose=dopts.verbose or 0)
 
     logger = Logger.get_logger()
     name, argv, cmd, options = _option_parse(argv, logger)
     try:
         opts, args = options.parse_args(argv)
-    except OptionValueError, e:
+    except OptionValueError as e:
         options.error(e)
         sys.exit(1)
 

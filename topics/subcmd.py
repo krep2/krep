@@ -1,7 +1,6 @@
 
 import os
 import threading
-import types
 
 from command import Command
 from logger import Logger
@@ -161,23 +160,22 @@ class SubCommand(object):
         logger = SubCommand.get_logger()
         # search the imported class to load the options
         for name, clazz in (modules or dict()).items():
-            if isinstance(clazz, (types.ClassType, types.TypeType)):
-                if optparse and hasattr(clazz, 'options'):
-                    try:
-                        logger.debug('Load %s', name)
-                        clazz.options(optparse)
-                    except TypeError:
-                        pass
+            if optparse and hasattr(clazz, 'options'):
+                try:
+                    logger.debug('Load %s', name)
+                    clazz.options(optparse)
+                except TypeError:
+                    pass
 
-                if hasattr(clazz, 'extra_items'):
-                    extra_list.extend(clazz.extra_items)
+            if hasattr(clazz, 'extra_items'):
+                extra_list.extend(clazz.extra_items)
 
         return extra_list
 
     @staticmethod
-    def get_logger(name=None, level=0):
+    def get_logger(name=None, level=0, verbose=0):
         """Returns the encapusulated logger for subcommands."""
-        return Logger.get_logger(name, level)
+        return Logger.get_logger(name, level, verbose)
 
     @staticmethod
     def get_absolute_working_dir(options):
@@ -254,7 +252,7 @@ class SubCommand(object):
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
         # set the logger name at the beggining
-        self.get_logger(self.get_name(options), level=1)
+        self.get_logger(self.get_name(options))
 
         return True
 
@@ -274,14 +272,14 @@ class SubCommandWithThread(SubCommand):
             except KeyboardInterrupt:
                 if event:
                     event.set()
-            except Exception, e:  # pylint: disable=W0703
+            except Exception as e:  # pylint: disable=W0703
                 self.get_logger().exception(e)
                 event.set()
             finally:
                 sem.release()
 
         ret = True
-        if jobs > 1:
+        if jobs and jobs > 1:
             threads = set()
             sem = threading.Semaphore(jobs)
             event = threading.Event()

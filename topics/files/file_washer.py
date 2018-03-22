@@ -1,9 +1,13 @@
 
-import cStringIO
 import fnmatch
 import os
 import stat
 import subprocess
+
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import io as StringIO
 
 try:
     import magic  # pylint: disable=F0401
@@ -198,7 +202,7 @@ Supports to wash out the a text file or text files inside a directory.
                 (sta.st_mode & stat.S_IWUSR) == 0:
             return False
 
-        text = cStringIO.StringIO()
+        text = StringIO.StringIO()
         with open(filename, 'r') as fp:
             for origin in fp:
                 line = origin
