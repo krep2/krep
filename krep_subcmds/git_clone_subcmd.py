@@ -1,5 +1,8 @@
 
-import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from topics import FileUtils, GitProject, SubCommand, DownloadError, \
     Gerrit, Pattern, ProcessingError, RaiseExceptionIfOptionMissed
@@ -59,7 +62,7 @@ replaced by GIT_URL."""
         if options.name:
             self.set_name(options.name)  # pylint: disable=E1101
         else:
-            ulp = urlparse.urlparse(options.git or '')
+            ulp = urlparse(options.git or '')
             self.set_name(ulp.path.strip('/'))  # pylint: disable=E1101
 
         return SubCommand.get_name(self, options)
@@ -70,7 +73,7 @@ replaced by GIT_URL."""
         RaiseExceptionIfOptionMissed(
             options.git, 'git url (--git-url) is not set')
 
-        ulp = urlparse.urlparse(options.name or '')
+        ulp = urlparse(options.name or '')
         RaiseExceptionIfOptionMissed(
             ulp.scheme or options.remote,
             'Neither git name (--name) nor remote (--remote) is set')
@@ -104,7 +107,7 @@ replaced by GIT_URL."""
             if ret != 0:
                 raise DownloadError('%s: failed to fetch project' % project)
 
-        ulp = urlparse.urlparse(remote)
+        ulp = urlparse(remote)
         # creat the project in the remote
         if ulp.scheme in ('ssh', 'git'):
             if not options.dryrun and options.remote and options.repo_create:

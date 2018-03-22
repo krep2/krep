@@ -8,7 +8,7 @@ import tempfile
 import time
 
 from topics import FileDiff, FileUtils, FileWasher, GitProject, Gerrit, \
-    Logger, SubCommand, RaiseExceptionIfOptionMissed
+    key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
 
 
 def _hash_digest(filename, mode):
@@ -63,7 +63,10 @@ def _split_name(fullname, patterns, filtered_chars):
     return name, ''
 
 
-def _pkg_sort(a, b):
+def _sort_pkg(a, b):
+    def _cmp(vva, vvb):
+        return (vva > vvb) - (vva < vvb)
+
     va = a[2].split('.')
     vb = b[2].split('.')
 
@@ -72,7 +75,7 @@ def _pkg_sort(a, b):
         mab = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vb[k])
         if maa and mab:
             if maa.group('digit') != mab.group('digit'):
-                return cmp(
+                return _cmp(
                     int(maa.group('digit')), int(mab.group('digit')))
 
             paa, pab = maa.group('patch'), mab.group('patch')
@@ -82,12 +85,12 @@ def _pkg_sort(a, b):
                 elif not pab:
                     return -1
                 else:
-                    return cmp(paa, pab)
+                    return _cmp(paa, pab)
 
-        if cmp(va[k], vb[k]) != 0:
-            return cmp(va[k], vb[k])
+        if _cmp(va[k], vb[k]) != 0:
+            return _cmp(va[k], vb[k])
 
-    return cmp(len(va), len(vb))
+    return _cmp(len(va), len(vb))
 
 
 def _timestamp(src):
@@ -272,13 +275,13 @@ The escaped variants are supported for the imported files including:
             return
 
         if not options.keep_order:
-            pkgs.sort(_pkg_sort)
+            pkgs.sort(key=key_compare(_sort_pkg))
 
         if options.show_order or options.verbose > 0:
-            print 'Effective packages (%d)' % len(pkgs)
-            print '----------------------------'
+            print('Effective packages (%d)' % len(pkgs))
+            print('----------------------------')
             for pkg, pkgname, revision in pkgs:
-                print '%s %-15s %s' % (pkgname, '[v%s]' % revision, pkg)
+                print('%s %-15s %s' % (pkgname, '[v%s]' % revision, pkg))
             print
 
             if options.show_order:
@@ -427,7 +430,7 @@ The escaped variants are supported for the imported files including:
             if os.path.lexists(temp):
                 try:
                     shutil.rmtree(temp)
-                except OSError, e:
+                except OSError as e:
                     logger.exception(e)
 
         # push the branches

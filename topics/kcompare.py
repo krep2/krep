@@ -25,4 +25,5 @@ def key_compare(cmp):
 
     return Kcompare
             
+
 TOPIC_ENTRY = 'key_compare'
