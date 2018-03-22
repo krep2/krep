@@ -12,6 +12,7 @@ def _register_topic(topic, doc):
     if topic in all_topics:
         raise SyntaxError("%s is duplicated" % topic)
 
+    __all__.append(topic)
     all_topics[topic] = doc
 
 
@@ -44,9 +45,8 @@ def _load_python_file(pyname):
                     lambda member: inspect.isclass(member))  # pylint: disable=W0108
 
                 for m in members or list():
-                    globals().update({m[0]: m[1]})
                     if m[0] == clazz:
-                        __all__.append(m[0])
+                        globals().update({m[0]: m[1]})
 
                         _register_topic(
                             clazz,
@@ -54,8 +54,20 @@ def _load_python_file(pyname):
                             getattr(mod, '__doc__'))
                         break
                 else:
-                    raise SyntaxError(
-                        '%s/%s does not define %s' % (__name__, pyname, clazz))
+                    members = inspect.getmembers(
+                        sys.modules[name],
+                        lambda member: inspect.isfunction(member))  # pylint: disable=W0108
+
+                    for m in members or list():
+                        if m[0] == clazz:
+                            globals().update({m[0]: m[1]})
+                            _register_topic(clazz, getattr(m[1], '__doc__'))
+
+                            break
+                    else:
+                        raise SyntaxError(
+                            '%s/%s does not define %s' % (
+                                __name__, pyname, clazz))
 
 
 def _load_python_recursive(dirname, level=1):

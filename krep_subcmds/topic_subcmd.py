@@ -21,11 +21,7 @@ is the official way to use by the implemented sub-commands."""
 
         topfmt = '%(summary)s'
         if print_name:
-            longest = 0
-            for name in topics:
-                if len(name) > longest:
-                    longest = len(name)
-
+            longest = max([len(topic) for topic in topics])
             topfmt = ' %%(name)-%ds%%(summary)s' % (longest + 2)
 
         for name in topics:
@@ -46,14 +42,14 @@ is the official way to use by the implemented sub-commands."""
 
         if len(lines) > 0:
             lines.sort()
-            print '\n'.join(lines)
+            print('\n'.join(lines))
 
     def _print_all_topics(self):  # pylint: disable=R0201
-        print 'The topics of krep are:'
-        print
+        print('The topics of krep are:')
+        print('')
 
         TopicSubcmd._print_formatted_topic(all_topics.keys())
-        print '\nSee more info with "krep topic <topic>"'
+        print('\nSee more info with "krep topic <topic>"')
 
     def _print_topic(self, topics):  # pylint: disable=R0201
         aliases = dict()
@@ -72,14 +68,14 @@ is the official way to use by the implemented sub-commands."""
         for topic in topics[:]:
             topics.remove(topic)
             if topic not in aliases:
-                print 'krep: "%s" is not a known topic' % topic
+                print('krep: "%s" is not a known topic' % topic)
             else:
                 topics.append(aliases[topic])
 
         if len(topics) > 1:
             TopicSubcmd._print_formatted_topic(topics)
         elif len(topics) == 1:
-            print all_topics[topics[0]]
+            print(all_topics[topics[0]])
 
     def execute(self, options, *args):  # pylint: disable=W0613
         if len(args) == 0 or 'all' in args:

@@ -82,6 +82,9 @@ class Values(optparse.Values):
                             getattr(values, attr), boolean=st_b))
 
     def __nonzero__(self):
+        return self.__bool__()
+
+    def __bool__(self):
         return len(self.__dict__) != 0
 
     def __getattr__(self, attr):
@@ -155,7 +158,7 @@ class Values(optparse.Values):
                 values = self.__dict__.get(_ensure_attr(values))
                 if isinstance(values, (list, tuple)):
                     return self.normalize(values, attr=False)
-                elif not isinstance(values, (str, unicode)):
+                elif not isinstance(values, str):
                     return values
 
             return self._normalize(values)
@@ -222,6 +225,8 @@ class IndentedHelpFormatterWithLf(optparse.IndentedHelpFormatter):
 
 
 class OptionParser(optparse.OptionParser):
+    SUPPRESS_HELP = optparse.SUPPRESS_HELP
+
     def __init__(self,  # pylint: disable=R0913
                  usage=None,
                  option_list=None,

@@ -40,9 +40,9 @@ It can be executed from the command line.
 As all commands are dynamically loaded, the framework can be easily implemented
 with different purpose.
 
-# SCM extension
+## SCM extension
 
-## [git]
+### git
 
 [git] is a famous free and distributed version control system, used by lots of
 open source projects.
@@ -52,14 +52,14 @@ to complete the function with some git commands.
 
 Now it's the only support version control system.
 
-## [gerrit]
+### gerrit
 
 [gerrit] works as a code review system for [git]. A class supports the gerrit
 commands `ls-project` and `create-project`, which are used to detect the
 existence of git repositories remotely, and create the project with
 `extra-option` options if provided.
 
-# Development
+## Development
 
 With the framework, it's quite easy to implement the owned toolkit. Following
 defined environment variables will impact the program with the framework.
@@ -72,7 +72,7 @@ defined environment variables will impact the program with the framework.
 | `KREP_TOPIC_PATH` | Directories containing the `topic` files |
 | `KREP_SUBCMD_PATH` | Directories containing the sub-commands |
 
-## sub-commands and topics
+### sub-commands and topics
 
 The basic sense is to implement the common API classes as `topic`s and write
 sub-commands using the `topic`s.
@@ -87,7 +87,7 @@ executed. [repo-diff] is a demonstrated and workable project as `krep` plug-in,
 which explained how to use the environment variables to load both `topic` and
 `subcommand`s.
 
-## options
+### options
 
 The framework provides a quite convenient way to add sub-command options beyond
 the actual running commands. The base class `SubCommand` will enumerate each
@@ -100,7 +100,7 @@ for the functions, which may call external commands with complicated options and
 arguments. To implement the function, just a list named `extra_items` need be
 created. For instance, [gerrit.py] can be referred.
 
-## hooks
+### hooks
 
 Like many tools work in phrase, *hook* is supported by the framework, a option
 "hook-dir" is provided to indicate the locations of hooks for running
@@ -121,7 +121,7 @@ SubCommand.do_hook(hook_name, options, dryrun=options.dryrun)
 What's more, an alternative method `SubCommand.run_hook` can be used to execute
 an external command as a hook when implementing a sub-command.
 
-## configurations
+### configurations
 
 The framework tries to load two default configuration files if they're existed:
 
@@ -140,13 +140,13 @@ within the XML format, many patterns to include (positive) or exclude (negative)
 rules are supports. These patterns can help to create the specific rule when
 building sub-commands with the framework.
 
-## multi-threading
+### multi-threading
 
 `sub-command` supports multi-threading with the method
 `SubCommandWithThread.run_with_thread`. The thread number is decided by the
 option `jobs`.
 
-## logging
+### logging
 
 Python provides its `logging` method. As `krep` framework can run in
 multi-threading method, a specific implementation has been done to run named
