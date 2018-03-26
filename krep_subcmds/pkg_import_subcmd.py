@@ -277,7 +277,7 @@ The escaped variants are supported for the imported files including:
         if not options.keep_order:
             pkgs.sort(key=key_compare(_sort_pkg))
 
-        if options.show_order or options.verbose > 0:
+        if options.show_order or (options.verbose and options.verbose > 0):
             print('Effective packages (%d)' % len(pkgs))
             print('----------------------------')
             for pkg, pkgname, revision in pkgs:
