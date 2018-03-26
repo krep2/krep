@@ -139,6 +139,11 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             injects = lopts.extra(lopts.inject_option, name) + \
                       lopts.extra(lopts.inject_option)
             for opt in injects:
+                if ':' in opt:
+                    cname, opt = opt.split(':', 1)
+                    if cname in all_commands and cname != name:
+                        continue
+
                 if not opt.startswith('-'):
                     opt = '--%s' % opt
 
