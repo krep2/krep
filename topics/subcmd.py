@@ -98,13 +98,11 @@ class SubCommand(object):
         # search the imported class to load the options
         for name, clazz in (modules or dict()).items():
             if optparse and hasattr(clazz, 'options'):
-                try:
-                    logger.debug('Load %s', name)
-                    clazz.options(optparse)
-                except TypeError:
-                    pass
+                logger.debug('Load options from %s', name)
+                clazz.options(optparse)
 
             if hasattr(clazz, 'extra_items'):
+                logger.debug('Load extras from %s', name)
                 extra_list.extend(clazz.extra_items)
 
         return extra_list
