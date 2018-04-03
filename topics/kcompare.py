@@ -24,5 +24,6 @@ def key_compare(cmp):
             return cmp(self, obj, other.obj) != 0
 
     return Kcompare
-            
+
+
 TOPIC_ENTRY = 'key_compare'
