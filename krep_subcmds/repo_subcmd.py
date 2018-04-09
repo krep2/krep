@@ -261,7 +261,7 @@ this command.
         res = repo.sync()
         if res:
             if options.force:
-                self.get_logger().error(
+                self.get_logger().error(  # pylint: disable=E1101
                     'Failed to sync "%s"' % options.manifest)
             else:
                 raise DownloadError(

@@ -7,6 +7,11 @@ import shutil
 import tempfile
 import time
 
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 from topics import FileDiff, FileUtils, FileWasher, GitProject, Gerrit, \
     key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
 
@@ -290,6 +295,8 @@ The escaped variants are supported for the imported files including:
         RaiseExceptionIfOptionMissed(
             options.name, "project name (--name) is not set")
         RaiseExceptionIfOptionMissed(
+            options.remote or options.offsite, 'remote (--remote) is set')
+        RaiseExceptionIfOptionMissed(
             options.pkg_pattern, "pkg pattern (--pkg-pattern) is not set")
         RaiseExceptionIfOptionMissed(
             args, "no files or directories are specified to import")
@@ -308,8 +315,12 @@ The escaped variants are supported for the imported files including:
         if options.offsite and not os.path.exists(path):
             os.makedirs(path)
 
-        remote = '%s/%s' % (options.remote.rstrip(), options.name) \
-            if options.remote else None
+        ulp = urlparse(options.remote or '')
+        if not ulp.scheme:
+            remote = 'git://%s/%s' % (
+                options.remote.strip('/'), options.name)
+        else:
+            remote = '%s/%s' % (options.remote.strip('/'), options.name)
 
         project = GitProject(
             options.name,
