@@ -271,14 +271,13 @@ this command.
             'post-sync', options, dryrun=options.dryrun)
 
     @staticmethod
-    def push(project, options, remote):
+    def push(project, gerrit, options, remote):
         project_name = str(project)
         logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
             name=project_name)
 
         logger.info('Start processing ...')
         if not options.dryrun and remote:
-            gerrit = Gerrit(remote)
             gerrit.create_project(project.uri, options=options)
 
         RepoSubcmd.do_hook(  # pylint: disable=E1101
@@ -413,7 +412,6 @@ this command.
         if not options.offsite:
             self.init_and_sync(options)
 
-        # handle the schema of the remote
         ulp = urlparse(options.remote)
         if not ulp.scheme:
             remote = options.remote
@@ -421,11 +419,11 @@ this command.
         else:
             remote = ulp.netloc.strip('/')
 
+        gerrit = Gerrit(remote)
         projects = self.fetch_projects_in_manifest(options)
 
         if options.print_new_projects or options.dump_projects or \
                 not options.repo_create:
-            gerrit = Gerrit(remote)
 
             new_projects = list()
             existed_projects = gerrit.ls_projects()
@@ -443,4 +441,4 @@ this command.
             return
 
         return self.run_with_thread(  # pylint: disable=E1101
-            options.job, projects, RepoSubcmd.push, options, remote)
+            options.job, projects, RepoSubcmd.push, gerrit, options, remote)
