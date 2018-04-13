@@ -26,25 +26,32 @@ def _hash_digest(filename, mode):
     return None
 
 
-def _read_file_with_escape(pkg, escaped, default):
+def _handle_message_with_escape(pkg, escaped=True, default=None,
+                                maps=None, dofile=True):
     message = default
 
     main, _ = os.path.splitext(pkg)
-    for ext in ('.txt', '.msg'):
-        msgf = '%s%s' % (main, ext)
-        if os.path.exists(msgf):
-            with open(msgf, 'r') as fp:
-                message = '\n'.join([line.rstrip() for line in fp.readlines()])
+    if dofile:
+        for ext in ('.txt', '.msg'):
+            msgf = '%s%s' % (main, ext)
+            if os.path.exists(msgf):
+                with open(msgf, 'r') as fp:
+                    message = '\n'.join(
+                        [line.rstrip() for line in fp.readlines()])
 
-            break
+                break
 
-    if escaped:
+    if message and escaped:
         vals = {
             '%file': os.path.basename(pkg),
             '%size': '%s' % os.lstat(pkg)[stat.ST_SIZE],
             '%sha1': _hash_digest(pkg, 'sha1'),
             '%md5': _hash_digest(pkg, 'md5')
         }
+
+        if maps:
+            for key, value in maps.items():
+                message = message.replace('%%%s' % key, value)
 
         for key, value in vals.items():
             message = message.replace(key, value)
@@ -355,7 +362,9 @@ The escaped variants are supported for the imported files including:
                 'VERSION': revision.upper()})
 
             if options.message_template:
-                message = options.message_template % tmpl
+                message = _handle_message_with_escape(
+                    pkg, options.enable_escape,
+                    default=options.message_template, maps=tmpl, dofile=False)
             else:
                 message = 'Import %s' % (
                     '%s%s%s' % (
@@ -364,7 +373,7 @@ The escaped variants are supported for the imported files including:
                         revision))
 
             if options.use_commit_file:
-                message = _read_file_with_escape(
+                message = _handle_message_with_escape(
                     pkg, options.enable_escape, message)
 
             if os.path.isfile(pkg):
