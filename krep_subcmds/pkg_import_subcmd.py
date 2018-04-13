@@ -40,6 +40,8 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
                         [line.rstrip() for line in fp.readlines()])
 
                 break
+    elif message:
+        message = message.replace('\\n', '\n')
 
     if message and escaped:
         vals = {
