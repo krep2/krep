@@ -131,6 +131,11 @@ this command.
             options = optparse.get_option_group('--hook-dir') or \
                 optparse.add_option_group('File options')
             options.add_option(
+                '--manifest-xml-file',
+                dest='manifest_xml_file', action='store', metavar='MANIFEST',
+                default='.repo/manifest.xml',
+                help='Set the manifest XML file to parse')
+            options.add_option(
                 '--output-xml-file',
                 dest='output_xml_file', action='store', metavar='FILE',
                 help='Set the output XML filename')
@@ -150,7 +155,7 @@ this command.
 
         if not manifest:
             manifest = os.path.realpath(
-                os.path.join(working_dir, '.repo/manifest.xml'))
+                os.path.join(working_dir, options.manifest_xml_file))
 
         return Manifest(
             filename=manifest,
