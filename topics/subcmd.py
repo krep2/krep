@@ -28,7 +28,7 @@ class SubCommand(object):
 
         return self._optparse
 
-    def options(self, optparse, *args, **kws):  # pylint: disable=W0613
+    def options(self, optparse, banned=None, *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
         options = optparse.add_option_group('File options')
         options.add_option(
@@ -38,7 +38,7 @@ class SubCommand(object):
 
         self._options_jobs(optparse)
         # load options from the imported classes
-        extra_list = self._options_loaded(optparse, kws.get('modules'))
+        extra_list = self._options_loaded(optparse, banned, kws.get('modules'))
         self._option_extra(optparse, extra_list)
 
     def _options_jobs(self, optparse):
@@ -91,12 +91,15 @@ class SubCommand(object):
                          ':\n%s' % item if item else ''))
 
     @staticmethod
-    def _options_loaded(optparse=None, modules=None):
+    def _options_loaded(optparse=None, banned=None, modules=None):
         extra_list = list()
 
         logger = SubCommand.get_logger()
         # search the imported class to load the options
         for name, clazz in (modules or dict()).items():
+            if banned and name in banned:
+                continue
+
             if optparse and hasattr(clazz, 'options'):
                 logger.debug('Load options from %s', name)
                 clazz.options(optparse)
