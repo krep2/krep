@@ -25,6 +25,7 @@ def _ensure_remote(url):
         ulp = urlparse(url)
         if not ulp.scheme:
             url = 'git://' + url
+        url = re.sub('://[^\/@]+@', '://', url)
 
     return url
 

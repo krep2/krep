@@ -56,9 +56,6 @@ class Logger(object):
 
     @staticmethod
     def get_logger(name=None, level=0, verbose=0):
-        if _level < 0:
-            Logger.set()
-
         if level == 0 and verbose > 0:
             level = Logger.LEVEL_MAP.get(verbose, Logger.NOTSET)
 
@@ -73,11 +70,11 @@ class Logger(object):
         if name and not hasattr(_ldata, 'name'):
             _ldata.name = name
 
-        if 0 <= level <= oldlevel:
-            _ldata.level = level
-
         if level == 0:
             level = oldlevel
+
+        if 0 <= level <= oldlevel:
+            _ldata.level = level
 
         logger = logging.getLogger(name)
         if logger.getEffectiveLevel() > level > 0 or name is None:

@@ -88,11 +88,7 @@ class Values(optparse.Values):
         return len(self.__dict__) != 0
 
     def __getattr__(self, attr):
-        nattr = _ensure_attr(attr)
-        if nattr in self.__dict__:
-            return self.__dict__[nattr]
-        else:
-            return None
+        return self.__dict__.get(_ensure_attr(attr))
 
     def diff(self, values, option=None, args=None):
         diffs = Values()
