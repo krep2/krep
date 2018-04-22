@@ -95,10 +95,14 @@ loaded class and check if the method `options` existed to load the functional
 options.
 
 With the implementation, every big function can provide its option. What's more,
+an injection option is implemented to pass options to wrapped sub-command. And
 an extra implementation with the option "extra-option" can supply the options
 for the functions, which may call external commands with complicated options and
 arguments. To implement the function, just a list named `extra_items` need be
 created. For instance, [gerrit.py] can be referred.
+
+Option `verbose` and `dry-run` are supported to debug the framework and plug-ins
+exhanced by the framework.
 
 ### hooks
 
