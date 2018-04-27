@@ -71,7 +71,7 @@ replaced by GIT_URL."""
         SubCommand.execute(self, options, *args, **kws)
 
         RaiseExceptionIfOptionMissed(
-            options.git, 'git url (--git-url) is not set')
+            options.git or options.offsite, 'git url (--git-url) is not set')
 
         ulp = urlparse(options.name or '')
         RaiseExceptionIfOptionMissed(
