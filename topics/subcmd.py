@@ -154,11 +154,13 @@ class SubCommand(object):
                 continue
 
             if optparse and hasattr(clazz, 'options'):
-                logger.debug('Load options from %s', name)
-                clazz.options(optparse)
+                try:
+                    logger.debug('Load %s', name)
+                    clazz.options(optparse)
+                except TypeError:
+                    pass
 
             if hasattr(clazz, 'extra_items'):
-                logger.debug('Load extras from %s', name)
                 extra_list.extend(clazz.extra_items)
 
         return extra_list
