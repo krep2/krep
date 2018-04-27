@@ -164,8 +164,11 @@ class SubCommand(object):
                 continue
 
             if optparse and hasattr(clazz, 'options'):
-                logger.debug('Load options from %s', name)
-                clazz.options(optparse)
+                try:
+                    logger.debug('Load %s', name)
+                    clazz.options(optparse)
+                except TypeError:
+                    pass
 
             if hasattr(clazz, 'extra_items'):
                 logger.debug('Load extras from %s', name)
@@ -180,8 +183,15 @@ class SubCommand(object):
 
     @staticmethod
     def get_absolute_working_dir(options):
-        return os.path.join(options.working_dir, options.relative_dir) \
-            if options.relative_dir else options.working_dir
+        if options.relative_dir:
+            path = os.path.join(options.working_dir, options.relative_dir)
+        else:
+            path = ptions.working_dir
+
+        if path.startswith('~/'):
+            return os.path.expanduser(path)
+        else:
+            return path
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
