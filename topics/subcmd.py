@@ -161,6 +161,7 @@ class SubCommand(object):
                     pass
 
             if hasattr(clazz, 'extra_items'):
+                logger.debug('Load extras from %s', name)
                 extra_list.extend(clazz.extra_items)
 
         return extra_list
