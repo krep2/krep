@@ -91,7 +91,7 @@ class Command(object):  # pylint: disable=R0902
         if capture_stderr:
             dbg += '2>| '
 
-        logger.info('%s%s', dbg, ' '.join(cli))
+        logger.debug('%s%s', dbg, ' '.join(cli))
 
         # invoke 'true' instead if dryrun set
         if dryrun:
