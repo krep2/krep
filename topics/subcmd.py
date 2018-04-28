@@ -186,7 +186,7 @@ class SubCommand(object):
         if options.relative_dir:
             path = os.path.join(options.working_dir, options.relative_dir)
         else:
-            path = ptions.working_dir
+            path = options.working_dir
 
         if path.startswith('~/'):
             return os.path.expanduser(path)
