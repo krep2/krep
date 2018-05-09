@@ -432,7 +432,7 @@ The escaped variants are supported for the imported files including:
                 if ret == 0:
                     if options.version_template:
                         tags.append(options.version_template % tmpl)
-                    elif options.local:
+                    elif options.local and revision:
                         trefs = self.override_value(  # pylint: disable=E1101
                             options.refs, options.tag_refs) or ''
                         if trefs:
@@ -441,11 +441,12 @@ The escaped variants are supported for the imported files including:
                         tags.append(
                             '%s%s%s' % (
                                 trefs, options.version_prefix, revision))
-                    else:
+                    elif revision:
                         tags.append(
                             '%s%s' % (options.version_prefix, revision))
 
-                    ret, _ = project.tag(tags[-1])
+                    if tags:
+                        ret, _ = project.tag(tags[-1])
 
             if os.path.lexists(temp):
                 try:
