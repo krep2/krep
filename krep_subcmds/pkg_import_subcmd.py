@@ -364,9 +364,7 @@ The escaped variants are supported for the imported files including:
                 'VERSION': revision.upper()})
 
             if options.message_template:
-                message = _handle_message_with_escape(
-                    pkg, options.enable_escape,
-                    default=options.message_template, maps=tmpl, dofile=False)
+                message = options.message_template
             else:
                 message = 'Import %s' % (
                     '%s%s%s' % (
@@ -374,9 +372,9 @@ The escaped variants are supported for the imported files including:
                         revision and ' %s' % options.version_prefix,
                         revision))
 
-            if options.use_commit_file:
-                message = _handle_message_with_escape(
-                    pkg, options.enable_escape, message)
+            message = _handle_message_with_escape(
+                pkg, options.enable_escape, message,
+                dofile=options.use_commit_file)
 
             if os.path.isfile(pkg):
                 FileUtils.extract_file(pkg, temp)
