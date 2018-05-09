@@ -278,7 +278,7 @@ The escaped variants are supported for the imported files including:
                 logger.warn(
                     'Warning: pkgname "%s" mismatched "%s"', pkgname, name)
 
-            if not revision:
+            if options.pkg_pattern and not revision:
                 logger.error(
                     'Error: %s failed to be recognized with revision' % pkg)
             else:
@@ -306,7 +306,8 @@ The escaped variants are supported for the imported files including:
         RaiseExceptionIfOptionMissed(
             options.remote or options.offsite, 'remote (--remote) is set')
         RaiseExceptionIfOptionMissed(
-            options.pkg_pattern, "pkg pattern (--pkg-pattern) is not set")
+            options.pkg_pattern or options.message_template,
+            'pkg pattern (--pkg-pattern) is not set')
         RaiseExceptionIfOptionMissed(
             args, "no files or directories are specified to import")
 
