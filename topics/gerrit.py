@@ -57,7 +57,7 @@ implicitly."""
             help='Set gerrit url for the repository management')
         options.add_option(
             '--repo-create',
-            dest='repo_create', action='store_true', default=True,
+            dest='repo_create', action='store_true', default=False,
             help='Create the repository by default: %default')
         # Not to set the default for no-option
         options.add_option(
