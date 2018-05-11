@@ -118,13 +118,18 @@ class Command(object):  # pylint: disable=R0902
         return command.replace('_', '-')
 
     def get_output(self):
-        return self.stdout and self.stdout.decode('utf-8').strip()
+        if self.stdout:
+            return str(self.stdout.decode('utf-8')).strip()
+        else:
+            return ''
 
     def get_out_lines(self):
         return (self.get_output() or '').split('\n')
 
     def get_error(self):
-        return self.stderr and self.stderr.decode('utf-8').strip()
-
+        if self.stderr:
+            return str(self.stderr.decode('utf-8')).strip()
+        else:
+            return ''
 
 TOPIC_ENTRY = "Command, CommandNotDetectedError"
