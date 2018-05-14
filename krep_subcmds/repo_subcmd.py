@@ -139,6 +139,10 @@ this command.
                 '--output-xml-file',
                 dest='output_xml_file', action='store', metavar='FILE',
                 help='Set the output XML filename')
+            options.add_option(
+                '--map-file',
+                dest='map_file', action='store', metavar='MAP_FILE',
+                help='Set the manifest map file with patterns')
 
     @staticmethod
     def get_manifest(options, manifest=None, mirror=False):
@@ -359,6 +363,13 @@ this command.
         builder.save()
 
     @staticmethod
+    def build_map_file(options, projects):
+        with open(options.map_file, 'w') as fp:
+            for project in projects:
+                if project.uri != project.source:
+                    fp.write('%s -> %s' % (project.uri, project.source))
+
+    @staticmethod
     def dump_projects(options, projects, nprojects):
         lsrc, luri = 0, 0
         if options.dump_projects:
@@ -443,8 +454,13 @@ this command.
                 RepoSubcmd.dump_projects(options, projects, new_projects)
                 return
 
-        if options.output_xml_file:
-            RepoSubcmd.build_xml_file(options, projects, True)
+        if options.output_xml_file or options.map_file:
+            if options.map_file:
+                RepoSubcmd.build_map_file(options, projects)
+
+            if options.output_xml_file:
+                RepoSubcmd.build_xml_file(options, projects, True)
+
             return
 
         return self.run_with_thread(  # pylint: disable=E1101
