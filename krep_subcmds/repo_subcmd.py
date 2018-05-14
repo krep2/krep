@@ -128,6 +128,12 @@ this command.
                 dest='print_new_projects', action='store_true',
                 help='Print the new projects which isn\'t managed by Gerrit')
 
+            options = optparse.add_option_group('Extra action options')
+            options.add_option(
+                '--convert-manifest-file',
+                dest='convert_manifest_file', action='store_true',
+                help='Do convert the manifest file with the manifest map file')
+
             options = optparse.get_option_group('--hook-dir') or \
                 optparse.add_option_group('File options')
             options.add_option(
@@ -175,7 +181,8 @@ this command.
         pattern = Pattern(options.pattern)
 
         for node in manifest.get_projects():
-            if not os.path.exists(node.path):
+            if not os.path.exists(node.path) and \
+                    not options.convert_manifest_file:
                 logger.warning('%s not existed, ignored', node.path)
                 continue
             elif not pattern.match('p,project', node.name):
@@ -370,6 +377,52 @@ this command.
                     fp.write('%s -> %s' % (project.uri, project.source))
 
     @staticmethod
+    def do_convert_manifest(options):
+        maps = dict()
+        origins = dict()
+
+        manifest = RepoSubcmd.get_manifest(options)
+        for project in manifest.get_projects():
+            origins[project.name] = project
+
+        default = manifest.get_default()
+        default.remote = options.remote
+
+        builder = ManifestBuilder(
+            options.output_xml_file,
+            RepoSubcmd.get_absolute_working_dir(options))  # pylint: disable=E1101
+
+        builder.append(default)
+
+        for remote in manifest.get_remotes():
+            builder.append(remote)
+
+        projects = RepoSubcmd.fetch_projects_in_manifest(options)
+        projects.sort(key=sort_project_path)
+
+        if options.map_file:
+            if not os.path.exists(options.map_file):
+                RepoSubcmd.build_map_file(options, projects)
+
+            if os.path.exists(options.map_file):
+                with open(options.map_file, 'r') as fp:
+                    for line in fp.readlines():
+                        nname, _, origin = line.split(' ', 2)
+                        maps[origin] = nname
+
+        for project in projects:
+            name = project.uri
+            if name in maps:
+                name = maps[name]
+
+            builder.project(
+                name, project.path, project.revision,
+                origins[project.source].groups,
+                copyfiles=project.copyfiles, linkfiles=project.linkfiles)
+
+        builder.save()
+
+    @staticmethod
     def dump_projects(options, projects, nprojects):
         lsrc, luri = 0, 0
         if options.dump_projects:
@@ -420,6 +473,9 @@ this command.
 
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
+
+        if options.convert_manifest_file:
+            return RepoSubcmd.do_convert_manifest(options)
 
         RaiseExceptionIfOptionMissed(
             options.remote, 'remote (--remote) is not set')
