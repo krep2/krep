@@ -162,11 +162,12 @@ this command.
             refspath=os.path.dirname(refsp),
             mirror=mirror or (options is not None and options.mirror))
 
-    def fetch_projects_in_manifest(self, options):
-        manifest = self.get_manifest(options)
+    @staticmethod
+    def fetch_projects_in_manifest(options):
+        manifest = RepoSubcmd.get_manifest(options)
 
         projects = list()
-        logger = self.get_logger()  # pylint: disable=E1101
+        logger = RepoSubcmd.get_logger()  # pylint: disable=E1101
         pattern = Pattern(options.pattern)
 
         for node in manifest.get_projects():
@@ -180,10 +181,11 @@ this command.
             name = '%s%s' % (
                 options.prefix or '',
                 pattern.replace('p,project', node.name, name=node.name))
+
             project = GitProject(
                 name,
                 worktree=os.path.join(
-                    self.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
+                    RepoSubcmd.get_absolute_working_dir(options), node.path),  # pylint: disable=E1101
                 remote='%s/%s' % (options.remote, name),
                 pattern=pattern,
                 source=node.name,
