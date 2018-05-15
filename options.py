@@ -163,6 +163,9 @@ class Values(optparse.Values):
     def extra(option, prefix=None):
         ret = list()
 
+        if not isinstance(option, (list, tuple)):
+            option = [option]
+
         for value in option or list():
             if ':' in value and prefix:
                 name, extra = value.split(':', 1)
