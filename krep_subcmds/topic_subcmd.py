@@ -7,13 +7,16 @@ from topics import all_topics, SubCommand
 class TopicSubcmd(SubCommand):
     COMMAND = 'topic'
     help_summary = 'Print the topic summaries'
-    help_usage = """\
+    help_usage = '''\
 %prog <topic> ...
 
 Display all registered topics of the program for debugging purpose.
 
 Topic contains the classes that can be imported from "topics", which
-is the official way to use by the implemented sub-commands."""
+is the official way to use by the implemented sub-commands.
+
+Environment variables KREP_EXTRA_PATH and KREP_TOPIC_PATH could define
+new external sub-commands. Try to define the variables if required.'''
 
     @staticmethod
     def _print_formatted_topic(topics, print_name=True):
