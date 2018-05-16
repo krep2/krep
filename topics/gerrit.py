@@ -108,7 +108,7 @@ implicitly."""
         logger = Logger.get_logger('Gerrit')
 
         project = project.strip()
-        optcp = options or options.extra_values(
+        optcp = options and options.extra_values(
             options.extra_option, 'gerrit-cp')
         if project not in self.ls_projects():
             args = list()
