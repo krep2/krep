@@ -75,6 +75,8 @@ this command.
              'continue sync even if a project fails'),
             ('repo-sync:current-branch', 'fetch only current branch'),
             ('repo-sync:jobs', 'projects to fetch simultaneously'),
+            ('repo-sync:no-clone-bundle',
+             'disable use of /clone.bundle on HTTP/HTTPS'),
             ('repo-sync:no-repo-verify', 'do not verify repo source code'),
             ('repo-sync:fetch-submodules', 'fetch submodules from server'),
             ('repo-sync:optimized-fetch', 'only fetch project fixed to sha1'),
