@@ -112,12 +112,16 @@ implicitly."""
         logger = Logger.get_logger('Gerrit')
 
         project = project.strip()
-        optcp = options or options.extra_values(
+        optcp = options and options.extra_values(
             options.extra_option, 'gerrit-cp')
         if project not in self.ls_projects():
             args = list()
-            if initial_commit or (optcp and optcp.empty_commit):
-                args.append('--empty-commit')
+            cp_value = optcp and optcp.boolean(optcp.empty_commit)
+            if initial_commit or cp_value:
+                if cp_value == False:
+                    pass
+                else:
+                    args.append('--empty-commit')
 
             # description=False means --no-description to suppress the function
             if optcp and optcp.description:

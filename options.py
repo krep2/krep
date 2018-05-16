@@ -160,8 +160,30 @@ class Values(optparse.Values):
             return self._normalize(values)
 
     @staticmethod
+    def boolean(value):
+        ret = Values._handle_value(value, True)
+        if ret in (True, False):
+            return ret
+        else:
+            return False
+
+    @staticmethod
+    def int(value):
+        ret = Values._handle_value(value)
+        try:
+            tmp = ret  # pylint: disable=W0612
+            # try inc
+            tmp += 1
+            return ret
+        except TypeError:
+            return None
+
+    @staticmethod
     def extra(option, prefix=None):
         ret = list()
+
+        if not isinstance(option, (list, tuple)):
+            option = [option]
 
         for value in option or list():
             if ':' in value and prefix:

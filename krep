@@ -12,6 +12,9 @@ from topics import ConfigFile, FileUtils, KrepError, Logger
 
 VERSION = '0.3'
 
+if sys.version_info[0] < 3:
+    reload(sys) 
+    sys.setdefaultencoding('utf-8')
 
 def _global_options(cmd=None):
     global_options = OptionParser(usage='''\
@@ -36,8 +39,7 @@ Execute the specified sub-commands, which can be listed with the command
     group.add_option(
         '-T', '--dryrun',
         dest='dryrun', action='store_true', default=False,
-        help='try running the command without actual changes to the local '
-             'repository and the remote server')
+        help='try running the command without actual execution of commands')
     group.add_option(
         '-v', '--verbose',
         dest='verbose', action='count', default=0,

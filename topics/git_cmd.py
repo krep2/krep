@@ -102,5 +102,8 @@ class GitCommand(Command):
     def rm(self, *args, **kws):  # pylint: disable=C0103
         return self.raw_command('rm', *args, **kws)
 
+    def show(self, *args, **kws):
+        return self.raw_command_with_output('show', *args, **kws)
+
     def tag(self, *args, **kws):
         return self.raw_command_with_output('tag', *args, **kws)

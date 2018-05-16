@@ -11,6 +11,9 @@ class HelpSubcmd(SubCommand):
 Display the detailed usage of the sub-command or the list of all supported
 sub-commands.
 
+Environment variables KREP_EXTRA_PATH and KREP_SUBCMD_PATH could define new
+external sub-commands. Try to define the variables if required.
+
 The argument "all" indicats to list all sub-commands implicitly.'''
 
     def _print_all_commands(self):

@@ -179,8 +179,13 @@ class GitProject(Project, GitCommand):
 
                 head = re.split(r'[\s]+', line, maxsplit=2)
                 if head[1] != '->':
-                    heads[_secure_head_name(head[0])] = head[1]
                     heads[head[0]] = head[1]
+
+                    # keep local branch with a higher priority
+                    name = _secure_head_name(head[0])
+                    if name not in heads or name == head[0]:
+                        heads[name] = head[1]
+
 
         return ret, heads
 
@@ -218,6 +223,10 @@ class GitProject(Project, GitCommand):
 
         for origin in local_heads:
             head = _secure_head_name(origin)
+            # ignore the remotes if local has changed
+            if head != origin and head in local_heads:
+                continue
+
             if not fullname:
                 head = os.path.basename(head)
             if not head:
