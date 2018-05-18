@@ -175,8 +175,8 @@ this command.
             mirror=mirror or (options is not None and options.mirror))
 
     @staticmethod
-    def fetch_projects_in_manifest(options):
-        manifest = RepoSubcmd.get_manifest(options)
+    def fetch_projects_in_manifest(options, filename=None):
+        manifest = RepoSubcmd.get_manifest(options, filename)
 
         projects = list()
         logger = RepoSubcmd.get_logger()  # pylint: disable=E1101
