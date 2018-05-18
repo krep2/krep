@@ -30,8 +30,8 @@ acutally in platform/manifest.git within a mirror.)
         optparse.suppress_opt('--mirror', True)
 
     @staticmethod
-    def fetch_projects_in_manifest(options):
-        manifest = RepoMirrorSubcmd.get_manifest(options)
+    def fetch_projects_in_manifest(options, filename=None):
+        manifest = RepoMirrorSubcmd.get_manifest(options, filename)
 
         projects = list()
         logger = RepoMirrorSubcmd.get_logger()  # pylint: disable=E1101
