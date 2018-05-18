@@ -182,7 +182,7 @@ class Values(optparse.Values):
     def extra(option, prefix=None):
         ret = list()
 
-        if not isinstance(option, (list, tuple)):
+        if option and not isinstance(option, (list, tuple)):
             option = [option]
 
         for value in option or list():
