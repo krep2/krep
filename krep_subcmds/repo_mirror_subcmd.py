@@ -29,16 +29,17 @@ acutally in platform/manifest.git within a mirror.)
         RepoSubcmd.options(self, optparse)
         optparse.suppress_opt('--mirror', True)
 
-    def fetch_projects_in_manifest(self, options):
-        manifest = self.get_manifest(options)
+    @staticmethod
+    def fetch_projects_in_manifest(options):
+        manifest = RepoMirrorSubcmd.get_manifest(options)
 
         projects = list()
-        logger = self.get_logger()  # pylint: disable=E1101
+        logger = RepoMirrorSubcmd.get_logger()  # pylint: disable=E1101
         pattern = Pattern(options.pattern)
 
         for node in manifest.get_projects():
             path = os.path.join(
-                self.get_absolute_working_dir(options),  # pylint: disable=E1101
+                RepoMirrorSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
                 '%s.git' % node.name)
             if not os.path.exists(path):
                 logger.warning('%s not existed, ignored', path)
