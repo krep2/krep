@@ -428,8 +428,8 @@ this command.
     def dump_projects(options, projects, nprojects):
         lsrc, luri = 0, 0
         if options.dump_projects:
-            print('IMPORTED PROJECTS')
-            print('=====================')
+            print('IMPORTED PROJECTS (%d)' % len(projects))
+            print('=========================')
             for p in projects:
                 if len(p.source) > lsrc:
                     lsrc = len(p.source)
@@ -447,8 +447,8 @@ this command.
                         project in nprojects else '')).rstrip())
         elif options.print_new_projects:
             if nprojects:
-                print('NEW PROJECTS')
-                print('================')
+                print('NEW PROJECTS (%d)' % len(nprojects))
+                print('====================')
                 for p in nprojects:
                     if len(p.source) > lsrc:
                         lsrc = len(p.source)
@@ -465,7 +465,7 @@ this command.
             else:
                 print('No new project found')
         elif not options.repo_create and len(nprojects) > 0:
-            print('Exit with following new projects:')
+            print('Exit with following new projects (%d):'  % len(nprojects))
             for project in sorted(nprojects, key=sort_project):
                 line = ' %s' % project.source
                 if project.source != project.uri:
