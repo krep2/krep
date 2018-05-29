@@ -224,7 +224,8 @@ class GitProject(Project, GitCommand):
         for origin in local_heads:
             head = _secure_head_name(origin)
             # ignore the remotes if local has changed
-            if head != origin and head in local_heads:
+            if head != origin and head in local_heads and \
+                    local_heads[head] != local_heads[origin]:
                 continue
 
             if not fullname:
