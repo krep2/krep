@@ -302,6 +302,20 @@ matching.
     def __len__(self):
         return len(self.categories)
 
+    def __str__(self):
+        val = '<Pattern - %r\n' % self
+        for pattern in sorted(self.categories.keys()):
+            items = self.categories[pattern]
+            val += ' %s = {\n' % pattern
+            for name, item in items.items():
+                val += '   %s : %s\n' % (name, item)
+            val += ' },\n'
+
+        val = val[:-2]
+        val += '\n>\n'
+
+        return val
+
     @staticmethod
     def options(optparse):
         options = optparse.get_option_group('--job') or \

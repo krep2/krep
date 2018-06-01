@@ -84,6 +84,11 @@ class SubCommand(object):
         # Import options
         options = optparse.add_option_group('Import options')
         options.add_option(
+            '--skip-validation',
+            dest='skip_validation', action='store_true',
+            help='Skip the validation with lots of commits. More info can '
+                 'refer to gerrit document for user upload')
+        options.add_option(
             '-a', '--all',
             dest='all', action='store_true', default=None,
             help='Take all operations except to suppress with opposite option '
