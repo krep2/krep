@@ -208,7 +208,8 @@ class GitProject(Project, GitCommand):
         return ret == 0
 
     def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
-                   fullname=False, force=False, sha1tag=None, *args, **kws):
+                   fullname=False, skip_validation=False,
+                   force=False, sha1tag=None, *args, **kws):
         logger = Logger.get_logger()
 
         refs = refs and '%s/' % refs.rstrip('/')
@@ -284,11 +285,19 @@ class GitProject(Project, GitCommand):
 
             ret = 0
             if not skip:
-                ret = self.push(
-                    self.remote,
-                    '%s%s:%s' % (
-                        '+' if force else '', local_ref, remote_ref),
-                    *args, **kws)
+                if skip_validation:
+                    ret = self.push(
+                        self.remote,
+                        '-o', 'skip-validation',
+                        '%s%s:%s' % (
+                            '+' if force else '', local_ref, remote_ref),
+                        *args, **kws)
+                else:
+                    ret = self.push(
+                        self.remote,
+                        '%s%s:%s' % (
+                            '+' if force else '', local_ref, remote_ref),
+                        *args, **kws)
 
             if ret == 0 and not push_all and (
                     sha1tag and self.is_sha1(origin)):
@@ -298,11 +307,19 @@ class GitProject(Project, GitCommand):
                     equals = _sha1_equals(sha1, origin)
 
                 if not equals or force:
-                    ret = self.push(
-                        self.remote,
-                        '%s%s:refs/tags/%s' % (
-                            '+' if force else '', local_ref, sha1tag),
-                        *args, **kws)
+                    if skip_validation:
+                        ret = self.push(
+                            self.remote,
+                            '-o', 'skip-validation',
+                            '%s%s:refs/tags/%s' % (
+                                '+' if force else '', local_ref, sha1tag),
+                            *args, **kws)
+                    else:
+                        ret = self.push(
+                            self.remote,
+                            '%s%s:refs/tags/%s' % (
+                                '+' if force else '', local_ref, sha1tag),
+                            *args, **kws)
 
             if ret != 0:
                 logger.error('error to execute git push to %s', self.remote)
@@ -310,7 +327,7 @@ class GitProject(Project, GitCommand):
         return ret
 
     def push_tags(self, tags=None, refs=None, force=False, fullname=False,
-                  *args, **kws):
+                  skip_validation=False, *args, **kws):
         logger = Logger.get_logger()
 
         refs = refs and '%s/' % refs.rstrip('/')
@@ -359,11 +376,19 @@ class GitProject(Project, GitCommand):
                     logger.info('%s is up-to-date', remote_tag)
                     continue
 
-            ret = self.push(
-                self.remote,
-                '%srefs/tags/%s:%s' % (
-                    '+' if force else '', origin, remote_tag),
-                *args, **kws)
+            if skip_validation:
+                ret = self.push(
+                    self.remote,
+                    '-o', 'skip-validation',
+                    '%srefs/tags/%s:%s' % (
+                        '+' if force else '', origin, remote_tag),
+                    *args, **kws)
+            else:
+                ret = self.push(
+                    self.remote,
+                    '%srefs/tags/%s:%s' % (
+                        '+' if force else '', origin, remote_tag),
+                    *args, **kws)
 
             if ret != 0:
                 logger.error(
