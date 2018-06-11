@@ -13,7 +13,7 @@ from topics import ConfigFile, FileUtils, KrepError, Logger
 VERSION = '0.3'
 
 if sys.version_info[0] < 3:
-    reload(sys) 
+    reload(sys)
     sys.setdefaultencoding('utf-8')
 
 def _global_options(cmd=None):
@@ -29,6 +29,10 @@ Execute the specified sub-commands, which can be listed with the command
         '-w', '--working-dir',
         dest='working_dir', action='store', metavar='DIR', default=os.getcwd(),
         help='Set the working directory. default: %default')
+    group.add_option(
+        '--current-dir',
+        dest='current_dir', action='store', metavar='DIR', default=os.getcwd(),
+        help=global_options.SUPPRESS_HELP)
     group.add_option(
         '--relative-dir',
         dest='relative_dir', action='store', metavar='DIR',
