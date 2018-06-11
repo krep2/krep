@@ -15,6 +15,10 @@ class ProcessingError(KrepError):
     """Indicate the unsuccessful processing."""
 
 
+class RepositoryNotFound(KrepError):
+    """Indicate that the repository isn't existed."""
+
+
 class RaiseExceptionIfOptionMissed(object):
     """Raise OptionMissedError if the option or options are missed."""
     def __init__(self, option, prompt):
@@ -23,4 +27,5 @@ class RaiseExceptionIfOptionMissed(object):
 
 
 TOPIC_ENTRY = 'KrepError, DownloadError, OptionMissedError, ' \
-              'ProcessingError, RaiseExceptionIfOptionMissed'
+              'ProcessingError, RepositoryNotFound, ' \
+              'RaiseExceptionIfOptionMissed'
