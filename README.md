@@ -1,3 +1,5 @@
+![](https://img.shields.io/badge/python-2.7%2C%203.6-blue.svg)
+
 # krep: Tool framework for extension
 
 The `krep` project on the branch contains the elemental construction to build
