@@ -130,6 +130,13 @@ class SubCommand(object):
         else:
             return path
 
+    @staticmethod
+    def get_absolute_running_file_name(options, filename):
+        if os.path.isabs(filename) or not options.current_dir:
+            return filename
+        else:
+            return os.path.join(options.current_dir, filename)
+
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
         return self._name or \
