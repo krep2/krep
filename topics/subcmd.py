@@ -3,7 +3,9 @@ import os
 import threading
 
 from command import Command
+from config_file import ConfigFile
 from logger import Logger
+from pattern import Pattern
 
 
 class SubCommand(object):
@@ -112,6 +114,22 @@ class SubCommand(object):
                 extra_list.extend(clazz.extra_items)
 
         return extra_list
+
+    @staticmethod
+    def get_patterns(options):
+        patterns = Pattern()
+
+        if options.pattern:
+            patterns += Pattern(options.pattern)
+
+        if options.pattern_file:
+            cfg = ConfigFile(
+                SubCommand.get_absolute_running_file_name(
+                    options.pattern_file))
+
+            patterns += cfg.get(ConfigFile.PATTERN_PREFIX)
+
+        return patterns
 
     @staticmethod
     def get_logger(name=None, level=0, verbose=0):
