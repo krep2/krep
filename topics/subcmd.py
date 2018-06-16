@@ -3,7 +3,9 @@ import os
 import threading
 
 from command import Command
+from config_file import ConfigFile
 from logger import Logger
+from pattern import Pattern
 
 
 class SubCommand(object):
@@ -172,6 +174,22 @@ class SubCommand(object):
         return extra_list
 
     @staticmethod
+    def get_patterns(options):
+        patterns = Pattern()
+
+        if options.pattern:
+            patterns += Pattern(options.pattern)
+
+        if options.pattern_file:
+            cfg = ConfigFile(
+                SubCommand.get_absolute_running_file_name(
+                    options.pattern_file))
+
+            patterns += cfg.get(ConfigFile.PATTERN_PREFIX)
+
+        return patterns
+
+    @staticmethod
     def get_logger(name=None, level=0, verbose=0):
         """Returns the encapusulated logger for subcommands."""
         return Logger.get_logger(name, level, verbose)
@@ -187,6 +205,13 @@ class SubCommand(object):
             return os.path.expanduser(path)
         else:
             return path
+
+    @staticmethod
+    def get_absolute_running_file_name(options, filename):
+        if os.path.isabs(filename) or not options.current_dir:
+            return filename
+        else:
+            return os.path.join(options.current_dir, filename)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
