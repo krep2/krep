@@ -326,7 +326,7 @@ matching.
             help='Set the patterns for the command')
         options.add_option(
             '--pattern-file',
-            dest='pattern-file', action='store',
+            dest='pattern_file', action='store',
             help='Set the pattern file in XML format for patterns')
 
     def _ensure_item(self, category, name, strict=False):

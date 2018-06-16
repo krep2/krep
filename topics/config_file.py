@@ -27,6 +27,7 @@ def _setattr(obj, name, value):
 
 class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
+    PATTERN_PREFIX = 'pattern'
     PROJECT_PREFIX = 'project'
     FILE_PREFIX = 'file'
     HOOK_PREFIX = "hook"
@@ -187,18 +188,26 @@ class _XmlConfigFile(_ConfigFile):
         self._parse_xml(filename, pi)
 
     def _parse_xml(self, content, pi=None):
+        def _getattr(node, name, default=None):
+            if node.hasAttribute(name):
+                return node.getAttribute(name)
+            else:
+                return default
+
+        def _handlePatterns(cfg, node):
+            if node.nodeName in (
+                    'patterns', 'exclude-patterns', 'replace-patterns'):
+                patterns = PatternFile.parse_patterns_str(child)
+                for pattern in patterns:
+                    _setattr(cfg, 'pattern', pattern)
+
         root = xml.dom.minidom.parse(content)
 
         default = self._new_value(_ConfigFile.DEFAULT_CONFIG)
 
         proj = root.childNodes[0]
-        if proj and proj.nodeName == 'projects':
-            def _getattr(node, name, default=None):
-                if node.hasAttribute(name):
-                    return node.getAttribute(name)
-                else:
-                    return default
 
+        if proj.nodeName == 'projects':
             def _parse_global(node):
                 _setattr(default, _getattr(node, 'name'),
                          _getattr(node, 'value', 'true'))
@@ -239,18 +248,15 @@ class _XmlConfigFile(_ConfigFile):
                         name = _getattr(child, 'name')
                         value = _getattr(child, 'value')
                         _setattr(cfg, name, value)
-                    elif child.nodeName in (
-                            'patterns', 'exclude-patterns', 'replace-patterns'):
-                        patterns = PatternFile.parse_patterns_str(child)
-                        for pattern in patterns:
-                            _setattr(cfg, 'pattern', pattern)
+                    elif child.nodeName == 'hook':
+                        _parse_hook(cfg, child)
                     elif child.nodeName in (
                             'pattern', 'exclude-pattern', 'rp-pattern',
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
-                    elif child.nodeName == 'hook':
-                        _parse_hook(cfg, child)
+                    else:
+                        _handlePatterns(cfg, node)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
@@ -267,6 +273,9 @@ class _XmlConfigFile(_ConfigFile):
                     name, xvals = _parse_include(node)
                     self._new_value(
                         '%s.%s' % (_ConfigFile.FILE_PREFIX, name), xvals)
+        else:
+            cfg = self._new_value(_ConfigFile.PROJECT_PREFIX)
+            _handlePatterns(cfg, proj)
 
 
 class ConfigFile(_ConfigFile):
