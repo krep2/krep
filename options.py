@@ -16,14 +16,37 @@ def _ensure_attr(attr, reverse=False):
         return attr.replace('-', '_')
 
 
+class _Origins(object):
+    def __init__(self, defaults=None):
+        self.origins = dict()
+        if defaults:
+            for attr in defaults:
+                self.origins[attr] = 'default'
+
+    def set(self, key, origin):
+      if origin:
+          self.origins[key] = origin
+      else:
+          self.origins.pop(key, None)
+
+    def get(self, key):
+      return self.origins.get(key, 'unknown')
+
+
 class Values(optparse.Values):
     def __init__(self, defaults=None):
         if isinstance(defaults, Values):
             optparse.Values.__init__(self, defaults.__dict__)
+            self.origins = _Origins(defaults.__dict__)
         elif isinstance(defaults, dict):
             optparse.Values.__init__(self, defaults)
+            self.origins = _Origins(defaults)
         else:
             optparse.Values.__init__(self)
+            self.origins = _Origins()
+
+    def origin(self, attr):
+         return self.origins.get(attr)
 
     @staticmethod
     def _handle_value(val, boolean=False):
@@ -57,7 +80,7 @@ class Values(optparse.Values):
 
         return opt
 
-    def join(self, values, option=None, override=True):
+    def join(self, values, option=None, override=True, origin=None):
         if values is not None:
             for attr in values.__dict__:
                 opt = option and Values._getopt(option, attr)
@@ -69,6 +92,7 @@ class Values(optparse.Values):
                             del self.__dict__[attr]
                         continue
 
+                    self.origins.set(attr, origin)
                     setattr(
                         self, attr,
                         Values._handle_value(
@@ -77,6 +101,7 @@ class Values(optparse.Values):
                     if getattr(values, attr) is None:
                         continue
 
+                    self.origins.set(attr, origin)
                     self.ensure_value(
                         attr, Values._handle_value(
                             getattr(values, attr), boolean=st_b))
@@ -305,7 +330,7 @@ class OptionParser(optparse.OptionParser):
             setattr(self.sup_values, opt.lstrip('-'), default)
 
     def join(self, opt):
-        opt.join(self.sup_values, override=True)
+        opt.join(self.sup_values, override=True, origin='default')
 
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """

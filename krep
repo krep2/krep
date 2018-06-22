@@ -80,8 +80,8 @@ def _load_default_option():
     global _default_option  # pylint: disable=C0103,W0603
     if _default_option is None:
         opts = Values()
-        opts.join(_loadconf('/etc/default/krepconfig'))
-        opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
+        opts.join(_loadconf('/etc/default/krepconfig'), origin='file')
+        opts.join(_loadconf(os.path.expanduser('~/.krepconfig')), origin='file')
 
         _default_option = opts
 
@@ -139,7 +139,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
         if optparse is None:
             _, _, _, optparse = _option_parse([name], logger)
             ops, _ = optparse.parse_args([])
-            lopts.join(ops, option=optparse, override=False)
+            lopts.join(ops, option=optparse, override=False, origin='cmdline')
             optparse.join(lopts)
 
             # inject options
@@ -157,7 +157,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
                 try:
                     ops, _ = optparse.parse_args(
                         OptionParser.split_argument(opt), inject=True)
-                    lopts.join(ops, optparse)
+                    lopts.join(ops, optparse, origin='inject')
                 except TypeError:
                     pass
 
