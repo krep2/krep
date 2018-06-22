@@ -45,7 +45,7 @@ acutally in platform/manifest.git within a mirror.)
                 logger.warning('%s not existed, ignored', path)
                 continue
             elif not pattern.match('p,project', node.name):
-                logger.debug('%s ignored by the pattern', node.name)
+                logger.warning('%s ignored by the pattern', node.name)
                 continue
 
             name = '%s%s' % (
