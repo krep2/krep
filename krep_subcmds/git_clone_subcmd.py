@@ -5,7 +5,7 @@ except ImportError:
     from urlparse import urlparse
 
 from topics import FileUtils, GitProject, SubCommand, DownloadError, \
-    Gerrit, Pattern, ProcessingError, RaiseExceptionIfOptionMissed
+    Gerrit, ProcessingError, RaiseExceptionIfOptionMissed
 
 
 class GitCloneSubcmd(SubCommand):
@@ -98,7 +98,8 @@ replaced by GIT_URL."""
             revision=options.branch,
             remote=remote,
             bare=options.bare,
-            pattern=Pattern(options.pattern))
+            pattern=RepoSubcmd.get_patterns(options)  # pylint: disable=E1101
+        )
 
         ret = 0
         if not options.offsite:
