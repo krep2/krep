@@ -88,6 +88,41 @@ The format of the plain-text configuration file can refer to the topic
 
                 return False
 
+        def _list(batch, projs, nprojs):
+            def _inc(dicta, key):
+                if key in dicta:
+                    dicta[key] += 1
+                else:
+                    dicta[key] = 1
+
+            print('\nFile: %s' % batch)
+            print('==================================')
+            if len(nprojs):
+                print('Parallel projects with %s job(s)' % (options.job or 1))
+                print('---------------------------------')
+                results = dict()
+                for project in nprojs:
+                    _inc(results, '[%s] %s' % (project.schema, project.name))
+
+                for k, result in enumerate(sorted(results.keys())):
+                    print('  %2d. %s' % (k + 1, result))
+
+            if len(projs):
+                print('\nNon-parallel projects')
+                print('---------------------------------')
+                results = dict()
+                for project in projs:
+                    _inc(results, '[%s] %s' % (project.schema, project.name))
+
+                for k, result in enumerate(sorted(results.keys())):
+                    print('  %2d. %s%s' % (
+                        k + 1, result, ' (%d)' % results[result]
+                        if results[result] > 1 else ''))
+
+            print('')
+
+            return True
+
         def _run(project):
             largs = options.args or list()
             ignore_error = options.ignore_error or False
@@ -144,48 +179,14 @@ The format of the plain-text configuration file can refer to the topic
                     nprojs.append(project)
 
             if options.list:
-                def _inc(dicta, key):
-                    if key in dicta:
-                        dicta[key] += 1
-                    else:
-                        dicta[key] = 1
+                return _list(batch, projs, nprojs)
 
-                print('\nFile: %s' % batch)
-                print('==================================')
-                if len(nprojs):
-                    print('Parallel projects with %s job(s)' % (
-                          options.job or 1))
-                    print('---------------------------------')
-                    results = dict()
-                    for project in nprojs:
-                        _inc(results, '[%s] %s' % (
-                            project.schema, project.name))
+            ret = self.run_with_thread(  # pylint: disable=E1101
+                options.job, nprojs, _run)
+            ret = self.run_with_thread(  # pylint: disable=E1101
+                1, projs, _run) and ret
 
-                    for k, result in enumerate(sorted(results.keys())):
-                        print('  %2d. %s' % (k + 1, result))
-
-                if len(projs):
-                    print('\nNon-parallel projects')
-                    print('---------------------------------')
-                    results = dict()
-                    for project in projs:
-                        _inc(results, '[%s] %s' % (
-                            project.schema, project.name))
-
-                    for k, result in enumerate(sorted(results.keys())):
-                        print('  %2d. %s%s' % (
-                            k + 1, result, ' (%d)' % results[result]
-                            if results[result] > 1 else ''))
-
-                print('')
-                return True
-            else:
-                ret = self.run_with_thread(  # pylint: disable=E1101
-                    options.job, nprojs, _run)
-                ret = self.run_with_thread(  # pylint: disable=E1101
-                    1, projs, _run) and ret
-
-                return ret
+            return ret
 
         RaiseExceptionIfOptionMissed(
             options.batch_file or args, "batch file (--batch-file) is not set")
