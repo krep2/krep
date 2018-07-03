@@ -115,7 +115,8 @@ class PatternItem(object):
 
         return inc, exc, rep
 
-    def add(self, patterns='', exclude=False, subst=None, cont=None):
+    def add(self, patterns='', exclude=False,  # pylint: disable=R0913
+            subst=None, pattern=None, cont=None):
         inc, exc, rep = self.split(patterns, cont)
         if exclude:
             inc, exc = exc, inc
@@ -128,6 +129,11 @@ class PatternItem(object):
             self.subst.extend(rep)
         if isinstance(subst, PatternReplaceItem):
             self.subst.append(subst)
+
+        if pattern:
+            self.include.extend(pattern.include)
+            self.exclude.extend(pattern.exclude)
+            self.subst.extend(pattern.subst)
 
     def match(self, patterns):
         for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
@@ -313,6 +319,11 @@ matching.
     def __len__(self):
         return len(self.categories)
 
+    def __add__(self, val):
+        self.add(val)
+
+        return self
+
     def __str__(self):
         val = '<Pattern - %r\n' % self
         for pattern in sorted(self.categories.keys()):
@@ -397,6 +408,22 @@ matching.
                 for item in pattern:
                     self.orders[category].append(item.name)
                     self.categories[category][item.name] = item
+        elif isinstance(patterns, Pattern):
+            for key, orders in patterns.orders.items():  # pylint: disable=E1103
+                if key in self.orders:
+                    self.orders[key].extend(orders)
+                else:
+                    self.orders[key] = orders
+
+            for key, categories in patterns.categories.items():  # pylint: disable=E1103
+                if key in self.categories:
+                    for category, item in categories.items():
+                        if category in self.categories[key]:
+                            self.categories[key][category].add(pattern=item)
+                        else:
+                            self.categories[key][category] = item
+                else:
+                    self.categories[key] = categories
         elif patterns is not None:
             logger.error('unknown option "%s"', str(patterns))
 
