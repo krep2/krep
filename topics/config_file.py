@@ -197,7 +197,7 @@ class _XmlConfigFile(_ConfigFile):
         def _handlePatterns(cfg, node):
             if node.nodeName in (
                     'patterns', 'exclude-patterns', 'replace-patterns'):
-                patterns = PatternFile.parse_patterns_str(child)
+                patterns = PatternFile.parse_patterns_str(node)
                 for pattern in patterns:
                     _setattr(cfg, 'pattern', pattern)
 
@@ -256,7 +256,7 @@ class _XmlConfigFile(_ConfigFile):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
                     else:
-                        _handlePatterns(cfg, node)
+                        _handlePatterns(cfg, child)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
