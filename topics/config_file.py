@@ -9,7 +9,7 @@ from pattern import PatternFile
 
 
 def _setattr(obj, name, value):
-    values = list()
+    values = None
 
     name = name.replace('-', '_')
     if hasattr(obj, name):
@@ -18,7 +18,10 @@ def _setattr(obj, name, value):
             values = [values]
 
     if values is not None:
-        values.append(value)
+        if isinstance(value, (list, tuple)):
+            values.extend(value)
+        else:
+            values.append(value)
     else:
         values = value
 
