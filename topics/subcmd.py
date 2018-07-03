@@ -193,9 +193,11 @@ class SubCommand(object):
         if options.pattern_file:
             cfg = ConfigFile(
                 SubCommand.get_absolute_running_file_name(
-                    options.pattern_file))
+                    options, options.pattern_file))
 
-            patterns += cfg.get(ConfigFile.PATTERN_PREFIX)
+            val = cfg.get_value(ConfigFile.FILE_PREFIX)
+            if val:
+                patterns += val.pattern
 
         return patterns
 

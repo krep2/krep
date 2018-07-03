@@ -37,16 +37,16 @@ class Values(optparse.Values):
     def __init__(self, defaults=None):
         if isinstance(defaults, Values):
             optparse.Values.__init__(self, defaults.__dict__)
-            self.origins = _Origins(defaults.__dict__)
+            self._origins = _Origins(defaults.__dict__)
         elif isinstance(defaults, dict):
             optparse.Values.__init__(self, defaults)
-            self.origins = _Origins(defaults)
+            self._origins = _Origins(defaults)
         else:
             optparse.Values.__init__(self)
-            self.origins = _Origins()
+            self._origins = _Origins()
 
     def origin(self, attr):
-         return self.origins.get(attr)
+         return self._origins.get(attr)
 
     @staticmethod
     def _handle_value(val, boolean=False):
@@ -92,7 +92,7 @@ class Values(optparse.Values):
                             del self.__dict__[attr]
                         continue
 
-                    self.origins.set(attr, origin)
+                    self._origins.set(attr, origin)
                     setattr(
                         self, attr,
                         Values._handle_value(
@@ -101,7 +101,7 @@ class Values(optparse.Values):
                     if getattr(values, attr) is None:
                         continue
 
-                    self.origins.set(attr, origin)
+                    self._origins.set(attr, origin)
                     self.ensure_value(
                         attr, Values._handle_value(
                             getattr(values, attr), boolean=st_b))

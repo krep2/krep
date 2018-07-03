@@ -7,7 +7,7 @@ except ImportError:
     from urlparse import urlparse
 
 from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
-    ManifestBuilder, SubCommandWithThread, DownloadError, \
+    ManifestBuilder, Pattern, SubCommandWithThread, DownloadError, \
     RaiseExceptionIfOptionMissed
 
 

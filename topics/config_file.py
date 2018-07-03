@@ -9,7 +9,7 @@ from pattern import PatternFile
 
 
 def _setattr(obj, name, value):
-    values = list()
+    values = None
 
     name = name.replace('-', '_')
     if hasattr(obj, name):
@@ -18,7 +18,10 @@ def _setattr(obj, name, value):
             values = [values]
 
     if values is not None:
-        values.append(value)
+        if isinstance(value, (list, tuple)):
+            values.extend(value)
+        else:
+            values.append(value)
     else:
         values = value
 
@@ -105,6 +108,17 @@ class _ConfigFile(object):
                     vals.append(key)
         else:
             vals.extend(self.vals.keys())
+
+        return vals
+
+    def get_value(self, section, subsection=None, name=None):
+        vals = self.get_values(section, subsection)
+        if vals:
+            if isinstance(vals, list):
+                if name:
+                    return getattr(vals[0], name)
+                else:
+                    return vals[0]
 
         return vals
 
@@ -197,7 +211,7 @@ class _XmlConfigFile(_ConfigFile):
         def _handlePatterns(cfg, node):
             if node.nodeName in (
                     'patterns', 'exclude-patterns', 'replace-patterns'):
-                patterns = PatternFile.parse_patterns_str(child)
+                patterns = PatternFile.parse_patterns_str(node)
                 for pattern in patterns:
                     _setattr(cfg, 'pattern', pattern)
 
@@ -214,7 +228,7 @@ class _XmlConfigFile(_ConfigFile):
 
             def _parse_include(node):
                 name = _getattr(node, 'name')
-                if name and not name.startswith('/'):
+                if name and not os.path.isabs(name):
                     name = os.path.join(os.path.dirname(self.filename), name)
 
                 xvals = _XmlConfigFile(name, self.get_default())
@@ -250,13 +264,19 @@ class _XmlConfigFile(_ConfigFile):
                         _setattr(cfg, name, value)
                     elif child.nodeName == 'hook':
                         _parse_hook(cfg, child)
+                    elif child.nodeName == 'include':
+                        name, xvals = _parse_include(child)
+                        # only pattern supported and need to export explicitly
+                        val = xvals.get_value(ConfigFile.FILE_PREFIX)
+                        if val and val.pattern:
+                            _setattr(cfg, 'pattern', val.pattern)
                     elif child.nodeName in (
                             'pattern', 'exclude-pattern', 'rp-pattern',
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
                     else:
-                        _handlePatterns(cfg, node)
+                        _handlePatterns(cfg, child)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
@@ -273,9 +293,14 @@ class _XmlConfigFile(_ConfigFile):
                     name, xvals = _parse_include(node)
                     self._new_value(
                         '%s.%s' % (_ConfigFile.FILE_PREFIX, name), xvals)
-        else:
-            cfg = self._new_value(_ConfigFile.PROJECT_PREFIX)
-            _handlePatterns(cfg, proj)
+
+                    val = xvals.get_value(ConfigFile.FILE_PREFIX)
+                    if val and val.pattern:
+                        _setattr(cfg, 'pattern', val.pattern)
+        elif proj.nodeName == 'patterns':
+            cfg = self._new_value(_ConfigFile.FILE_PREFIX)
+            for child in proj.childNodes:
+                _handlePatterns(cfg, child)
 
 
 class ConfigFile(_ConfigFile):
@@ -292,15 +317,7 @@ class ConfigFile(_ConfigFile):
         return self.inst.get_default()
 
     def get_value(self, section, subsection=None, name=None):
-        vals = self.get_values(section, subsection)
-        if vals:
-            if isinstance(vals, list):
-                if name:
-                    return getattr(vals[0], name)
-                else:
-                    return vals[0]
-
-        return vals
+        return self.inst.get_values(section, subsection, name)
 
     def get_names(self, section=None, subsection=None):
         return self.inst.get_names(section, subsection)
