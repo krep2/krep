@@ -272,6 +272,10 @@ class PatternFile(object):  # pylint: disable=R0903
             logger.error('manifest has no root')
             return
 
+        if root.nodeName != 'patterns':
+            logger.error('root name should be patterns')
+            return
+
         for node in root.childNodes:
             if node.nodeName in (
                     'patterns', 'exclude-patterns', 'replace-patterns'):
