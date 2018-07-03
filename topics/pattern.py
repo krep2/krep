@@ -185,15 +185,15 @@ class PatternFile(object):  # pylint: disable=R0903
 
             return None
 
-        isReplacePattern = replacement or \
+        is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
         p = PatternFile._XmlPattern(
             name=_attr(node, 'name', patterns and patterns.name),
             category=_attr(node, 'category', patterns and patterns.category),
-            value=_attr(node, 'name') or _attr(node, 'value')
-                if isReplacePattern else _attr(node, 'value'),
-            replacement=_attr(node, 'replace') or _attr(node, 'value')
-                if isReplacePattern else None,
+            value=_attr(node, 'name') or _attr(node, 'value') \
+                if is_rep else _attr(node, 'value'),
+            replacement=_attr(node, 'replace') or _attr(node, 'value') \
+                if is_rep else None,
             cont=_ensure_bool(
                 _attr(node, 'continue', patterns and patterns.cont)))
 
