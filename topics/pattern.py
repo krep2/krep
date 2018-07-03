@@ -115,7 +115,8 @@ class PatternItem(object):
 
         return inc, exc, rep
 
-    def add(self, patterns='', exclude=False, subst=None, cont=None, pattern=None):
+    def add(self, patterns='', exclude=False,  # pylint: disable=R0913
+            subst=None, pattern=None, cont=None):
         inc, exc, rep = self.split(patterns, cont)
         if exclude:
             inc, exc = exc, inc
@@ -190,23 +191,30 @@ class PatternFile(object):  # pylint: disable=R0903
 
             return None
 
+        is_rep = replacement or \
+            node.nodeName in ('rp-pattern', 'replace-pattern')
         p = PatternFile._XmlPattern(
             name=_attr(node, 'name', patterns and patterns.name),
             category=_attr(node, 'category', patterns and patterns.category),
-            value=_attr(node, 'value') or _attr(node, 'name'),
-            replacement=_attr(node, 'replace')
-            if node.nodeName != 'exclude-pattern' or replacement else None,
+            value=_attr(node, 'name') or _attr(node, 'value') \
+                if is_rep else _attr(node, 'value'),
+            replacement=_attr(node, 'replace') or _attr(node, 'value') \
+                if is_rep else None,
             cont=_ensure_bool(
                 _attr(node, 'continue', patterns and patterns.cont)))
 
-        if p.replacement is not None or PatternItem.is_replace_str(p.value):
-            pi = PatternItem(category=p.category, name=p.name)
-            if p.replacement:
+        if p.replacement is not None:
+            if PatternItem.is_replace_str(p.replacement):
+                pi = PatternItem(
+                    category=p.category, patterns=p.replacement, name=p.name)
+            else:
+                pi = PatternItem(category=p.category, name=p.name)
                 pi.add(
                     subst=PatternReplaceItem(
                         p.value, p.replacement, p.cont == True))
-            else:
-                pi.add(p.value, cont=p.cont)
+        elif not PatternItem.is_replace_str(p.value):
+            pi = PatternItem(category=p.category, name=p.name)
+            pi.add(p.value)
         else:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
@@ -401,13 +409,13 @@ matching.
                     self.orders[category].append(item.name)
                     self.categories[category][item.name] = item
         elif isinstance(patterns, Pattern):
-            for key, orders in patterns.orders.items():
+            for key, orders in patterns.orders.items():  # pylint: disable=E1103
                 if key in self.orders:
-                    self.orders.extend(orders)
+                    self.orders[key].extend(orders)
                 else:
                     self.orders[key] = orders
 
-            for key, categories in patterns.categories.items():
+            for key, categories in patterns.categories.items():  # pylint: disable=E1103
                 if key in self.categories:
                     for category, item in categories.items():
                         if category in self.categories[key]:

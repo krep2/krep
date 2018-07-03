@@ -201,14 +201,14 @@ class _XmlConfigFile(_ConfigFile):
 
         self._parse_xml(filename, pi)
 
-    def _parse_xml(self, content, pi=None):
+    def _parse_xml(self, content, pi=None):  # pylint: disable=R0914
         def _getattr(node, name, default=None):
             if node.hasAttribute(name):
                 return node.getAttribute(name)
             else:
                 return default
 
-        def _handlePatterns(cfg, node):
+        def _handle_patterns(cfg, node):
             if node.nodeName in (
                     'patterns', 'exclude-patterns', 'replace-patterns'):
                 patterns = PatternFile.parse_patterns_str(node)
@@ -268,15 +268,15 @@ class _XmlConfigFile(_ConfigFile):
                         name, xvals = _parse_include(child)
                         # only pattern supported and need to export explicitly
                         val = xvals.get_value(ConfigFile.FILE_PREFIX)
-                        if val and val.pattern:
-                            _setattr(cfg, 'pattern', val.pattern)
+                        if val and val.pattern:  # pylint: disable=E1103
+                            _setattr(cfg, 'pattern', val.pattern)  # pylint: disable=E1103
                     elif child.nodeName in (
                             'pattern', 'exclude-pattern', 'rp-pattern',
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
                         _setattr(cfg, 'pattern', pattern)
                     else:
-                        _handlePatterns(cfg, child)
+                        _handle_patterns(cfg, child)
 
                 cfg.join(self.get_default(), override=False)
                 if pi is not None:
@@ -295,12 +295,14 @@ class _XmlConfigFile(_ConfigFile):
                         '%s.%s' % (_ConfigFile.FILE_PREFIX, name), xvals)
 
                     val = xvals.get_value(ConfigFile.FILE_PREFIX)
-                    if val and val.pattern:
-                        _setattr(cfg, 'pattern', val.pattern)
+                    if val and val.pattern:  # pylint: disable=E1103
+                        self._new_value(
+                            '%s.%s' % (_ConfigFile.FILE_PREFIX, 'pattern'),
+                            val.pattern)  # pylint: disable=E1103
         elif proj.nodeName == 'patterns':
             cfg = self._new_value(_ConfigFile.FILE_PREFIX)
             for child in proj.childNodes:
-                _handlePatterns(cfg, child)
+                _handle_patterns(cfg, child)
 
 
 class ConfigFile(_ConfigFile):
