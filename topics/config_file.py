@@ -108,6 +108,17 @@ class _ConfigFile(object):
 
         return vals
 
+    def get_value(self, section, subsection=None, name=None):
+        vals = self.get_values(section, subsection)
+        if vals:
+            if isinstance(vals, list):
+                if name:
+                    return getattr(vals[0], name)
+                else:
+                    return vals[0]
+
+        return vals
+
     def get_values(self, section=None, subsection=None):
         vals = list()
         sname = self._build_name(section, subsection)
@@ -292,15 +303,7 @@ class ConfigFile(_ConfigFile):
         return self.inst.get_default()
 
     def get_value(self, section, subsection=None, name=None):
-        vals = self.get_values(section, subsection)
-        if vals:
-            if isinstance(vals, list):
-                if name:
-                    return getattr(vals[0], name)
-                else:
-                    return vals[0]
-
-        return vals
+        return self.inst.get_values(section, subsection, name)
 
     def get_names(self, section=None, subsection=None):
         return self.inst.get_names(section, subsection)
