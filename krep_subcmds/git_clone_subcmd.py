@@ -98,7 +98,8 @@ replaced by GIT_URL."""
             revision=options.branch,
             remote=remote,
             bare=options.bare,
-            pattern=Pattern(options.pattern))
+            pattern=GitCloneSubcmd.get_patterns(options)  # pylint: disable=E1101
+        )
 
         ret = 0
         if not options.offsite:

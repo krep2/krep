@@ -2,7 +2,7 @@
 import os
 
 from repo_subcmd import RepoSubcmd
-from topics import GitProject, Pattern
+from topics import GitProject
 
 
 class RepoMirrorSubcmd(RepoSubcmd):
@@ -35,7 +35,7 @@ acutally in platform/manifest.git within a mirror.)
 
         projects = list()
         logger = RepoMirrorSubcmd.get_logger()  # pylint: disable=E1101
-        pattern = Pattern(options.pattern)
+        pattern = RepoSubcmd.get_patterns(options)  # pylint: disable=E1101
 
         for node in manifest.get_projects():
             path = os.path.join(

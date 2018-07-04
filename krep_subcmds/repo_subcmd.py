@@ -180,7 +180,7 @@ this command.
 
         projects = list()
         logger = RepoSubcmd.get_logger()  # pylint: disable=E1101
-        pattern = Pattern(options.pattern)
+        pattern = RepoSubcmd.get_patterns(options)  # pylint: disable=E1101
 
         for node in manifest.get_projects():
             if not os.path.exists(node.path) and \
