@@ -228,7 +228,7 @@ class _XmlConfigFile(_ConfigFile):
 
             def _parse_include(node):
                 name = _getattr(node, 'name')
-                if name and not name.startswith('/'):
+                if name and not os.path.isabs(name):
                     name = os.path.join(os.path.dirname(self.filename), name)
 
                 xvals = _XmlConfigFile(name, self.get_default())
