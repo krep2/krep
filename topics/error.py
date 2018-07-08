@@ -3,6 +3,10 @@ class KrepError(Exception):
     """Root exception for krep"""
 
 
+class HookError(KrepError):
+    """Indicate a failed execution of hook."""
+
+
 class OptionMissedError(KrepError):
     """Indicate the missed option."""
 
@@ -18,5 +22,5 @@ class RaiseExceptionIfOptionMissed(object):
             raise OptionMissedError(prompt)
 
 
-TOPIC_ENTRY = 'KrepError, OptionMissedError, ProcessingError, ' \
+TOPIC_ENTRY = 'KrepError, HookError, OptionMissedError, ProcessingError, ' \
               'RaiseExceptionIfOptionMissed'

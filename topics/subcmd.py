@@ -4,6 +4,7 @@ import threading
 
 from command import Command
 from config_file import ConfigFile
+from error import HookError
 from logger import Logger
 from pattern import Pattern
 
@@ -224,7 +225,11 @@ class SubCommand(object):
 
                 cmd = Command(cwd=cwd, dryrun=dryrun)
                 cmd.new_args(*cli)
-                return cmd.wait(**kws)
+                ret = cmd.wait(**kws)
+                if ret != 0:
+                    raise HookError('Failed to run %s' % hook)
+
+                return 0
             else:
                 SubCommand.get_logger().debug("Error: %s not existed", hook)
 
