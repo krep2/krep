@@ -197,7 +197,7 @@ class PatternFile(object):  # pylint: disable=R0903
             name=_attr(node, 'name', patterns and patterns.name),
             category=_attr(node, 'category', patterns and patterns.category),
             value=_attr(node, 'name') or _attr(node, 'value') \
-                if is_rep else _attr(node, 'value'),
+                if is_rep else _attr(node, 'value') or _attr(node, 'name'),
             replacement=_attr(node, 'replace') or _attr(node, 'value') \
                 if is_rep else None,
             cont=_ensure_bool(
