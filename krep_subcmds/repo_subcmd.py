@@ -166,6 +166,9 @@ this command.
             _, refsp = repo.ls_remote('--get-url')
 
         if not manifest:
+            if not options.manifest_xml_file:
+                options.manifest_xml_file = '.repo/manifest.xml'
+
             manifest = RepoSubcmd.get_absolute_running_file_name(  # pylint: disable=E1101
                 options, options.manifest_xml_file)
 
