@@ -14,6 +14,33 @@ class XmlError(KrepError):
     pass
 
 
+def _secure_split(val, delimiter, num=0):
+    ret = val.split(delimiter)
+
+    k = 0
+    while k < len(ret) - 1:
+        # support \\\@ as \@ when @ is a delimiter
+        if ret[k].endswith('\\\\\\'):
+            ret[k] = ret[k][:-1]
+        elif ret[k].endswith('\\\\'):
+            ret[k] = ret[k][:-1]
+            k += 1
+
+            continue
+
+        if ret[k].endswith('\\'):
+            ret[k] = ret[k][:-1] + delimiter + ret[k + 1]
+            del ret[k + 1]
+        else:
+            k += 1
+
+    if num and len(ret) > num + 1:
+        ret[num] = delimiter.join(ret[num:])
+        del ret[num + 1:]
+
+    return ret
+
+
 class PatternItem(object):
     """Contains the positive or opposite pattern items."""
 
@@ -97,7 +124,7 @@ class PatternItem(object):
         inc, exc, rep = list(), list(), list()
         patterns = patterns.strip()
 
-        for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
+        for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
             if PatternItem.is_replace_str(pattern):
                 items = re.split(pattern[0], pattern)
@@ -136,7 +163,7 @@ class PatternItem(object):
             self.subst.extend(pattern.subst)
 
     def match(self, patterns):
-        for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
+        for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             opposite = pattern.startswith(PatternItem.OPPOSITE_DELIMITER)
             if opposite:
                 pattern = pattern[1:]
@@ -377,13 +404,13 @@ matching.
         logger = Logger.get_logger('PATTERN')
         if isinstance(patterns, (list, tuple)):
             for pattern in patterns:
-                if pattern.find(PatternItem.CATEGORY_DELIMITER) > 0:
-                    category, value = pattern.split(
-                        PatternItem.CATEGORY_DELIMITER, 1)
-
-                    if value.find(PatternItem.ITEM_NAME_DELIMITER) > 0:
-                        name, value = value.split(
-                            PatternItem.ITEM_NAME_DELIMITER, 1)
+                sli = _secure_split(pattern, PatternItem.CATEGORY_DELIMITER, 1)
+                if len(sli) == 2:
+                    category, value = sli
+                    sli = _secure_split(
+                        value, PatternItem.ITEM_NAME_DELIMITER, 1)
+                    if len(sli) == 2:
+                        name, value = sli
                     else:
                         name = None
 
@@ -440,14 +467,16 @@ matching.
         ret = False
         existed = False
 
-        for category in categories.split(PatternItem.PATTERN_DELIMITER):
+        for category in _secure_split(
+                categories, PatternItem.PATTERN_DELIMITER):
             item = self._ensure_item(category, name)
             if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
 
         if not existed and name is None:
-            for category in categories.split(PatternItem.PATTERN_DELIMITER):
+            for category in _secure_split(
+                    categories, PatternItem.PATTERN_DELIMITER):
                 item = self._ensure_item(category, value)
                 if item and not item.replacable_only():
                     existed = True
@@ -458,7 +487,8 @@ matching.
     def replace(self, categories, value, name=None):
         replaced = False
 
-        for category in categories.split(PatternItem.PATTERN_DELIMITER):
+        for category in _secure_split(
+                categories, PatternItem.PATTERN_DELIMITER):
             category = PatternItem.ensure_category(category)
             if category in self.categories:
                 items = self.categories[category]
