@@ -35,7 +35,7 @@ class PatternItem(object):
 
         self.category = category
         if patterns:
-            self.add(patterns, exclude)
+            self.add(patterns, exclude=exclude)
 
     def __len__(self):
         return len(self.include) + len(self.exclude) + len(self.subst)
@@ -214,7 +214,9 @@ class PatternFile(object):  # pylint: disable=R0903
                         p.value, p.replacement, p.cont == True))
         elif not PatternItem.is_replace_str(p.value):
             pi = PatternItem(category=p.category, name=p.name)
-            pi.add(p.value)
+            pi.add(
+                p.value, exclude=(
+                    exclude or node.nodeName == 'exclude-pattern'))
         else:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
