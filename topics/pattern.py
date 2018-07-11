@@ -440,14 +440,14 @@ matching.
         ret = False
         existed = False
 
-        for category in categories.split(','):
+        for category in categories.split(PatternItem.PATTERN_DELIMITER):
             item = self._ensure_item(category, name)
             if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
 
         if not existed and name is None:
-            for category in categories.split(','):
+            for category in categories.split(PatternItem.PATTERN_DELIMITER):
                 item = self._ensure_item(category, value)
                 if item and not item.replacable_only():
                     existed = True
@@ -458,7 +458,7 @@ matching.
     def replace(self, categories, value, name=None):
         replaced = False
 
-        for category in categories.split(','):
+        for category in categories.split(PatternItem.PATTERN_DELIMITER):
             category = PatternItem.ensure_category(category)
             if category in self.categories:
                 items = self.categories[category]
