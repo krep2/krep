@@ -19,9 +19,16 @@ def _secure_split(val, delimiter, num=0):
 
     k = 0
     while k < len(ret) - 1:
-        if ret[k].endswith('\\\\'):
+        # support \\\@ as \@ when @ is a delimiter
+        if ret[k].endswith('\\\\\\'):
             ret[k] = ret[k][:-1]
-        elif ret[k].endswith('\\'):
+        elif ret[k].endswith('\\\\'):
+            ret[k] = ret[k][:-1]
+            k += 1
+
+            continue
+
+        if ret[k].endswith('\\'):
             ret[k] = ret[k][:-1] + ret[k + 1]
             del ret[k + 1]
         else:
