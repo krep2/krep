@@ -7,7 +7,7 @@ from dir_utils import AutoChangedDir
 from krep_subcmds import all_commands
 from options import OptionParser, OptionValueError, Values
 from synchronize import synchronized
-from topics import ConfigFile, FileUtils, KrepError, Logger
+from topics import ConfigFile, Debug, FileUtils, KrepError, Logger
 
 
 VERSION = '0.3'
@@ -44,6 +44,10 @@ Execute the specified sub-commands, which can be listed with the command
         '-T', '--dryrun',
         dest='dryrun', action='store_true', default=False,
         help='try running the command without actual execution of commands')
+    group.add_option(
+        '-d', '--debug',
+        dest='debug', action='store', metavar='ITEM,ITEM,...',
+        help='set to debug the function')
     group.add_option(
         '-v', '--verbose',
         dest='verbose', action='count', default=0,
@@ -166,9 +170,10 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
         lopts.join(defopts, optparse, override=False)
         with AutoChangedDir(
-            FileUtils.ensure_path(
-                lopts.working_dir, lopts.relative_dir, exists=False),
-            cleanup=False):
+                FileUtils.ensure_path(
+                    lopts.working_dir, lopts.relative_dir, exists=False),
+                cleanup=False):
+            Debug.dump_options(lopts)
             cmd.execute(lopts, *args)
     except KeyError:
         if ignore_except:
