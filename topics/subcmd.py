@@ -4,6 +4,7 @@ import threading
 
 from command import Command
 from config_file import ConfigFile
+from debug import Debug
 from error import HookError
 from logger import Logger
 from pattern import Pattern
@@ -199,6 +200,8 @@ class SubCommand(object):
             val = cfg.get_value(ConfigFile.FILE_PREFIX)
             if val:
                 patterns += val.pattern
+
+        Debug.dump_pattern(options, patterns)
 
         return patterns
 
