@@ -188,8 +188,11 @@ class PatternItem(object):
     def replace(self, value):
         if self.subst:
             for rep in self.subst:
-                value = re.sub(rep.pattern, rep.subst, value)
                 self.cont = rep.cont
+
+                ovalue, value = value, re.sub(rep.pattern, rep.subst, value)
+                if ovalue != value and not rep.cont:
+                    break
 
         return value
 
