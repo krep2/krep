@@ -53,9 +53,10 @@ class PatternItem(object):
     REPLACEMENT_DELIMITER = '~'
     CONN_REPLACE_DELIMITER = '='
 
-    def __init__(self, category, patterns=None, exclude=False, name=None):
+    def __init__(self, category, patterns=None, exclude=False,
+                 name=None, cont=False):
         self.name = name
-        self.cont = False
+        self.cont = cont
         self.include = list()
         self.exclude = list()
         self.subst = list()
@@ -132,9 +133,10 @@ class PatternItem(object):
                     rep.append(
                         PatternReplaceItem(
                             items[1] or self.name, items[2],
-                            cont if cont is not None else
-                            pattern.startswith(
-                                PatternItem.CONN_REPLACE_DELIMITER)))
+                            cont if cont is not None else (
+                                self.cont or
+                                pattern.startswith(
+                                    PatternItem.CONN_REPLACE_DELIMITER))))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
             elif pattern:
@@ -233,7 +235,8 @@ class PatternFile(object):  # pylint: disable=R0903
         if p.replacement is not None:
             if PatternItem.is_replace_str(p.replacement):
                 pi = PatternItem(
-                    category=p.category, patterns=p.replacement, name=p.name)
+                    category=p.category, patterns=p.replacement, name=p.name,
+                    cont=p.cont)
             else:
                 pi = PatternItem(category=p.category, name=p.name)
                 pi.add(
@@ -248,7 +251,8 @@ class PatternFile(object):  # pylint: disable=R0903
             pi = PatternItem(
                 category=p.category, patterns=p.value,
                 name=p.name,
-                exclude=exclude or node.nodeName == 'exclude-pattern')
+                exclude=exclude or node.nodeName == 'exclude-pattern',
+                cont=p.cont)
 
         return pi
 
