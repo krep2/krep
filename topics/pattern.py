@@ -29,7 +29,7 @@ def _secure_split(val, delimiter, num=0):
             continue
 
         if ret[k].endswith('\\'):
-            ret[k] = ret[k][:-1] + ret[k + 1]
+            ret[k] = ret[k][:-1] + delimiter + ret[k + 1]
             del ret[k + 1]
         else:
             k += 1
