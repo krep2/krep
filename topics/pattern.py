@@ -430,6 +430,7 @@ matching.
                         name, value = sli
                     else:
                         name = None
+                        value = sli[0]
 
                     category = PatternItem.ensure_category(category)
                     if category not in self.categories:
