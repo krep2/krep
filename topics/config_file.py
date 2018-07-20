@@ -319,7 +319,7 @@ class ConfigFile(_ConfigFile):
         return self.inst.get_default()
 
     def get_value(self, section, subsection=None, name=None):
-        return self.inst.get_values(section, subsection, name)
+        return self.inst.get_value(section, subsection, name)
 
     def get_names(self, section=None, subsection=None):
         return self.inst.get_names(section, subsection)
