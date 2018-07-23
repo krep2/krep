@@ -361,16 +361,18 @@ matching.
         return self
 
     def __str__(self):
-        val = '<Pattern - %r\n' % self
+        val = '<Pattern - %r' % self
         for pattern in sorted(self.categories.keys()):
             items = self.categories[pattern]
-            val += ' %s = {\n' % pattern
-            for name, item in items.items():
-                val += '   %s : %s\n' % (name, item)
-            val += ' },\n'
+            val += '\n %s = {\n' % pattern
+            for name in self.orders[pattern]:
+                val += '   %s : %s\n' % (name, items[name])
+            val += ' },'
 
-        val = val[:-2]
-        val += '\n>\n'
+        if len(self.categories):
+            val = val[:-1] + '\n'
+
+        val += '>\n'
 
         return val
 
