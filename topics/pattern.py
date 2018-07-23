@@ -400,7 +400,7 @@ matching.
 
             for pattern in self.orders[category]:
                 if pattern is not None and name:
-                    if re.search(pattern, name) is not None:
+                    if not strict and re.search(pattern, name) is not None:
                         return items[pattern]
 
             if not strict:
