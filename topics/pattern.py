@@ -224,10 +224,12 @@ class PatternFile(object):  # pylint: disable=R0903
 
             return None
 
+        is_exc = exclude or node.nodeName == 'exclude-pattern'
         is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
         p = PatternFile._XmlPattern(
-            name=_attr(node, 'name', patterns and patterns.name),
+            name=_attr(node, 'name') if not is_exc else
+                (None if not _attr(node, 'value') else _attr(node, 'name')),
             category=_attr(node, 'category', patterns and patterns.category),
             value=_attr(node, 'name') or _attr(node, 'value') \
                 if is_rep else _attr(node, 'value') or _attr(node, 'name'),
