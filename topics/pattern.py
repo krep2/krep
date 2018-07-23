@@ -274,15 +274,16 @@ class PatternFile(object):  # pylint: disable=R0903
             parent = PatternFile._XmlPattern(
                 name=_attr(node, 'name'),
                 category=_attr(node, 'category'),
-                value=None, replacement=None,
+                value=None,
+                replacement=node.nodeName in (
+                    'rp-patterns', 'replace-patterns'),
                 cont=_attr(node, 'continue', 'false'))
 
             for child in node.childNodes:
                 pi = PatternFile.parse_pattern(
                     child, parent,
                     exclude=node.nodeName == 'exclude-patterns',
-                    replacement=node.nodeName in (
-                        'rp-patterns', 'replace-patterns'))
+                    replacement=parent.replacement)
                 if pi:
                     patterns.append(pi)
 
