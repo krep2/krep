@@ -504,8 +504,9 @@ matching.
             if category in self.categories:
                 items = self.categories[category]
                 for pattern in self.orders[category]:
-                    if pattern is not None and name and (
-                            re.search(pattern, name) is not None):
+                    if pattern and name and (
+                            re.search(pattern, name) or (
+                                replaced and re.search(pattern, value))):
                         item = items[pattern]
                         if not item.replacable():
                             continue
