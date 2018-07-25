@@ -53,8 +53,8 @@ class PatternItem(object):
     REPLACEMENT_DELIMITER = '~'
     CONN_REPLACE_DELIMITER = '='
 
-    def __init__(self, category, patterns=None, exclude=False,
-                 name=None, cont=False):
+    def __init__(self, category, patterns=None,  # pylint: disable=R0913
+                 exclude=False, name=None, cont=False):
         self.name = name
         self.cont = cont
         self.repcont = False
@@ -134,7 +134,7 @@ class PatternItem(object):
             if PatternItem.is_replace_str(pattern):
                 items = re.split(pattern[0], pattern)
                 if len(items) == 4:
-                    rep.append(
+                    rep.append(  # pylint: disable=E1103
                         PatternReplaceItem(
                             items[1] or self.name, items[2],
                             cont if cont is not None else (

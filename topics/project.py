@@ -2,7 +2,7 @@
 from pattern import Pattern
 
 
-class Project(object):
+class Project(object):  # pylint: disable=R0902
     def __init__(self, uri, path=None, revision=None, remote=None,  # pylint: disable=W0613
                  pattern=None, *args, **kws):
         self.uri = self._safepath(uri)
