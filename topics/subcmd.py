@@ -4,6 +4,7 @@ import threading
 
 from command import Command
 from config_file import ConfigFile
+from error import HookError
 from logger import Logger
 from pattern import Pattern
 
@@ -187,7 +188,7 @@ class SubCommand(object):
 
             val = cfg.get_value(ConfigFile.FILE_PREFIX)
             if val:
-                patterns += val.pattern
+                patterns += val.pattern  # pylint: disable=E1103
 
         return patterns
 
@@ -210,10 +211,13 @@ class SubCommand(object):
 
     @staticmethod
     def get_absolute_running_file_name(options, filename):
-        if os.path.isabs(filename) or not options.current_dir:
+        if os.path.isabs(filename):
             return filename
-        else:
+        elif options.current_dir:
             return os.path.join(options.current_dir, filename)
+        else:
+            return os.path.join(
+                SubCommand.get_absolute_working_dir(options), filename)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
@@ -279,7 +283,11 @@ class SubCommand(object):
 
                 cmd = Command(cwd=cwd, dryrun=dryrun)
                 cmd.new_args(*cli)
-                return cmd.wait(**kws)
+                ret = cmd.wait(**kws)
+                if ret != 0:
+                    raise HookError('Failed to run %s' % hook)
+
+                return 0
             else:
                 SubCommand.get_logger().debug("Error: %s not existed", hook)
 

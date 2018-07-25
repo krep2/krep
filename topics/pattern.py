@@ -14,6 +14,33 @@ class XmlError(KrepError):
     pass
 
 
+def _secure_split(val, delimiter, num=0):
+    ret = val.split(delimiter)
+
+    k = 0
+    while k < len(ret) - 1:
+        # support \\\@ as \@ when @ is a delimiter
+        if ret[k].endswith('\\\\\\'):
+            ret[k] = ret[k][:-1]
+        elif ret[k].endswith('\\\\'):
+            ret[k] = ret[k][:-1]
+            k += 1
+
+            continue
+
+        if ret[k].endswith('\\'):
+            ret[k] = ret[k][:-1] + delimiter + ret[k + 1]
+            del ret[k + 1]
+        else:
+            k += 1
+
+    if num and len(ret) > num + 1:
+        ret[num] = delimiter.join(ret[num:])
+        del ret[num + 1:]
+
+    return ret
+
+
 class PatternItem(object):
     """Contains the positive or opposite pattern items."""
 
@@ -26,16 +53,17 @@ class PatternItem(object):
     REPLACEMENT_DELIMITER = '~'
     CONN_REPLACE_DELIMITER = '='
 
-    def __init__(self, category, patterns=None, exclude=False, name=None):
+    def __init__(self, category, patterns=None,  # pylint: disable=R0913
+                 exclude=False, name=None, cont=False):
         self.name = name
-        self.cont = False
+        self.cont = cont
         self.include = list()
         self.exclude = list()
         self.subst = list()
 
         self.category = category
         if patterns:
-            self.add(patterns, exclude)
+            self.add(patterns, exclude=exclude)
 
     def __len__(self):
         return len(self.include) + len(self.exclude) + len(self.subst)
@@ -97,17 +125,18 @@ class PatternItem(object):
         inc, exc, rep = list(), list(), list()
         patterns = patterns.strip()
 
-        for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
+        for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             pattern = pattern.strip()
             if PatternItem.is_replace_str(pattern):
                 items = re.split(pattern[0], pattern)
                 if len(items) == 4:
-                    rep.append(
+                    rep.append(  # pylint: disable=E1103
                         PatternReplaceItem(
                             items[1] or self.name, items[2],
-                            cont if cont is not None else
-                            pattern.startswith(
-                                PatternItem.CONN_REPLACE_DELIMITER)))
+                            cont if cont is not None else (
+                                self.cont or
+                                pattern.startswith(
+                                    PatternItem.CONN_REPLACE_DELIMITER))))
             elif pattern.startswith(PatternItem.OPPOSITE_DELIMITER):
                 exc.append(pattern[1:])
             elif pattern:
@@ -136,7 +165,7 @@ class PatternItem(object):
             self.subst.extend(pattern.subst)
 
     def match(self, patterns):
-        for pattern in patterns.split(PatternItem.PATTERN_DELIMITER):
+        for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             opposite = pattern.startswith(PatternItem.OPPOSITE_DELIMITER)
             if opposite:
                 pattern = pattern[1:]
@@ -159,8 +188,12 @@ class PatternItem(object):
     def replace(self, value):
         if self.subst:
             for rep in self.subst:
-                value = re.sub(rep.pattern, rep.subst, value)
-                self.cont = rep.cont
+                ovalue, value = value, re.sub(rep.pattern, rep.subst, value)
+                if ovalue != value:
+                    self.cont = rep.cont
+
+                if ovalue != value and not rep.cont:
+                    break
 
         return value
 
@@ -191,13 +224,15 @@ class PatternFile(object):  # pylint: disable=R0903
 
             return None
 
+        is_exc = exclude or node.nodeName == 'exclude-pattern'
         is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
         p = PatternFile._XmlPattern(
-            name=_attr(node, 'name', patterns and patterns.name),
+            name=_attr(node, 'name') if not is_exc else \
+                (None if not _attr(node, 'value') else _attr(node, 'name')),
             category=_attr(node, 'category', patterns and patterns.category),
             value=_attr(node, 'name') or _attr(node, 'value') \
-                if is_rep else _attr(node, 'value'),
+                if is_rep else _attr(node, 'value') or _attr(node, 'name'),
             replacement=_attr(node, 'replace') or _attr(node, 'value') \
                 if is_rep else None,
             cont=_ensure_bool(
@@ -206,7 +241,8 @@ class PatternFile(object):  # pylint: disable=R0903
         if p.replacement is not None:
             if PatternItem.is_replace_str(p.replacement):
                 pi = PatternItem(
-                    category=p.category, patterns=p.replacement, name=p.name)
+                    category=p.category, patterns=p.replacement, name=p.name,
+                    cont=p.cont)
             else:
                 pi = PatternItem(category=p.category, name=p.name)
                 pi.add(
@@ -214,12 +250,15 @@ class PatternFile(object):  # pylint: disable=R0903
                         p.value, p.replacement, p.cont == True))
         elif not PatternItem.is_replace_str(p.value):
             pi = PatternItem(category=p.category, name=p.name)
-            pi.add(p.value)
+            pi.add(
+                p.value, exclude=(
+                    exclude or node.nodeName == 'exclude-pattern'))
         else:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
                 name=p.name,
-                exclude=exclude or node.nodeName == 'exclude-pattern')
+                exclude=exclude or node.nodeName == 'exclude-pattern',
+                cont=p.cont)
 
         return pi
 
@@ -238,15 +277,16 @@ class PatternFile(object):  # pylint: disable=R0903
             parent = PatternFile._XmlPattern(
                 name=_attr(node, 'name'),
                 category=_attr(node, 'category'),
-                value=None, replacement=None,
+                value=None,
+                replacement=node.nodeName in (
+                    'rp-patterns', 'replace-patterns'),
                 cont=_attr(node, 'continue', 'false'))
 
             for child in node.childNodes:
                 pi = PatternFile.parse_pattern(
                     child, parent,
                     exclude=node.nodeName == 'exclude-patterns',
-                    replacement=node.nodeName in (
-                        'rp-patterns', 'replace-patterns'))
+                    replacement=parent.replacement)
                 if pi:
                     patterns.append(pi)
 
@@ -325,16 +365,18 @@ matching.
         return self
 
     def __str__(self):
-        val = '<Pattern - %r\n' % self
+        val = '<Pattern - %r' % self
         for pattern in sorted(self.categories.keys()):
             items = self.categories[pattern]
-            val += ' %s = {\n' % pattern
-            for name, item in items.items():
-                val += '   %s : %s\n' % (name, item)
-            val += ' },\n'
+            val += '\n %s = {\n' % pattern
+            for name in self.orders[pattern]:
+                val += '   %s : %s\n' % (name, items[name])
+            val += ' },'
 
-        val = val[:-2]
-        val += '\n>\n'
+        if len(self.categories):
+            val = val[:-1] + '\n'
+
+        val += '>\n'
 
         return val
 
@@ -360,7 +402,7 @@ matching.
 
             for pattern in self.orders[category]:
                 if pattern is not None and name:
-                    if re.search(pattern, name) is not None:
+                    if not strict and re.search(pattern, name) is not None:
                         return items[pattern]
 
             if not strict:
@@ -375,13 +417,13 @@ matching.
         logger = Logger.get_logger('PATTERN')
         if isinstance(patterns, (list, tuple)):
             for pattern in patterns:
-                if pattern.find(PatternItem.CATEGORY_DELIMITER) > 0:
-                    category, value = pattern.split(
-                        PatternItem.CATEGORY_DELIMITER, 1)
-
-                    if value.find(PatternItem.ITEM_NAME_DELIMITER) > 0:
-                        name, value = value.split(
-                            PatternItem.ITEM_NAME_DELIMITER, 1)
+                sli = _secure_split(pattern, PatternItem.CATEGORY_DELIMITER, 1)
+                if len(sli) == 2:
+                    category, value = sli
+                    sli = _secure_split(
+                        value, PatternItem.ITEM_NAME_DELIMITER, 1)
+                    if len(sli) == 2:
+                        name, value = sli
                     else:
                         name = None
 
@@ -438,14 +480,16 @@ matching.
         ret = False
         existed = False
 
-        for category in categories.split(','):
+        for category in _secure_split(
+                categories, PatternItem.PATTERN_DELIMITER):
             item = self._ensure_item(category, name)
             if item and not item.replacable_only():
                 existed = True
                 ret |= item.match(value)
 
         if not existed and name is None:
-            for category in categories.split(','):
+            for category in _secure_split(
+                    categories, PatternItem.PATTERN_DELIMITER):
                 item = self._ensure_item(category, value)
                 if item and not item.replacable_only():
                     existed = True
@@ -456,13 +500,15 @@ matching.
     def replace(self, categories, value, name=None):
         replaced = False
 
-        for category in categories.split(','):
+        for category in _secure_split(
+                categories, PatternItem.PATTERN_DELIMITER):
             category = PatternItem.ensure_category(category)
             if category in self.categories:
                 items = self.categories[category]
                 for pattern in self.orders[category]:
-                    if pattern is not None and name and (
-                            re.search(pattern, name) is not None):
+                    if pattern and name and (
+                            re.search(pattern, name) or (
+                                replaced and re.search(pattern, value))):
                         item = items[pattern]
                         if not item.replacable():
                             continue

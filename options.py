@@ -123,13 +123,13 @@ class Values(optparse.Values):
     def _normalize(self, val):
         newval = None
         while newval != val:
-            match = re.search(r'\$\{([0-9A-Za-z_\-]+)\}', val)
+            match = re.search(r'\$\{([0-9A-Za-z_\-]+)\}', str(val))
             if match:
                 name = match.group(1)
                 newval = val.replace(
                     '${%s}' % name, self.__dict__.get(_ensure_attr(name), ''))
             else:
-                match = re.search(r'\$\(([0-9A-Za-z_\-]+)\)', val)
+                match = re.search(r'\$\(([0-9A-Za-z_\-]+)\)', str(val))
                 if match:
                     name = match.group(1)
                     newval = val.replace(

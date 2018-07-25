@@ -228,7 +228,7 @@ class _XmlConfigFile(_ConfigFile):
 
             def _parse_include(node):
                 name = _getattr(node, 'name')
-                if name and not name.startswith('/'):
+                if name and not os.path.isabs(name):
                     name = os.path.join(os.path.dirname(self.filename), name)
 
                 xvals = _XmlConfigFile(name, self.get_default())
@@ -319,7 +319,7 @@ class ConfigFile(_ConfigFile):
         return self.inst.get_default()
 
     def get_value(self, section, subsection=None, name=None):
-        return self.inst.get_values(section, subsection, name)
+        return self.inst.get_value(section, subsection, name)
 
     def get_names(self, section=None, subsection=None):
         return self.inst.get_names(section, subsection)
