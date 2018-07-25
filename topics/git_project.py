@@ -25,7 +25,7 @@ def _ensure_remote(url):
         ulp = urlparse(url)
         if not ulp.scheme:
             url = 'git://' + url
-        url = re.sub('://[^\/@]+@', '://', url)
+        url = re.sub(r'://[^\/@]+@', '://', url)
 
     return url
 
@@ -254,7 +254,7 @@ class GitProject(Project, GitCommand):
             if not self.rev_existed(local_ref):
                 local_ref = 'refs/heads/%s' % origin
                 if not self.rev_existed(local_ref):
-                    logger.error('"%s" has no matched rev', origin)
+                    logger.error('"%s" has no matched revision', origin)
                     continue
 
             if not self.pattern.match(

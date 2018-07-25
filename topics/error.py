@@ -7,6 +7,10 @@ class DownloadError(KrepError):
     """Indicate the unsuccessful download."""
 
 
+class HookError(KrepError):
+    """Indicate a failed execution of hook."""
+
+
 class OptionMissedError(KrepError):
     """Indicate the missed option."""
 
@@ -26,6 +30,6 @@ class RaiseExceptionIfOptionMissed(object):
             raise OptionMissedError(prompt)
 
 
-TOPIC_ENTRY = 'KrepError, DownloadError, OptionMissedError, ' \
+TOPIC_ENTRY = 'KrepError, DownloadError, HookError, OptionMissedError, ' \
               'ProcessingError, RepositoryNotFound, ' \
               'RaiseExceptionIfOptionMissed'
