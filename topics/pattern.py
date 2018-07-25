@@ -57,6 +57,7 @@ class PatternItem(object):
                  exclude=False, name=None, cont=False):
         self.name = name
         self.cont = cont
+        self.repcont = False
         self.include = list()
         self.exclude = list()
         self.subst = list()
@@ -119,7 +120,10 @@ class PatternItem(object):
             and len(self.exclude) == 0
 
     def continuable(self):
-        return self.cont
+        if len(self.subst) > 1:
+            return self.cont
+        else:
+            return self.cont or self.repcont
 
     def split(self, patterns, cont=None):
         inc, exc, rep = list(), list(), list()
@@ -190,7 +194,7 @@ class PatternItem(object):
             for rep in self.subst:
                 ovalue, value = value, re.sub(rep.pattern, rep.subst, value)
                 if ovalue != value:
-                    self.cont = rep.cont
+                    self.repcont = rep.cont
 
                 if ovalue != value and not rep.cont:
                     break
