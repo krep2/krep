@@ -31,8 +31,8 @@ class SubCommand(object):
 
         return self._optparse
 
-    def options(self, optparse, option_remote=False, option_import=False,
-                banned=None, *args, **kws):  # pylint: disable=W0613
+    def options(self, optparse, option_remote=False,  # pylint: disable=W0613
+                option_import=False, banned=None, *args, **kws):
         """Handles the options for the subcommand."""
         options = optparse.add_option_group('File options')
         options.add_option(
