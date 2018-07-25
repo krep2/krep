@@ -130,7 +130,7 @@ class SubCommand(object):
 
             val = cfg.get_value(ConfigFile.FILE_PREFIX)
             if val:
-                patterns += val.pattern
+                patterns += val.pattern  # pylint: disable=E1103
 
         return patterns
 
