@@ -1,9 +1,5 @@
 
-from gerrit_cmd import GerritCmd
-
-
-class GerritError(Exception):
-    """Indicate the unsuccessful gerrit processing."""
+from gerrit_cmd import GerritCmd, GerritError
 
 
 class Gerrit(GerritCmd):

@@ -5,6 +5,10 @@ from logger import Logger
 from synchronize import synchronized
 
 
+class GerritError(Exception):
+    """Indicate the unsuccessful gerrit processing."""
+
+
 class GerritCmd(Command):
     def __init__(self, server, enable):
         Command.__init__(self)
