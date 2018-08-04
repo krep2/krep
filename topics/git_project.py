@@ -166,7 +166,9 @@ class GitProject(Project, GitCommand):
         if ret == 0:
             for line in lines.split('\n'):
                 line = line.strip()
-                if line.startswith('*'):
+                if re.search('^\s*remotes/.*/HEAD', line):
+                    continue
+                elif line.startswith('*'):
                     line = line[1:].lstrip()
                     if line.startswith('(HEAD detached at '):
                         continue
