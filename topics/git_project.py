@@ -167,9 +167,10 @@ class GitProject(Project, GitCommand):
             for line in lines.split('\n'):
                 line = line.strip()
                 if line.startswith('*'):
-                    if self.bare or local:
-                        line = line[1:].lstrip()
-                    else:
+                    line = line[1:].lstrip()
+                    if line.startswith('(HEAD detached at '):
+                        continue
+                    elif not (self.bare or local):
                         continue
                 elif not line:
                     continue
