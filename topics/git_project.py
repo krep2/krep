@@ -184,12 +184,6 @@ class GitProject(Project, GitCommand):
                 if head[1] != '->':
                     heads[head[0]] = head[1]
 
-                    # keep local branch with a higher priority
-                    name = _secure_head_name(head[0])
-                    if name not in heads or name == head[0]:
-                        heads[name] = head[1]
-
-
         return ret, heads
 
     def get_local_tags(self):
