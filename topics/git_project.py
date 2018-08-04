@@ -239,14 +239,10 @@ class GitProject(Project, GitCommand):
                 logger.debug('"%s" do not match revision pattern', head)
                 continue
 
-            if self.is_sha1(origin) and self.rev_existed(origin):
-                local_ref = origin
-            elif not self.bare and not origin.startswith('remotes/'):
-                local_ref = 'refs/remotes/%s' % origin
-            elif origin.startswith('remotes/'):
-                local_ref = 'refs/%s' % origin
+            if self.rev_existed(origin):
+                local_ref = '%s' % origin
             else:
-                local_ref = 'refs/heads/%s' % origin
+                local_ref = 'refs/%s' % origin
 
             if not self.rev_existed(local_ref):
                 local_ref = 'refs/heads/%s' % origin
