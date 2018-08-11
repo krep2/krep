@@ -333,6 +333,23 @@ class GitProject(Project, GitCommand):
         else:
             local_tags.append(tags)
 
+        if not (tags or self.pattern) and fullname:
+            if skip_validation:
+                ret = self.push(
+                    self.remote,
+                    '-o', 'skip-validation',
+                    '%srefs/tags/*:refs/tags/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+            else:
+                ret = self.push(
+                    self.remote,
+                    '%srefs/tags/*:refs/tags/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+
+            return ret
+
         for origin in local_tags:
             tag = origin
             if not fullname:
