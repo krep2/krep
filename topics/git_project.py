@@ -39,6 +39,7 @@ def _secure_head_name(head):
 
 
 class GitProject(Project, GitCommand):
+    CATEGORY_TAGS = 't,tag,revision'
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
                  remote=None, pattern=None, bare=False, *args, **kws):
@@ -204,6 +205,17 @@ class GitProject(Project, GitCommand):
 
         return ret == 0
 
+    @staticmethod
+    def has_changes(names, cut=False):
+        if not cut:
+            return False
+
+        for name in names:
+            if os.path.basename(name) != name:
+                return True
+
+        return False
+
     def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
                    fullname=False, skip_validation=False,
                    force=False, sha1tag=None, *args, **kws):
@@ -333,7 +345,9 @@ class GitProject(Project, GitCommand):
         else:
             local_tags.append(tags)
 
-        if not (tags or self.pattern) and fullname:
+        if not (tags or GitProject.has_changes(local_tags, fullname)
+                or self.pattern.can_replace(
+                    GitProject.CATEGORY_TAGS, local_tags)):
             if skip_validation:
                 ret = self.push(
                     self.remote,
@@ -357,20 +371,22 @@ class GitProject(Project, GitCommand):
             if not tag:
                 continue
 
-            if not self.pattern.match('t,tag,revision', origin, name=self.uri):
+            if not self.pattern.match(
+                    GitProject.CATEGORY_TAGS, origin, name=self.uri):
                 logger.debug('%s: "%s" not match tag pattern', origin, origin)
                 continue
-            elif not self.pattern.match('t,tag,revision', tag, name=self.uri):
+            elif not self.pattern.match(
+                    GitProject.CATEGORY_TAGS, tag, name=self.uri):
                 logger.debug('%s: "%s" not match tag pattern', origin, tag)
                 continue
 
             rtag = self.pattern.replace(
-                't,tag,revision', '%s' % tag, name=self.uri)
+                GitProject.CATEGORY_TAGS, '%s' % tag, name=self.uri)
             if rtag != tag:
                 rtag = '%s%s' % (refs or '', rtag)
             else:
                 rtag = self.pattern.replace(
-                    't,tag,revision', '%s%s' % (refs or '', tag),
+                    GitProject.CATEGORY_TAGS, '%s%s' % (refs or '', tag),
                     name=self.uri)
 
             remote_tag = 'refs/tags/%s' % rtag
