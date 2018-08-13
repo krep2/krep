@@ -532,5 +532,13 @@ matching.
 
         return value
 
+    def can_replace(self, categories, values, name=None):
+        for value in values or list():
+            newvalue = self.replace(categories, values, name)
+            if newvalue != value:
+                return True
+
+        return False
+
 
 TOPIC_ENTRY = 'Pattern'
