@@ -40,6 +40,8 @@ def _secure_head_name(head):
 
 class GitProject(Project, GitCommand):
     CATEGORY_TAGS = 't,tag,revision'
+    CATEGORY_REVISION = 'r,rev,revision'
+    
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
                  remote=None, pattern=None, bare=False, *args, **kws):
@@ -230,7 +232,25 @@ class GitProject(Project, GitCommand):
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
+        elif not (sha1tag or GitProject.has_changes(local_heads, fullname)
+                  or self.pattern.can_replace(
+                    GitProject.CATEGORY_REVISION, local_heads)):
+            if skip_validation:
+                ret = self.push(
+                    self.remote,
+                    '-o', 'skip-validation',
+                    '%srefs/heads/*:refs/heads/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+            else:
+                ret = self.push(
+                    self.remote,
+                    '%srefs/heads/*:refs/heads/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
 
+            return ret
+                    
         for origin in local_heads:
             head = _secure_head_name(origin)
 
@@ -243,10 +263,11 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    'r,rev,revision', origin, name=self.uri):
+                    GitProject.CATEGORY_REVISION, origin, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', origin)
                 continue
-            elif not self.pattern.match('r,rev,revision', head, name=self.uri):
+            elif not self.pattern.match(
+                    GitProject.CATEGORY_REVISION, head, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', head)
                 continue
 
@@ -262,17 +283,17 @@ class GitProject(Project, GitCommand):
                     continue
 
             if not self.pattern.match(
-                    'r,rev,revision', local_ref, name=self.uri):
+                    GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
                 logger.debug('"%s" do not match revision pattern', local_ref)
                 continue
 
             rhead = self.pattern.replace(
-                'r,rev,revision', '%s' % head, name=self.uri)
+                GitProject.CATEGORY_REVISION, '%s' % head, name=self.uri)
             if rhead != head:
                 rhead = '%s%s' % (refs or '', rhead)
             else:
                 rhead = self.pattern.replace(
-                    'r,rev,revision', '%s%s' % (refs or '', head),
+                    GitProject.CATEGORY_REVISION, '%s%s' % (refs or '', head),
                     name=self.uri)
 
             skip = False
