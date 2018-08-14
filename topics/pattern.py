@@ -534,7 +534,7 @@ matching.
 
     def can_replace(self, categories, values, name=None):
         for value in values or list():
-            newvalue = self.replace(categories, values, name)
+            newvalue = self.replace(categories, value, name)
             if newvalue != value:
                 return True
 
