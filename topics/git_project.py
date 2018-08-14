@@ -223,7 +223,7 @@ class GitProject(Project, GitCommand):
                    force=False, sha1tag=None, *args, **kws):
         logger = Logger.get_logger()
 
-        refs = refs and '%s/' % refs.rstrip('/')
+        refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, local_heads = self.get_local_heads(local=True)
         ret, remote_heads = self.get_remote_heads()
         ret, remote_tags = self.get_remote_tags()
@@ -290,10 +290,10 @@ class GitProject(Project, GitCommand):
             rhead = self.pattern.replace(
                 GitProject.CATEGORY_REVISION, '%s' % head, name=self.uri)
             if rhead != head:
-                rhead = '%s%s' % (refs or '', rhead)
+                rhead = '%s%s' % (refs, rhead)
             else:
                 rhead = self.pattern.replace(
-                    GitProject.CATEGORY_REVISION, '%s%s' % (refs or '', head),
+                    GitProject.CATEGORY_REVISION, '%s%s' % (refs, head),
                     name=self.uri)
 
             skip = False
@@ -355,7 +355,7 @@ class GitProject(Project, GitCommand):
                   skip_validation=False, *args, **kws):
         logger = Logger.get_logger()
 
-        refs = refs and '%s/' % refs.rstrip('/')
+        refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
 
         local_tags = list()
@@ -404,10 +404,10 @@ class GitProject(Project, GitCommand):
             rtag = self.pattern.replace(
                 GitProject.CATEGORY_TAGS, '%s' % tag, name=self.uri)
             if rtag != tag:
-                rtag = '%s%s' % (refs or '', rtag)
+                rtag = '%s%s' % (refs, rtag)
             else:
                 rtag = self.pattern.replace(
-                    GitProject.CATEGORY_TAGS, '%s%s' % (refs or '', tag),
+                    GitProject.CATEGORY_TAGS, '%s%s' % (refs, tag),
                     name=self.uri)
 
             remote_tag = 'refs/tags/%s' % rtag
