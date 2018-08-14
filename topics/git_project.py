@@ -415,7 +415,10 @@ class GitProject(Project, GitCommand):
                 equals = True
                 if force:
                     sha1 = remote_tags[remote_tag]
-                    ret, lsha1 = self.rev_parse(origin)
+                    if not origin.startswith('refs'):
+                        ret, lsha1 = self.rev_parse('refs/tags/%s' % origin)
+                    else:
+                        ret, lsha1 = self.rev_parse(origin)
                     equals = _sha1_equals(sha1, lsha1)
 
                 if equals:
