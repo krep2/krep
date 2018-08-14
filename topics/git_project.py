@@ -208,8 +208,8 @@ class GitProject(Project, GitCommand):
         return ret == 0
 
     @staticmethod
-    def has_changes(names, cut=False):
-        if not cut:
+    def has_changes(names, keepname=False):
+        if keepname:
             return False
 
         for name in names:
