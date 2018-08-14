@@ -132,7 +132,7 @@ replaced by GIT_URL."""
                 options.branch,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
-                push_all=options.all,
+                push_all=options.all or options.branch is None,
                 fullname=options.keep_name,
                 skip_validation=options.skip_validation,
                 force=options.force,
