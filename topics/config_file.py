@@ -195,6 +195,22 @@ class _IniConfigFile(_ConfigFile):
                 raise ProcessingError('Unmatched Line %d: %s' % (k + 1, strip))
 
 
+class _JsonConfigFile(_ConfigFile):
+    def __init__(self, filename, content=None):
+        _ConfigFile.__init__(self, filename)
+
+        self._parse_xml(content or self.read())
+
+    def _parse_json(self, content):
+        jresults = json.loads(content)
+
+        for section, values in jresults.items():
+            cfg = self._new_value(section)
+
+            for name, value in values.items():
+                _setattr(cfg, name, value)
+
+
 class _XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
@@ -312,6 +328,8 @@ class ConfigFile(_ConfigFile):
         content = self.read().lstrip()
         if content[:6].lower().startswith('<?xml'):
             self.inst = _XmlConfigFile(filename)
+        elif content.startswith('{'):
+            self.inst = _JsonConfigFile(filename, content)
         else:
             self.inst = _IniConfigFile(filename, content)
 
