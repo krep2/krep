@@ -241,9 +241,9 @@ class _XmlConfigFile(_ConfigFile):
                     filen = os.path.join(
                         os.path.dirname(self.filename), filen)
 
-                _setattr(cfg, 'hook-%s' % name, filename)
+                _setattr(cfg, 'hook-%s' % name, filen)
                 for child in node.childNodes:
-                    if child.nodeName != '#text':
+                    if child.nodeName == 'args':
                         _setattr(cfg, 'hook-%s-%s' % (name, child.nodeName),
                                  _getattr(child, 'value'))
 
