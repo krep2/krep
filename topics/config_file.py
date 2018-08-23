@@ -236,10 +236,10 @@ class _XmlConfigFile(_ConfigFile):
 
             def _parse_hook(cfg, node):
                 name = _getattr(node, 'name')
-                filename = _getattr(node, 'file')
-                if filename and not filename.startswith('/'):
-                    filename = os.path.join(
-                        os.path.dirname(self.filename), filename)
+                filen = _getattr(node, 'file')
+                if filen and not os.path.isabs(filen):
+                    filen = os.path.join(
+                        os.path.dirname(self.filename), filen)
 
                 _setattr(cfg, 'hook-%s' % name, filename)
                 for child in node.childNodes:
