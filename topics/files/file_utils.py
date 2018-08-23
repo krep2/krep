@@ -45,6 +45,36 @@ class FileUtils(object):
             return name
 
     @staticmethod
+    def last_modified(path, recursive=True):
+        def _modified_time(filename):
+            if os.path.exists(filename):
+                while os.path.islink(filename):
+                    name = os.readlink(filename)
+                    if not os.path.isabs(name):
+                        name = os.path.join(os.path.dirname(filename), name)
+
+                    if os.path.exists(name):
+                        filename = name
+                    else:
+                        continue
+
+                stat = os.lstat(filename)
+                return stat.st_mtime
+            else:
+                return 0
+
+        timestamp = _modified_time(path)
+        if os.path.isdir(path) and recursive:
+            timestamp = 0
+            for root, _, files in os.walk(path):
+                for name in files:
+                    mtime = _modified_time(os.path.join(root, name))
+                    if mtime > timestamp:
+                        timestamp = mtime
+
+        return timestamp
+
+    @staticmethod
     def copy_file(src, dest):
         if os.path.islink(src):
             linkto = os.readlink(src)
