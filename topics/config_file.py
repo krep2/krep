@@ -152,10 +152,10 @@ class _ConfigFile(object):
 
 
 class _IniConfigFile(_ConfigFile):
-    def __init__(self, filename):
+    def __init__(self, filename, content=None):
         _ConfigFile.__init__(self, filename)
 
-        self._parse_ini(self.read())
+        self._parse_ini(content or self.read())
 
     def _parse_ini(self, content):
         cfg = self._new_value(_ConfigFile.DEFAULT_CONFIG)
@@ -201,7 +201,7 @@ class _XmlConfigFile(_ConfigFile):
 
         self._parse_xml(filename, pi)
 
-    def _parse_xml(self, content, pi=None):  # pylint: disable=R0914
+    def _parse_xml(self, filename, pi=None):  # pylint: disable=R0914
         def _getattr(node, name, default=None):
             if node.hasAttribute(name):
                 return node.getAttribute(name)
@@ -215,7 +215,7 @@ class _XmlConfigFile(_ConfigFile):
                 for pattern in patterns:
                     _setattr(cfg, 'pattern', pattern)
 
-        root = xml.dom.minidom.parse(content)
+        root = xml.dom.minidom.parse(filename)
 
         default = self._new_value(_ConfigFile.DEFAULT_CONFIG)
 
@@ -309,11 +309,11 @@ class ConfigFile(_ConfigFile):
     def __init__(self, filename):
         _ConfigFile.__init__(self, filename)
 
-        content = self.read()
+        content = self.read().lstrip()
         if content[:6].lower().startswith('<?xml'):
             self.inst = _XmlConfigFile(filename)
         else:
-            self.inst = _IniConfigFile(filename)
+            self.inst = _IniConfigFile(filename, content)
 
     def get_default(self):
         return self.inst.get_default()
