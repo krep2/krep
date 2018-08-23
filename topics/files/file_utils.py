@@ -100,6 +100,17 @@ class FileUtils(object):
             return name
 
     @staticmethod
+    def last_modifed(path):
+        timestamp = 0
+        for root, _, files in os.walk(path):
+            for name in files:
+                timest = os.lstat(os.path.join(root, name))
+                if timest.st_mtime > timestamp:
+                    timestamp = timest.st_mtime
+
+        return timestamp
+            
+    @staticmethod
     def copy_file(src, dest):
         if os.path.islink(src):
             linkto = os.readlink(src)
