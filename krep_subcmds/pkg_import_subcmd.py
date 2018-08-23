@@ -107,17 +107,6 @@ def _sort_pkg(a, b):
     return _cmp(len(va), len(vb))
 
 
-def _timestamp(src):
-    timestamp = 0
-    for root, _, files in os.walk(src):
-        for name in files:
-            timest = os.lstat(os.path.join(root, name))
-            if timest.st_mtime > timestamp:
-                timestamp = timest.st_mtime
-
-    return timestamp
-
-
 class PkgImportSubcmd(SubCommand):
     COMMAND = 'pkg-import'
     ALIASES = ('pki',)
@@ -414,7 +403,7 @@ The escaped variants are supported for the imported files including:
 
                 timestamp = diff.timestamp
             else:
-                timestamp = _timestamp(workp)
+                timestamp = FileUtils.last_modifed(workp)
                 FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
                 FileUtils.copy_files(workp, project.path)
 
