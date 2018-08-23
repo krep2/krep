@@ -63,6 +63,39 @@ class FileDecompressor(Command):
             decompressor.execute(filename)
 
 
+class FileVersion(object):
+    @staticmethod
+    def cmp(va, vb):
+        def _cmp(vva, vvb):
+            return (vva > vvb) - (vva < vvb)
+
+        vsa = va.split('.')
+        vsb = vb.split('.')
+
+        for k in range(min(len(vsa), len(vsb))):
+            maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
+            mab = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsb[k])
+            if maa and mab:
+                if maa.group('digit') != mab.group('digit'):
+                    return _cmp(
+                        int(maa.group('digit')), int(mab.group('digit')))
+
+                paa, pab = maa.group('patch'), mab.group('patch')
+                if paa != pab:
+                    if not paa:
+                        return 1
+                    elif not pab:
+                        return -1
+                    else:
+                        return _cmp(paa, pab)
+
+            res = _cmp(vsa[k], vsb[k])
+            if res != 0:
+                return res
+
+        return _cmp(len(vsa), len(vsb))
+
+
 class FileUtils(object):
     """Utility to handle file operations."""
     @staticmethod
@@ -173,4 +206,4 @@ class FileUtils(object):
         FileDecompressor.extract(src, dest)
 
 
-TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'
+TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils, FileVersion'
