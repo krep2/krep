@@ -8,17 +8,6 @@ from file_pattern import FilePattern, GitFilePattern, RepoFilePattern, \
 from file_utils import FileUtils
 
 
-def _timestamp(src):
-    timestamp = 0
-    for root, _, files in os.walk(src):
-        for name in files:
-            timest = os.lstat(os.path.join(root, name))
-            if timest.st_mtime > timestamp:
-                timestamp = timest.st_mtime
-
-    return timestamp
-
-
 class FileDiff(object):
     """Supports to handle the difference between two directories."""
 
@@ -226,7 +215,7 @@ class FileDiff(object):
         if not quickcopy:
             ret = self._sync(gitcmd=gitcmd, logger=logger)
         else:
-            self._timestamp = _timestamp(self.src)
+            self._timestamp = FileUtils.last_modified(self.src)
 
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
             FileUtils.copy_files(self.src, self.dest)
