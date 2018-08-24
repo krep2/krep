@@ -253,32 +253,41 @@ The escaped variants are supported for the imported files including:
 
         return name, ''
 
-    def execute(self, options, *args, **kws):  # pylint: disable=R0915
-        SubCommand.execute(self, options, option_import=True, *args, **kws)
-
-        logger = Logger.get_logger()  # pylint: disable=E1101
-
-        pkgs, name = list(), None
+    @staticmethod
+    def build_packages(options, args, logger=None):
+        name, pkgs, rets = None, dict(), list()
         for pkg in args:
             pkgname, revision = PkgImportSubcmd.split_name(
                 pkg, options.pkg_pattern, options.filter_out_chars)
 
             if name and pkgname != name:
-                logger.warn(
+                logger and logger.warn(
                     'Warning: pkgname "%s" mismatched "%s"', pkgname, name)
 
             if options.pkg_pattern and not revision:
-                logger.error(
+                logger and logger.error(
                     'Error: %s failed to be recognized with revision' % pkg)
             else:
-                name = pkgname
-                pkgs.append((os.path.realpath(pkg), pkgname, revision))
+                pkgs[revision] = (os.path.realpath(pkg), pkgname, revision)
 
-        if len(pkgs) != len(args):
-            return
+                name = pkgname
+                rets.append(pkgs[revision])
 
         if not options.keep_order:
-            pkgs.sort(key=key_compare(_sort_pkg))
+            rets = list()
+            for rev in pkgs.keys().sort(key=key_compare(_sort_pkg)):
+                rets.append(pkgs[rev])
+
+        return len(rets) == len(args), name, rets
+
+    def execute(self, options, *args, **kws):  # pylint: disable=R0915
+        SubCommand.execute(self, options, option_import=True, *args, **kws)
+
+        logger = Logger.get_logger()  # pylint: disable=E1101
+
+        ret, pkgs, name = PkgImportSubcmd.build_packages(options, args, logger)
+        if not ret:
+            return
 
         if options.show_order or (options.verbose and options.verbose > 0):
             print('Effective packages (%d)' % len(pkgs))
