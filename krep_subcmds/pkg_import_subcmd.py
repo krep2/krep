@@ -61,22 +61,6 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
     return message
 
 
-def _split_name(fullname, patterns, filtered_chars):
-    name, _ = os.path.splitext(os.path.basename(fullname))
-    if name.endswith('.tar'):
-        name = name[:len(name) - 4]
-
-    for pattern in patterns or list():
-        m = re.match(pattern, name)
-        if m:
-            res = [r for r in m.groups() if r is not None]
-            if len(res) > 1:
-                return res[0], '.'.join(
-                    [r.lstrip(filtered_chars) for r in res[1:]])
-
-    return name, ''
-
-
 def _sort_pkg(a, b):
     def _cmp(vva, vvb):
         return (vva > vvb) - (vva < vvb)
@@ -253,6 +237,22 @@ The escaped variants are supported for the imported files including:
     def get_name(self, options):
         return options.name or '[-]'
 
+    @staticmethod
+    def split_name(fullname, patterns, filtered_chars):
+        name, _ = os.path.splitext(os.path.basename(fullname))
+        if name.endswith('.tar'):
+            name = name[:len(name) - 4]
+
+        for pattern in patterns or list():
+            m = re.match(pattern, name)
+            if m:
+                res = [r for r in m.groups() if r is not None]
+                if len(res) > 1:
+                    return res[0], '.'.join(
+                        [r.lstrip(filtered_chars) for r in res[1:]])
+
+        return name, ''
+
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
         SubCommand.execute(self, options, option_import=True, *args, **kws)
 
@@ -260,7 +260,7 @@ The escaped variants are supported for the imported files including:
 
         pkgs, name = list(), None
         for pkg in args:
-            pkgname, revision = _split_name(
+            pkgname, revision = PkgImportSubcmd.split_name(
                 pkg, options.pkg_pattern, options.filter_out_chars)
 
             if name and pkgname != name:
