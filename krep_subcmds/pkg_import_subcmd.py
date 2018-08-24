@@ -377,7 +377,7 @@ The escaped variants are supported for the imported files including:
             if options.washed:
                 diff = FileDiff(project.path, workp, filter_out,
                                 enable_sccs_pattern=options.filter_out_sccs)
-                if diff.sync(project, logger) > 0:
+                if diff.sync(logger) > 0:
                     ret = 0
 
                 timestamp = diff.timestamp
@@ -386,7 +386,7 @@ The escaped variants are supported for the imported files including:
                 FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
                 FileUtils.copy_files(workp, project.path)
 
-                ret = project.add('--all', project.path)
+            ret = project.add('--all', project.path)
 
             if ret == 0:
                 args = list()
