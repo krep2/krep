@@ -102,7 +102,7 @@ class FileDiff(object):
 
         return False
 
-    def _sync(self, gitcmd=None, logger=None):  # pylint: disable=R0915
+    def _sync(self, logger=None):  # pylint: disable=R0915
         changes = 0
 
         def debug(msg):
@@ -125,10 +125,7 @@ class FileDiff(object):
                 if not os.path.lexists(newf):
                     debug('remove file %s' % oldf)
                     changes += 1
-                    if gitcmd:
-                        gitcmd.rm(oldf)
-                    else:
-                        os.unlink(oldf)
+                    os.unlink(oldf)
 
             for dname in dirs:
                 oldd = os.path.join(root, dname)
@@ -142,10 +139,7 @@ class FileDiff(object):
                 if not os.path.lexists(newd):
                     debug('remove directory %s' % oldd)
                     changes += 1
-                    if gitcmd:
-                        gitcmd.rm('-r', oldd)
-                    else:
-                        shutil.rmtree(oldd)
+                    shutil.rmtree(oldd)
 
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:
@@ -180,8 +174,6 @@ class FileDiff(object):
                     if not self._equal_link(oldf, newf):
                         debug('copy the link file %s' % oldf)
                         FileUtils.copy_file(newf, oldf)
-                        if gitcmd:
-                            gitcmd.add(oldf)
                         changes += 1
                 elif not os.path.lexists(oldf):
                     debug('add file %s' % newf)
@@ -190,37 +182,29 @@ class FileDiff(object):
                         os.makedirs(dirn)
 
                     FileUtils.copy_file(newf, oldf)
-                    if gitcmd:
-                        gitcmd.add(oldf)
                     changes += 1
                 else:
                     if os.path.islink(oldf):
                         debug('link file %s' % newf)
                         FileUtils.copy_file(newf, oldf)
-                        if gitcmd:
-                            gitcmd.add(oldf)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
                         debug('change file %s' % newf)
                         FileUtils.copy_file(newf, oldf)
-                        if gitcmd:
-                            gitcmd.add(oldf)
                         changes += 1
                     else:
                         debug('no change %s' % newf)
 
         return changes
 
-    def sync(self, gitcmd=None, logger=None, quickcopy=False):
+    def sync(self, logger=None, quickcopy=False):
         if not quickcopy:
-            ret = self._sync(gitcmd=gitcmd, logger=logger)
+            ret = self._sync(logger=logger)
         else:
             self._timestamp = FileUtils.last_modified(self.src)
 
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
             FileUtils.copy_files(self.src, self.dest)
-            if gitcmd:
-                ret = gitcmd.add('--all', self.dest)
 
         return ret
 
