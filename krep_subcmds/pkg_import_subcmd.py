@@ -12,8 +12,8 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-from topics import FileDiff, FileUtils, FileWasher, GitProject, Gerrit, \
-    key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
+from topics import FileDiff, FileUtils, FileVersion, FileWasher, GitProject, \
+    Gerrit, key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
 
 
 def _hash_digest(filename, mode):
@@ -59,36 +59,6 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
             message = message.replace(key, value)
 
     return message
-
-
-def _sort_pkg(a, b):
-    def _cmp(vva, vvb):
-        return (vva > vvb) - (vva < vvb)
-
-    va = a[2].split('.')
-    vb = b[2].split('.')
-
-    for k in range(min(len(va), len(vb))):
-        maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', va[k])
-        mab = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vb[k])
-        if maa and mab:
-            if maa.group('digit') != mab.group('digit'):
-                return _cmp(
-                    int(maa.group('digit')), int(mab.group('digit')))
-
-            paa, pab = maa.group('patch'), mab.group('patch')
-            if paa != pab:
-                if not paa:
-                    return 1
-                elif not pab:
-                    return -1
-                else:
-                    return _cmp(paa, pab)
-
-        if _cmp(va[k], vb[k]) != 0:
-            return _cmp(va[k], vb[k])
-
-    return _cmp(len(va), len(vb))
 
 
 class PkgImportSubcmd(SubCommand):
@@ -275,7 +245,7 @@ The escaped variants are supported for the imported files including:
 
         if not options.keep_order and pkgs:
             rets = list()
-            for rev in sorted(pkgs.keys(), key=key_compare(_sort_pkg)):
+            for rev in sorted(pkgs.keys(), key=key_compare(FileVersion.cmp)):
                 rets.append(pkgs[rev])
 
         return len(rets) == len(args), name, rets
