@@ -62,7 +62,7 @@ class FileDecompressor(Command):
         with AutoChangedDir(output, cleanup=False):
             decompressor.execute(filename)
 
-            
+
 class FileVersion(object):
     @staticmethod
     def cmp(va, vb):
@@ -70,7 +70,7 @@ class FileVersion(object):
             return (vva > vvb) - (vva < vvb)
 
         vsa = va.split('.')
-        vsb = va.split('.')
+        vsb = vb.split('.')
 
         for k in range(min(len(vsa), len(vsb))):
             maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
@@ -95,7 +95,7 @@ class FileVersion(object):
 
         return _cmp(len(vsa), len(vsb))
 
-        
+
 class FileUtils(object):
     """Utility to handle file operations."""
     @staticmethod
@@ -142,7 +142,7 @@ class FileUtils(object):
                     timestamp = timest.st_mtime
 
         return timestamp
-            
+
     @staticmethod
     def copy_file(src, dest):
         if os.path.islink(src):
