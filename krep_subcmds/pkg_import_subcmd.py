@@ -253,7 +253,7 @@ The escaped variants are supported for the imported files including:
 
     @staticmethod
     def do_import(project, options, name, path, revision,
-                  pattern=None, logger=None, *args, **kws):
+                  filtered=None, logger=None, *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -274,47 +274,39 @@ The escaped variants are supported for the imported files including:
             path, options.enable_escape, message,
             dofile=options.use_commit_file)
 
-        workp = path
-        temp = options.temp_directory or tempfile.mkdtemp()
+        workplace = path
+        tmpdir = options.temp_directory or tempfile.mkdtemp()
         if os.path.isfile(path):
-            FileUtils.extract_file(path, temp)
-            workp = temp
+            FileUtils.extract_file(path, tmpdir)
+            workplace = tmpdir
 
-        if options.init_path:
-            inited = os.path.join(workp, options.init_path)
-            if os.path.exists(inited):
-                workp = inited
-
+        ret = 0
         if options.auto_detect:
-            dname = os.listdir(workp)
+            dname = os.listdir(workplace)
             while 0 < len(dname) < 2:
-                workp += '/%s' % dname[0]
-                dname = os.listdir(workp)
-                logger.info('Go into %s' % workp)
+                workplace = os.path.join(workplace, dname[0])
+                dname = os.listdir(workplace)
+                logger.info('Go into %s' % workplace)
 
         if options.washed:
-            filter_out = list([r'\.git/'])
-            for fout in options.filter_out or list():
-                filter_out.extend(fout.split(','))
-
-            diff = FileDiff(project.path, workp, filter_out,
+            diff = FileDiff(project.path, workplace, filtered,
                             enable_sccs_pattern=options.filter_out_sccs)
-            if diff.sync(project, logger) > 0:
+            if diff.sync(logger) > 0:
                 ret = 0
 
             timestamp = diff.timestamp
         else:
-            timestamp = FileUtils.last_modifed(workp)
+            timestamp = FileUtils.last_modifed(workplace)
             FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
-            FileUtils.copy_files(workp, project.path)
+            FileUtils.copy_files(workplace, project.path)
 
         if options.washed:
             # wash the directory
             washer = FileWasher()
-            washer.wash(workp)
+            washer.wash(workplace)
 
         if ret == 0:
-            project.add('--all', project.path)
+            project.add('--all', '-f', project.path)
 
             args = list()
             if options.author:
@@ -324,6 +316,7 @@ The escaped variants are supported for the imported files including:
             args.append(message)
             args.append('--date="%s"' % time.ctime(timestamp))
 
+            tags = list()
             ret = project.commit(*args)
             if ret == 0:
                 if options.version_template:
@@ -344,9 +337,9 @@ The escaped variants are supported for the imported files including:
                 if tags:
                     ret, _ = project.tag(tags[-1])
 
-        if os.path.lexists(temp):
+        if os.path.lexists(tmpdir):
             try:
-                shutil.rmtree(temp)
+                shutil.rmtree(tmpdir)
             except OSError as e:
                 logger.exception(e)
 
@@ -415,10 +408,22 @@ The escaped variants are supported for the imported files including:
             logger.error('Failed to init the repo %s' % project)
             return False
 
+        filtered_out = list([r'\.git/'])
+        for fout in options.filter_out or list():
+            filtered_out.extend(fout.split(','))
+
         tags = list()
         for pkg, pkgname, revision in pkgs:
+            workplace = pkg
+            if options.init_path:
+                inited = os.path.join(workplace, options.init_path)
+                if os.path.exists(inited):
+                    workplace = inited
+
             _, ptags = PkgImportSubcmd.do_import(
-                project, options, logger, name, path, revision)
+                project, options, pkgname, workplace,
+                revision, filtered_out, logger)
+
             if ptags:
                 tags.extend(ptags)
 
