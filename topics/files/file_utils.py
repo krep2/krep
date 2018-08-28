@@ -166,6 +166,8 @@ class FileUtils(object):
         for name in os.listdir(dest):
             matched = False
             if os.path.isdir(os.path.join(dest, name)):
+                # OS doesn't complain the trailing backslash, but patterns use
+                # it to treat the name with trailing backslash as directories
                 name += '/'
 
             for pattern in ignore_list or list():
@@ -178,9 +180,12 @@ class FileUtils(object):
 
             filename = os.path.join(dest, name)
             if os.path.isdir(filename):
-                shutil.rmtree(filename)
+                FileUtils.rmtree(filename, ignore_list=ignore_list)
             else:
                 os.unlink(filename)
+
+        if len(os.listdir(dest)) == 0:
+            shutil.rmtree(dest)
 
     @staticmethod
     def copy_files(src, dest, ignore_list=None):
@@ -194,12 +199,16 @@ class FileUtils(object):
             if matched:
                 continue
 
-            filename = os.path.join(src, name)
-            if os.path.isdir(filename):
-                shutil.copytree(
-                    filename, os.path.join(dest, name), symlinks=True)
+            sname = os.path.join(src, name)
+            dname = os.path.join(dest, name)
+            if os.path.isdir(sname):
+                dname = os.path.join(dest, name)
+                if not os.path.exists(dname):
+                    os.makedirs(dname)
+
+                FileUtils.copy_files(sname, dname, ignore_list=ignore_list)
             else:
-                FileUtils.copy_file(filename, os.path.join(dest, name))
+                FileUtils.copy_file(sname, dname)
 
     @staticmethod
     def extract_file(src, dest):
