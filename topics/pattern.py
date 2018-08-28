@@ -168,18 +168,24 @@ class PatternItem(object):
             self.exclude.extend(pattern.exclude)
             self.subst.extend(pattern.subst)
 
-    def match(self, patterns):
+    def match(self, patterns, strict=False):
         for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             opposite = pattern.startswith(PatternItem.OPPOSITE_DELIMITER)
             if opposite:
                 pattern = pattern[1:]
 
             for i in self.include:
-                if re.search(i, pattern) is not None:
+                if strict:
+                    if i == pattern:
+                        return not opposite
+                elif re.search(i, pattern) is not None:
                     return not opposite
 
             for e in self.exclude:
-                if re.search(e, pattern) is not None:
+                if strict:
+                    if e == pattern:
+                        return opposite
+                elif re.search(e, pattern) is not None:
                     return opposite
 
             if len(self.include) > 0:
@@ -189,10 +195,15 @@ class PatternItem(object):
 
         return True
 
-    def replace(self, value):
+    def replace(self, value, strict=False):
         if self.subst:
             for rep in self.subst:
-                ovalue, value = value, re.sub(rep.pattern, rep.subst, value)
+                ovalue = value
+                if strict:
+                    value = value.replace(rep.pattern, rep.subst)
+                else:
+                    value = re.sub(rep.pattern, rep.subst, value)
+
                 if ovalue != value:
                     self.repcont = rep.cont
 
@@ -481,7 +492,7 @@ matching.
     def get(self):
         return self.categories
 
-    def match(self, categories, value, name=None):
+    def match(self, categories, value, name=None, strict=False):
         ret = False
         existed = False
 
@@ -490,7 +501,7 @@ matching.
             item = self._ensure_item(category, name)
             if item and not item.replacable_only():
                 existed = True
-                ret |= item.match(value)
+                ret |= item.match(value, strict=strict)
 
         if not existed and name is None:
             for category in _secure_split(
@@ -498,11 +509,11 @@ matching.
                 item = self._ensure_item(category, value)
                 if item and not item.replacable_only():
                     existed = True
-                    ret |= item.match(value)
+                    ret |= item.match(value, strict=strict)
 
         return ret if existed else True
 
-    def replace(self, categories, value, name=None):
+    def replace(self, categories, value, name=None, strict=False):
         replaced = False
 
         for category in _secure_split(
@@ -512,13 +523,14 @@ matching.
                 items = self.categories[category]
                 for pattern in self.orders[category]:
                     if pattern and name and (
-                            re.search(pattern, name) or (
+                            (strict and name == pattern) or
+                            (not strict and re.search(pattern, name)) or (
                                 replaced and re.search(pattern, value))):
                         item = items[pattern]
                         if not item.replacable():
                             continue
 
-                        value, ovalue = item.replace(value), value
+                        value, ovalue = item.replace(value, strict), value
                         if value != ovalue:
                             replaced = True
                         if replaced and not item.continuable():
