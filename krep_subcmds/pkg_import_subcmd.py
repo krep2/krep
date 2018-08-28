@@ -97,21 +97,22 @@ The escaped variants are supported for the imported files including:
  %md5  - the MD5 value of the imported file
 """
 
-    def options(self, optparse):
-        SubCommand.options(self, optparse, option_import=True,
-                           option_remote=True, modules=globals())
+    def options(self, optparse, inherited=False):
+        if not inherited:
+            SubCommand.options(self, optparse, option_import=True,
+                               option_remote=True, modules=globals())
 
-        options = optparse.get_option_group('--refs') or \
-            optparse.add_option_group('Remote options')
-        options.add_option(
-            '-b', '--branch',
-            dest="branch", action='store', metavar='BRANCH',
-            help='Set the branch')
-        options.add_option(
-            '-n', '--name', '--project-name',
-            dest="name", action='store', metavar='NAME',
-            help='Set the project name. If it\'s not set, the name will be '
-                 'generated from the git name')
+            options = optparse.get_option_group('--refs') or \
+                optparse.add_option_group('Remote options')
+            options.add_option(
+                '-b', '--branch',
+                dest="branch", action='store', metavar='BRANCH',
+                help='Set the branch')
+            options.add_option(
+                '-n', '--name', '--project-name',
+                dest="name", action='store', metavar='NAME',
+                help='Set the project name. If it\'s not set, the name will '
+                     'be generated from the git name')
 
         options = optparse.get_option_group('-a') or \
             optparse.add_option_group('Import options')
