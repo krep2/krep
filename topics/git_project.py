@@ -220,8 +220,9 @@ class GitProject(Project, GitCommand):
 
     def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
                    fullname=False, skip_validation=False,
-                   force=False, sha1tag=None, *args, **kws):
-        logger = Logger.get_logger()
+                   force=False, sha1tag=None, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, local_heads = self.get_local_heads(local=True)
@@ -352,8 +353,9 @@ class GitProject(Project, GitCommand):
         return ret
 
     def push_tags(self, tags=None, refs=None, force=False, fullname=False,
-                  skip_validation=False, *args, **kws):
-        logger = Logger.get_logger()
+                  skip_validation=False, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
