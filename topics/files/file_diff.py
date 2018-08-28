@@ -82,7 +82,7 @@ class FileDiff(object):
             if not ignore_dir:
                 for dname in dirs:
                     newd = os.path.join(root, dname)
-                    if self.pattern.match(newd[dlen:]):
+                    if self.pattern.match_dir(newd[dlen:]):
                         continue
 
                     oldd = newd.replace(self.dest, self.src)
