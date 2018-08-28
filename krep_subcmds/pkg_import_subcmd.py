@@ -251,6 +251,115 @@ The escaped variants are supported for the imported files including:
 
         return len(rets) == len(args), name, rets
 
+    @staticmethod
+    def do_import(project, options, name, path, revision,
+                  pattern=None, logger=None, *args, **kws):
+        tmpl = dict({
+            'n': name,             'name': name,
+            'N': name.upper(),     'NAME': name.upper(),
+            'v': revision,         'version': revision,
+            'V': revision.upper(), 'VERSION': revision.upper()}
+        )
+
+        if options.message_template:
+            message = options.message_template
+        else:
+            message = 'Import %s' % (
+                '%s%s%s' % (
+                    name,
+                    revision and ' %s' % options.version_prefix,
+                    revision))
+
+        message = _handle_message_with_escape(
+            path, options.enable_escape, message,
+            dofile=options.use_commit_file)
+
+        workp = path
+        temp = options.temp_directory or tempfile.mkdtemp()
+        if os.path.isfile(path):
+            FileUtils.extract_file(path, temp)
+            workp = temp
+
+        if options.init_path:
+            inited = os.path.join(workp, options.init_path)
+            if os.path.exists(inited):
+                workp = inited
+
+        if options.washed:
+            if workp != temp:
+                os.makedirs(temp)
+                shutil.copytree(workp, temp, symlinks=True)
+                # wash the directory
+                washer = FileWasher(
+                    temp, overrideReadOnly=True,
+                    eol=options.washer_eol,
+                    tab=options.washer_tabsize > 0,
+                    trailing=options.washer_trailing)
+                if washer.wash(temp):
+                    workp = temp
+
+        if options.auto_detect:
+            dname = os.listdir(workp)
+            while 0 < len(dname) < 2:
+                workp += '/%s' % dname[0]
+                dname = os.listdir(workp)
+                logger.info('Go into %s' % workp)
+
+        if options.washed:
+            filter_out = list([r'\.git/'])
+            for fout in options.filter_out or list():
+                filter_out.extend(fout.split(','))
+
+            diff = FileDiff(project.path, workp, filter_out,
+                            enable_sccs_pattern=options.filter_out_sccs)
+            if diff.sync(project, logger) > 0:
+                ret = 0
+
+            timestamp = diff.timestamp
+        else:
+            timestamp = FileUtils.last_modifed(workp)
+            FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
+            FileUtils.copy_files(workp, project.path)
+
+        if ret == 0:
+            project.add('--all', project.path)
+
+            args = list()
+            if options.author:
+                args.append('--author="%s"' % options.author)
+
+            args.append('-m')
+            args.append(message)
+            args.append('--date="%s"' % time.ctime(timestamp))
+
+            ret = project.commit(*args)
+            if ret == 0:
+                if options.version_template:
+                    tags.append(options.version_template % tmpl)
+                elif options.local and revision:
+                    trefs = SubCommand.override_value(  # pylint: disable=E1101
+                        options.refs, options.tag_refs) or ''
+                    if trefs:
+                        trefs += '/'
+
+                    tags.append(
+                        '%s%s%s' % (
+                            trefs, options.version_prefix, revision))
+                elif revision:
+                    tags.append(
+                        '%s%s' % (options.version_prefix, revision))
+
+                if tags:
+                    ret, _ = project.tag(tags[-1])
+
+        if os.path.lexists(temp):
+            try:
+                shutil.rmtree(temp)
+            except OSError as e:
+                logger.exception(e)
+
+        return ret == 0, tags
+
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
         SubCommand.execute(self, options, option_import=True, *args, **kws)
 
@@ -314,115 +423,12 @@ The escaped variants are supported for the imported files including:
             logger.error('Failed to init the repo %s' % project)
             return False
 
-        temp = options.temp_directory or tempfile.mkdtemp()
         tags = list()
-        filter_out = list([r'\.git/'])
-        for fout in options.filter_out or list():
-            filter_out.extend(fout.split(','))
-
         for pkg, pkgname, revision in pkgs:
-            workp = pkg
-
-            tmpl = dict({
-                'n': pkgname,
-                'name': pkgname,
-                'N': pkgname.upper(),
-                'NAME': pkgname.upper(),
-                'v': revision,
-                'version': revision,
-                'V': revision.upper(),
-                'VERSION': revision.upper()})
-
-            if options.message_template:
-                message = options.message_template
-            else:
-                message = 'Import %s' % (
-                    '%s%s%s' % (
-                        pkgname,
-                        revision and ' %s' % options.version_prefix,
-                        revision))
-
-            message = _handle_message_with_escape(
-                pkg, options.enable_escape, message,
-                dofile=options.use_commit_file)
-
-            if os.path.isfile(pkg):
-                FileUtils.extract_file(pkg, temp)
-                workp = temp
-
-            if options.init_path:
-                inited = os.path.join(workp, options.init_path)
-                if os.path.exists(inited):
-                    workp = inited
-
-            if options.washed:
-                if workp != temp:
-                    os.makedirs(temp)
-                    shutil.copytree(workp, temp, symlinks=True)
-                    # wash the directory
-                    washer = FileWasher(
-                        temp, overrideReadOnly=True,
-                        eol=options.washer_eol,
-                        tab=options.washer_tabsize > 0,
-                        trailing=options.washer_trailing)
-                    if washer.wash(temp):
-                        workp = temp
-
-            if options.auto_detect:
-                dname = os.listdir(workp)
-                while 0 < len(dname) < 2:
-                    workp += '/%s' % dname[0]
-                    dname = os.listdir(workp)
-                    logger.info('Go into %s' % workp)
-
-            if options.washed:
-                diff = FileDiff(project.path, workp, filter_out,
-                                enable_sccs_pattern=options.filter_out_sccs)
-                if diff.sync(logger) > 0:
-                    ret = 0
-
-                timestamp = diff.timestamp
-            else:
-                timestamp = FileUtils.last_modifed(workp)
-                FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
-                FileUtils.copy_files(workp, project.path)
-
-            ret = project.add('--all', project.path)
-
-            if ret == 0:
-                args = list()
-                if options.author:
-                    args.append('--author="%s"' % options.author)
-
-                args.append('-m')
-                args.append(message)
-                args.append('--date="%s"' % time.ctime(timestamp))
-
-                ret = project.commit(*args)
-                if ret == 0:
-                    if options.version_template:
-                        tags.append(options.version_template % tmpl)
-                    elif options.local and revision:
-                        trefs = self.override_value(  # pylint: disable=E1101
-                            options.refs, options.tag_refs) or ''
-                        if trefs:
-                            trefs += '/'
-
-                        tags.append(
-                            '%s%s%s' % (
-                                trefs, options.version_prefix, revision))
-                    elif revision:
-                        tags.append(
-                            '%s%s' % (options.version_prefix, revision))
-
-                    if tags:
-                        ret, _ = project.tag(tags[-1])
-
-            if os.path.lexists(temp):
-                try:
-                    shutil.rmtree(temp)
-                except OSError as e:
-                    logger.exception(e)
+            _, ptags = PkgImportSubcmd.do_import(
+                project, options, logger, name, path, revision)
+            if ptags:
+                tags.extend(ptags)
 
         if not ret and not options.local:
             # pylint: disable=E1101
