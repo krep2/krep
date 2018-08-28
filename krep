@@ -106,8 +106,7 @@ def _option_parse(argv, logger):
             cmd = all_commands[name]
             cmd.COMMAND = name
         except KeyError:
-            logger.error('Error: Sub-command "%s" is unknown to the program',
-                         name)
+            print('Error: Sub-command "%s" is unknown to the program' % name)
             sys.exit(1)
 
         options = cmd.get_option_parser(_global_options(cmd))
@@ -177,7 +176,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             cmd.execute(lopts, *args)
     except KeyError:
         if ignore_except:
-            logger.error('Sub-command is unknown to the program')
+            print('Error: Sub-command "%s" is unknown to the program' % name)
         else:
             raise
     except KrepError as e:
