@@ -285,19 +285,6 @@ The escaped variants are supported for the imported files including:
             if os.path.exists(inited):
                 workp = inited
 
-        if options.washed:
-            if workp != temp:
-                os.makedirs(temp)
-                shutil.copytree(workp, temp, symlinks=True)
-                # wash the directory
-                washer = FileWasher(
-                    temp, overrideReadOnly=True,
-                    eol=options.washer_eol,
-                    tab=options.washer_tabsize > 0,
-                    trailing=options.washer_trailing)
-                if washer.wash(temp):
-                    workp = temp
-
         if options.auto_detect:
             dname = os.listdir(workp)
             while 0 < len(dname) < 2:
@@ -320,6 +307,11 @@ The escaped variants are supported for the imported files including:
             timestamp = FileUtils.last_modifed(workp)
             FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
             FileUtils.copy_files(workp, project.path)
+
+        if options.washed:
+            # wash the directory
+            washer = FileWasher()
+            washer.wash(workp)
 
         if ret == 0:
             project.add('--all', project.path)
