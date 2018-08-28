@@ -244,9 +244,9 @@ The escaped variants are supported for the imported files including:
                 name = pkgname
                 rets.append(pkgs[revision])
 
-        if not options.keep_order:
+        if not options.keep_order and pkgs:
             rets = list()
-            for rev in pkgs.keys().sort(key=key_compare(FileVersion.cmp)):
+            for rev in sorted(pkgs.keys(), key=key_compare(FileVersion.cmp)):
                 rets.append(pkgs[rev])
 
         return len(rets) == len(args), name, rets
@@ -256,7 +256,7 @@ The escaped variants are supported for the imported files including:
 
         logger = Logger.get_logger()  # pylint: disable=E1101
 
-        ret, pkgs, name = PkgImportSubcmd.build_packages(options, args, logger)
+        ret, _, pkgs = PkgImportSubcmd.build_packages(options, args, logger)
         if not ret:
             return
 
