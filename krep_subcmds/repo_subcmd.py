@@ -318,7 +318,8 @@ this command.
                 skip_validation=options.skip_validation,
                 force=options.force,
                 sha1tag=options.sha1_tag,
-                dryrun=options.dryrun)
+                dryrun=options.dryrun,
+                logger=logger)
             if res != 0:
                 logger.error('failed to push heads')
 
@@ -331,7 +332,8 @@ this command.
                 fullname=options.keep_name,
                 skip_validation=options.skip_validation,
                 force=options.force,
-                dryrun=options.dryrun)
+                dryrun=options.dryrun,
+                logger=logger)
             if res != 0:
                 logger.error('failed to push tags')
 
