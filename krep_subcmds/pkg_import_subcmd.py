@@ -424,22 +424,24 @@ The escaped variants are supported for the imported files including:
                 except OSError as e:
                     logger.exception(e)
 
-        # push the branches
         if not ret and not options.local:
-            if self.override_value(  # pylint: disable=E1101
+            # pylint: disable=E1101
+            # push the branches
+            if self.override_value(
                     options.branches, options.all):
                 ret = project.push_heads(
                     branch,
-                    self.override_value(  # pylint: disable=E1101
+                    self.override_value(
                         options.refs, options.head_refs),
                     force=options.force, dryrun=options.dryrun)
             # push the tags
-            if tags and self.override_value(  # pylint: disable=E1101
+            if tags and self.override_value(
                     options.tags, options.all):
                 ret = project.push_tags(
-                    tags, self.override_value(  # pylint: disable=E1101
+                    tags, self.override_value(
                         options.refs, options.tag_refs),
                     fullname=True, force=options.force, dryrun=options.dryrun)
+            # pylint: enable=E1101
 
         return ret == 0
 
