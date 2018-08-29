@@ -305,6 +305,9 @@ be saved in XML file again with limited attributes.
 
         projects = list()
         for project in project_list or list():
+            if project.groups and project.groups.find('notdefault') > -1:
+                continue
+
             projects.append(
                 _XmlProject(
                     name=project.name,

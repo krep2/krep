@@ -1,4 +1,5 @@
 
+import json
 import os
 import re
 import xml.dom.minidom
@@ -152,10 +153,10 @@ class _ConfigFile(object):
 
 
 class _IniConfigFile(_ConfigFile):
-    def __init__(self, filename):
+    def __init__(self, filename, content=None):
         _ConfigFile.__init__(self, filename)
 
-        self._parse_ini(self.read())
+        self._parse_ini(content or self.read())
 
     def _parse_ini(self, content):
         cfg = self._new_value(_ConfigFile.DEFAULT_CONFIG)
@@ -195,13 +196,29 @@ class _IniConfigFile(_ConfigFile):
                 raise ProcessingError('Unmatched Line %d: %s' % (k + 1, strip))
 
 
+class _JsonConfigFile(_ConfigFile):
+    def __init__(self, filename, content=None):
+        _ConfigFile.__init__(self, filename)
+
+        self._parse_json(content or self.read())
+
+    def _parse_json(self, content):
+        jresults = json.loads(content)
+
+        for section, values in jresults.items():
+            cfg = self._new_value(section)
+
+            for name, value in values.items():
+                _setattr(cfg, name, value)
+
+
 class _XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
 
         self._parse_xml(filename, pi)
 
-    def _parse_xml(self, content, pi=None):  # pylint: disable=R0914
+    def _parse_xml(self, filename, pi=None):  # pylint: disable=R0914
         def _getattr(node, name, default=None):
             if node.hasAttribute(name):
                 return node.getAttribute(name)
@@ -215,7 +232,7 @@ class _XmlConfigFile(_ConfigFile):
                 for pattern in patterns:
                     _setattr(cfg, 'pattern', pattern)
 
-        root = xml.dom.minidom.parse(content)
+        root = xml.dom.minidom.parse(filename)
 
         default = self._new_value(_ConfigFile.DEFAULT_CONFIG)
 
@@ -236,14 +253,14 @@ class _XmlConfigFile(_ConfigFile):
 
             def _parse_hook(cfg, node):
                 name = _getattr(node, 'name')
-                filename = _getattr(node, 'file')
-                if filename and not filename.startswith('/'):
-                    filename = os.path.join(
-                        os.path.dirname(self.filename), filename)
+                filen = _getattr(node, 'file')
+                if filen and not os.path.isabs(filen):
+                    filen = os.path.join(
+                        os.path.dirname(self.filename), filen)
 
-                _setattr(cfg, 'hook-%s' % name, filename)
+                _setattr(cfg, 'hook-%s' % name, filen)
                 for child in node.childNodes:
-                    if child.nodeName != '#text':
+                    if child.nodeName == 'args':
                         _setattr(cfg, 'hook-%s-%s' % (name, child.nodeName),
                                  _getattr(child, 'value'))
 
@@ -309,11 +326,13 @@ class ConfigFile(_ConfigFile):
     def __init__(self, filename):
         _ConfigFile.__init__(self, filename)
 
-        content = self.read()
+        content = self.read().lstrip()
         if content[:6].lower().startswith('<?xml'):
             self.inst = _XmlConfigFile(filename)
+        elif content.startswith('{'):
+            self.inst = _JsonConfigFile(filename, content)
         else:
-            self.inst = _IniConfigFile(filename)
+            self.inst = _IniConfigFile(filename, content)
 
     def get_default(self):
         return self.inst.get_default()

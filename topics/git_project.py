@@ -39,6 +39,9 @@ def _secure_head_name(head):
 
 
 class GitProject(Project, GitCommand):
+    CATEGORY_TAGS = 't,tag,revision'
+    CATEGORY_REVISION = 'r,rev,revision'
+
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
                  remote=None, pattern=None, bare=False, *args, **kws):
@@ -166,10 +169,13 @@ class GitProject(Project, GitCommand):
         if ret == 0:
             for line in lines.split('\n'):
                 line = line.strip()
-                if line.startswith('*'):
-                    if self.bare or local:
-                        line = line[1:].lstrip()
-                    else:
+                if re.search(r'^\s*remotes/.*/HEAD', line):
+                    continue
+                elif line.startswith('*'):
+                    line = line[1:].lstrip()
+                    if line.startswith('(HEAD detached at '):
+                        continue
+                    elif not (self.bare or local):
                         continue
                 elif not line:
                     continue
@@ -180,12 +186,6 @@ class GitProject(Project, GitCommand):
                 head = re.split(r'[\s]+', line, maxsplit=2)
                 if head[1] != '->':
                     heads[head[0]] = head[1]
-
-                    # keep local branch with a higher priority
-                    name = _secure_head_name(head[0])
-                    if name not in heads or name == head[0]:
-                        heads[name] = head[1]
-
 
         return ret, heads
 
@@ -207,12 +207,24 @@ class GitProject(Project, GitCommand):
 
         return ret == 0
 
+    @staticmethod
+    def has_changes(names, keepname=False):
+        if keepname:
+            return False
+
+        for name in names:
+            if os.path.basename(name) != name:
+                return True
+
+        return False
+
     def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
                    fullname=False, skip_validation=False,
-                   force=False, sha1tag=None, *args, **kws):
-        logger = Logger.get_logger()
+                   force=False, sha1tag=None, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
 
-        refs = refs and '%s/' % refs.rstrip('/')
+        refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, local_heads = self.get_local_heads(local=True)
         ret, remote_heads = self.get_remote_heads()
         ret, remote_tags = self.get_remote_tags()
@@ -221,12 +233,29 @@ class GitProject(Project, GitCommand):
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
+        elif not (sha1tag or GitProject.has_changes(local_heads, fullname)
+                  or self.pattern.can_replace(
+                      GitProject.CATEGORY_REVISION, local_heads)):
+            if skip_validation:
+                ret = self.push(
+                    self.remote,
+                    '-o', 'skip-validation',
+                    '%srefs/heads/*:refs/heads/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+            else:
+                ret = self.push(
+                    self.remote,
+                    '%srefs/heads/*:refs/heads/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+
+            return ret
 
         for origin in local_heads:
             head = _secure_head_name(origin)
-            # ignore the remotes if local has changed
-            if head != origin and head in local_heads and \
-                    local_heads[head] != local_heads[origin]:
+
+            if head != origin and head in local_heads:
                 continue
 
             if not fullname:
@@ -235,21 +264,18 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    'r,rev,revision', origin, name=self.uri):
-                logger.debug('"%s" do not match revision pattern', origin)
+                    GitProject.CATEGORY_REVISION, origin, name=self.uri):
+                logger.warning('"%s" do not match revision pattern', origin)
                 continue
-            elif not self.pattern.match('r,rev,revision', head, name=self.uri):
-                logger.debug('"%s" do not match revision pattern', head)
+            elif not self.pattern.match(
+                    GitProject.CATEGORY_REVISION, head, name=self.uri):
+                logger.warning('"%s" do not match revision pattern', head)
                 continue
 
-            if self.is_sha1(origin) and self.rev_existed(origin):
-                local_ref = origin
-            elif not self.bare and not origin.startswith('remotes/'):
-                local_ref = 'refs/remotes/%s' % origin
-            elif origin.startswith('remotes/'):
-                local_ref = 'refs/%s' % origin
+            if self.rev_existed(origin):
+                local_ref = '%s' % origin
             else:
-                local_ref = 'refs/heads/%s' % origin
+                local_ref = 'refs/%s' % origin
 
             if not self.rev_existed(local_ref):
                 local_ref = 'refs/heads/%s' % origin
@@ -258,17 +284,17 @@ class GitProject(Project, GitCommand):
                     continue
 
             if not self.pattern.match(
-                    'r,rev,revision', local_ref, name=self.uri):
-                logger.debug('"%s" do not match revision pattern', local_ref)
+                    GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
+                logger.warning('"%s" do not match revision pattern', local_ref)
                 continue
 
             rhead = self.pattern.replace(
-                'r,rev,revision', '%s' % head, name=self.uri)
+                GitProject.CATEGORY_REVISION, '%s' % head, name=self.uri)
             if rhead != head:
-                rhead = '%s%s' % (refs or '', rhead)
+                rhead = '%s%s' % (refs, rhead)
             else:
                 rhead = self.pattern.replace(
-                    'r,rev,revision', '%s%s' % (refs or '', head),
+                    GitProject.CATEGORY_REVISION, '%s%s' % (refs, head),
                     name=self.uri)
 
             skip = False
@@ -327,10 +353,11 @@ class GitProject(Project, GitCommand):
         return ret
 
     def push_tags(self, tags=None, refs=None, force=False, fullname=False,
-                  skip_validation=False, *args, **kws):
-        logger = Logger.get_logger()
+                  skip_validation=False, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
 
-        refs = refs and '%s/' % refs.rstrip('/')
+        refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
 
         local_tags = list()
@@ -341,6 +368,25 @@ class GitProject(Project, GitCommand):
         else:
             local_tags.append(tags)
 
+        if not (tags or GitProject.has_changes(local_tags, fullname)
+                or self.pattern.can_replace(
+                    GitProject.CATEGORY_TAGS, local_tags)):
+            if skip_validation:
+                ret = self.push(
+                    self.remote,
+                    '-o', 'skip-validation',
+                    '%srefs/tags/*:refs/tags/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+            else:
+                ret = self.push(
+                    self.remote,
+                    '%srefs/tags/*:refs/tags/%s*' % (
+                        '+' if force else '', refs),
+                    *args, **kws)
+
+            return ret
+
         for origin in local_tags:
             tag = origin
             if not fullname:
@@ -348,20 +394,22 @@ class GitProject(Project, GitCommand):
             if not tag:
                 continue
 
-            if not self.pattern.match('t,tag,revision', origin, name=self.uri):
-                logger.debug('%s: "%s" not match tag pattern', origin, origin)
+            if not self.pattern.match(
+                    GitProject.CATEGORY_TAGS, origin, name=self.uri):
+                logger.warning('%s: "%s" not match tag pattern', origin, origin)
                 continue
-            elif not self.pattern.match('t,tag,revision', tag, name=self.uri):
-                logger.debug('%s: "%s" not match tag pattern', origin, tag)
+            elif not self.pattern.match(
+                    GitProject.CATEGORY_TAGS, tag, name=self.uri):
+                logger.warning('%s: "%s" not match tag pattern', origin, tag)
                 continue
 
             rtag = self.pattern.replace(
-                't,tag,revision', '%s' % tag, name=self.uri)
+                GitProject.CATEGORY_TAGS, '%s' % tag, name=self.uri)
             if rtag != tag:
-                rtag = '%s%s' % (refs or '', rtag)
+                rtag = '%s%s' % (refs, rtag)
             else:
                 rtag = self.pattern.replace(
-                    't,tag,revision', '%s%s' % (refs or '', tag),
+                    GitProject.CATEGORY_TAGS, '%s%s' % (refs, tag),
                     name=self.uri)
 
             remote_tag = 'refs/tags/%s' % rtag
@@ -369,7 +417,10 @@ class GitProject(Project, GitCommand):
                 equals = True
                 if force:
                     sha1 = remote_tags[remote_tag]
-                    ret, lsha1 = self.rev_parse(origin)
+                    if not origin.startswith('refs'):
+                        ret, lsha1 = self.rev_parse('refs/tags/%s' % origin)
+                    else:
+                        ret, lsha1 = self.rev_parse(origin)
                     equals = _sha1_equals(sha1, lsha1)
 
                 if equals:

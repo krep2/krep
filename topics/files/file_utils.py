@@ -63,6 +63,39 @@ class FileDecompressor(Command):
             decompressor.execute(filename)
 
 
+class FileVersion(object):
+    @staticmethod
+    def cmp(va, vb):
+        def _cmp(vva, vvb):
+            return (vva > vvb) - (vva < vvb)
+
+        vsa = va.split('.')
+        vsb = vb.split('.')
+
+        for k in range(min(len(vsa), len(vsb))):
+            maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
+            mab = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsb[k])
+            if maa and mab:
+                if maa.group('digit') != mab.group('digit'):
+                    return _cmp(
+                        int(maa.group('digit')), int(mab.group('digit')))
+
+                paa, pab = maa.group('patch'), mab.group('patch')
+                if paa != pab:
+                    if not paa:
+                        return 1
+                    elif not pab:
+                        return -1
+                    else:
+                        return _cmp(paa, pab)
+
+            res = _cmp(vsa[k], vsb[k])
+            if res != 0:
+                return res
+
+        return _cmp(len(vsa), len(vsb))
+
+
 class FileUtils(object):
     """Utility to handle file operations."""
     @staticmethod
@@ -100,6 +133,17 @@ class FileUtils(object):
             return name
 
     @staticmethod
+    def last_modified(path):
+        timestamp = 0
+        for root, _, files in os.walk(path):
+            for name in files:
+                timest = os.lstat(os.path.join(root, name))
+                if timest.st_mtime > timestamp:
+                    timestamp = timest.st_mtime
+
+        return timestamp
+
+    @staticmethod
     def copy_file(src, dest):
         if os.path.islink(src):
             linkto = os.readlink(src)
@@ -122,6 +166,8 @@ class FileUtils(object):
         for name in os.listdir(dest):
             matched = False
             if os.path.isdir(os.path.join(dest, name)):
+                # OS doesn't complain the trailing backslash, but patterns use
+                # it to treat the name with trailing backslash as directories
                 name += '/'
 
             for pattern in ignore_list or list():
@@ -134,9 +180,12 @@ class FileUtils(object):
 
             filename = os.path.join(dest, name)
             if os.path.isdir(filename):
-                shutil.rmtree(filename)
+                FileUtils.rmtree(filename, ignore_list=ignore_list)
             else:
                 os.unlink(filename)
+
+        if len(os.listdir(dest)) == 0:
+            shutil.rmtree(dest)
 
     @staticmethod
     def copy_files(src, dest, ignore_list=None):
@@ -150,16 +199,20 @@ class FileUtils(object):
             if matched:
                 continue
 
-            filename = os.path.join(src, name)
-            if os.path.isdir(filename):
-                shutil.copytree(
-                    filename, os.path.join(dest, name), symlinks=True)
+            sname = os.path.join(src, name)
+            dname = os.path.join(dest, name)
+            if os.path.isdir(sname):
+                dname = os.path.join(dest, name)
+                if not os.path.exists(dname):
+                    os.makedirs(dname)
+
+                FileUtils.copy_files(sname, dname, ignore_list=ignore_list)
             else:
-                FileUtils.copy_file(filename, os.path.join(dest, name))
+                FileUtils.copy_file(sname, dname)
 
     @staticmethod
     def extract_file(src, dest):
         FileDecompressor.extract(src, dest)
 
 
-TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'
+TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils, FileVersion'

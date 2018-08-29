@@ -60,7 +60,7 @@ The format of the plain-text configuration file can refer to the topic
 
             for limit in limits:
                 opposite = False
-                if limit.startswith('-'):
+                if limit.startswith('-') or limit.startswith('!'):
                     limit = limit[1:]
                     opposite = True
                 else:
@@ -79,7 +79,13 @@ The format of the plain-text configuration file can refer to the topic
             limits = re.split(r'\s*,\s*', limit or 'default')
 
             groups = re.split(r'\s*,\s*', project.pop('group', ''))
-            groups.extend([name, os.path.basename(name)])
+
+            if name not in groups:
+                groups.append(name)
+            bname = os.path.basename(name)
+            if bname not in groups:
+                groups.append(bname)
+
             if _in_group(limits, groups):
                 return True
             else:

@@ -88,7 +88,7 @@ def _load_default_option():
     return _default_option
 
 
-def _option_parse(argv, logger):
+def _option_parse(argv):
     name = None
     for i in range(len(argv)):
         if not argv[i].startswith('-'):
@@ -102,8 +102,7 @@ def _option_parse(argv, logger):
             cmd = all_commands[name]
             cmd.COMMAND = name
         except KeyError:
-            logger.error('Error: Sub-command "%s" is unknown to the program',
-                         name)
+            print('Error: Sub-command "%s" is unknown to the program' % name)
             sys.exit(1)
 
         options = cmd.get_option_parser(_global_options(cmd))
@@ -118,7 +117,7 @@ def _get_named_command(name):
 
 
 def _get_named_options(name):
-    _, _, _, optparse = _option_parse([name], Logger.get_logger(name))
+    _, _, _, optparse = _option_parse([name])
     return optparse
 
 
@@ -137,7 +136,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
         # sub-command
         if optparse is None:
-            _, _, _, optparse = _option_parse([name], logger)
+            _, _, _, optparse = _option_parse([name])
             ops, _ = optparse.parse_args([])
             lopts.join(ops, option=optparse, override=False)
             optparse.join(lopts)
@@ -172,7 +171,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
             cmd.execute(lopts, *args)
     except KeyError:
         if ignore_except:
-            logger.error('Sub-command is unknown to the program')
+            print('Error: Sub-command "%s" is unknown to the program' % name)
         else:
             raise
     except KrepError as e:
@@ -189,7 +188,7 @@ def main(argv):
     Logger.set(verbose=dopts.verbose or 0)
 
     logger = Logger.get_logger()
-    name, argv, cmd, options = _option_parse(argv, logger)
+    name, argv, cmd, options = _option_parse(argv)
     try:
         opts, args = options.parse_args(argv)
     except OptionValueError as e:
