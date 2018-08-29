@@ -60,7 +60,7 @@ The format of the plain-text configuration file can refer to the topic
 
             for limit in limits:
                 opposite = False
-                if limit.startswith('-'):
+                if limit.startswith('-') or limit.startswith('!'):
                     limit = limit[1:]
                     opposite = True
                 else:
