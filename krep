@@ -92,7 +92,7 @@ def _load_default_option():
     return _default_option
 
 
-def _option_parse(argv, logger):
+def _option_parse(argv):
     name = None
     for i in range(len(argv)):
         if not argv[i].startswith('-'):
@@ -121,7 +121,7 @@ def _get_named_command(name):
 
 
 def _get_named_options(name):
-    _, _, _, optparse = _option_parse([name], Logger.get_logger(name))
+    _, _, _, optparse = _option_parse([name])
     return optparse
 
 
@@ -140,7 +140,7 @@ def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # 
 
         # sub-command
         if optparse is None:
-            _, _, _, optparse = _option_parse([name], logger)
+            _, _, _, optparse = _option_parse([name])
             ops, _ = optparse.parse_args([])
             lopts.join(ops, option=optparse, override=False, origin='cmdline')
             optparse.join(lopts)
@@ -193,7 +193,7 @@ def main(argv):
     Logger.set(verbose=dopts.verbose or 0)
 
     logger = Logger.get_logger()
-    name, argv, cmd, options = _option_parse(argv, logger)
+    name, argv, cmd, options = _option_parse(argv)
     try:
         opts, args = options.parse_args(argv)
     except OptionValueError as e:

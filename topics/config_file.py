@@ -1,4 +1,5 @@
 
+import json
 import os
 import re
 import xml.dom.minidom
@@ -199,7 +200,7 @@ class _JsonConfigFile(_ConfigFile):
     def __init__(self, filename, content=None):
         _ConfigFile.__init__(self, filename)
 
-        self._parse_xml(content or self.read())
+        self._parse_json(content or self.read())
 
     def _parse_json(self, content):
         jresults = json.loads(content)

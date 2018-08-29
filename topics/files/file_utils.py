@@ -133,7 +133,7 @@ class FileUtils(object):
             return name
 
     @staticmethod
-    def last_modifed(path):
+    def last_modified(path):
         timestamp = 0
         for root, _, files in os.walk(path):
             for name in files:

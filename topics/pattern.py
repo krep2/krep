@@ -168,7 +168,7 @@ class PatternItem(object):
             self.exclude.extend(pattern.exclude)
             self.subst.extend(pattern.subst)
 
-    def match(self, patterns, strict=False):
+    def match(self, patterns, strict=False):  # pylint: disable=R0911
         for pattern in _secure_split(patterns, PatternItem.PATTERN_DELIMITER):
             opposite = pattern.startswith(PatternItem.OPPOSITE_DELIMITER)
             if opposite:

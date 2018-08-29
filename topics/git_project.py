@@ -41,7 +41,7 @@ def _secure_head_name(head):
 class GitProject(Project, GitCommand):
     CATEGORY_TAGS = 't,tag,revision'
     CATEGORY_REVISION = 'r,rev,revision'
-    
+
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
                  remote=None, pattern=None, bare=False, *args, **kws):
@@ -169,7 +169,7 @@ class GitProject(Project, GitCommand):
         if ret == 0:
             for line in lines.split('\n'):
                 line = line.strip()
-                if re.search('^\s*remotes/.*/HEAD', line):
+                if re.search(r'^\s*remotes/.*/HEAD', line):
                     continue
                 elif line.startswith('*'):
                     line = line[1:].lstrip()
@@ -235,7 +235,7 @@ class GitProject(Project, GitCommand):
                     else local_heads.get(branch)}
         elif not (sha1tag or GitProject.has_changes(local_heads, fullname)
                   or self.pattern.can_replace(
-                    GitProject.CATEGORY_REVISION, local_heads)):
+                      GitProject.CATEGORY_REVISION, local_heads)):
             if skip_validation:
                 ret = self.push(
                     self.remote,
@@ -251,7 +251,7 @@ class GitProject(Project, GitCommand):
                     *args, **kws)
 
             return ret
-                    
+
         for origin in local_heads:
             head = _secure_head_name(origin)
 
