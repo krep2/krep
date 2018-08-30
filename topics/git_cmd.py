@@ -49,6 +49,9 @@ class GitCommand(Command):
         if worktree:
             self.worktree = worktree
 
+    def exists_(self):
+        return self.gitdir and os.path.isdir(self.gitdir)
+
     def init(self, *args, **kws):
         return self.raw_command('init', *args, **kws)
 
