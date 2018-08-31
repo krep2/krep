@@ -264,11 +264,11 @@ class GitProject(Project, GitCommand):
 
             if not self.pattern.match(
                     GitProject.CATEGORY_REVISION, origin, name=self.uri):
-                logger.warning('"%s" do not match revision pattern', origin)
+                logger.warning('"%s" does not match revision pattern', origin)
                 continue
             elif not self.pattern.match(
                     GitProject.CATEGORY_REVISION, head, name=self.uri):
-                logger.warning('"%s" do not match revision pattern', head)
+                logger.warning('"%s" does not match revision pattern', head)
                 continue
 
             if self.rev_existed(origin):
@@ -284,7 +284,8 @@ class GitProject(Project, GitCommand):
 
             if not self.pattern.match(
                     GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
-                logger.warning('"%s" do not match revision pattern', local_ref)
+                logger.warning(
+                    '"%s" does not match revision pattern', local_ref)
                 continue
 
             rhead = self.pattern.replace(
@@ -395,11 +396,13 @@ class GitProject(Project, GitCommand):
 
             if not self.pattern.match(
                     GitProject.CATEGORY_TAGS, origin, name=self.uri):
-                logger.warning('%s: "%s" not match tag pattern', origin, origin)
+                logger.warning(
+                    '%s: "%s" does not match tag pattern', origin, origin)
                 continue
             elif not self.pattern.match(
                     GitProject.CATEGORY_TAGS, tag, name=self.uri):
-                logger.warning('%s: "%s" not match tag pattern', origin, tag)
+                logger.warning(
+                    '%s: "%s" does not match tag pattern', origin, tag)
                 continue
 
             rtag = self.pattern.replace(
