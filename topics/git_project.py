@@ -457,6 +457,7 @@ class GitProject(Project, GitCommand):
         if not revision:
             revision = self.revision
 
+        ret = 0
         if offsite:
             if not self.exists_():
                 ret = self.init()
