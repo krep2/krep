@@ -38,8 +38,8 @@ replaced by GIT_URL."""
             dest='git', action='store', metavar='GIT_URL',
             help='Set the git repository url to download and import')
         options.add_option(
-            '--rev', '--reversion', '--branch',
-            dest='branch', action='store',
+            '--rev', '--revision', '--branch',
+            dest='revision', action='store',
             help='Set the initial revisions to download')
         options = optparse.get_option_group('--all') or \
             optparse.add_option_group('Git options')
@@ -95,7 +95,7 @@ replaced by GIT_URL."""
             worktree=working_dir,
             gitdir=FileUtils.ensure_path(
                 working_dir, subdir=None if options.bare else '.git'),
-            revision=options.branch,
+            revision=options.revision,
             remote=remote,
             bare=options.bare,
             pattern=GitCloneSubcmd.get_patterns(options)  # pylint: disable=E1101
@@ -132,13 +132,13 @@ replaced by GIT_URL."""
 
         # push the branches
         if self.override_value(  # pylint: disable=E1101
-                options.all, options.branches):
+                options.all, options.heads):
             res = project.push_heads(
-                options.branch,
+                options.revision,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
-                push_all=options.all or options.branch is None,
+                push_all=options.all or options.revision is None,
                 fullname=options.keep_name,
                 skip_validation=skip_validation,
                 no_thin=no_thin,

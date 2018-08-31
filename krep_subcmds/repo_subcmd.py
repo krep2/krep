@@ -313,7 +313,7 @@ this command.
 
         # push the heads
         if RepoSubcmd.override_value(  # pylint: disable=E1101
-                options.branches, options.all):
+                options.heads, options.all):
             res = project.push_heads(
                 project.revision,
                 RepoSubcmd.override_value(  # pylint: disable=E1101
