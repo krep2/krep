@@ -132,6 +132,7 @@ replaced by GIT_URL."""
                 options.branch,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
+                options.head_pattern,
                 push_all=options.all or options.branch is None,
                 fullname=options.keep_name,
                 skip_validation=options.skip_validation,
@@ -149,6 +150,7 @@ replaced by GIT_URL."""
                 None if options.all else options.tag,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
+                options.tag_pattern,
                 skip_validation=options.skip_validation,
                 fullname=options.keep_name,
                 force=options.force,
