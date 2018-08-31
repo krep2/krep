@@ -67,7 +67,7 @@ class SubCommand(object):
             dest='refs', action='store', metavar='REF',
             help='the reference prefix of the remote server')
         options.add_option(
-            '--head-refs',
+            '--branch-refs', '--head-refs',
             dest='head_refs', action='store', metavar='HEAD_REF',
             help='the reference prefix of the heads. it will override the one '
                  'of "refs"')
@@ -100,7 +100,7 @@ class SubCommand(object):
         # Not to set the default for no-option
         options.add_option(
             '--branches', '--heads',
-            dest='branches', action='store_true',
+            dest='heads', action='store_true',
             help='push all branches to the remote. Once option "--all" is '
                  'set, it is enabled except "--no-branches" or "--no-heads" '
                  'is set explicitly')
