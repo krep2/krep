@@ -15,6 +15,9 @@ class Debug(object):
         print('\nOptions Dumping')
         print('-------------------------')
         for name in namelist:
+            if name == '_origins':
+                continue
+
             value = getattr(options, name)
             print('Option %s' % name)
             print('  origin: %s, value=%r, normalized=%s' % (
