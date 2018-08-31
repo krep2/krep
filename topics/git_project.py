@@ -217,8 +217,8 @@ class GitProject(Project, GitCommand):
 
         return False
 
-    def push_heads(self, branch=None, refs=None, push_all=False,  # pylint: disable=R0915
-                   fullname=False, skip_validation=False,
+    def push_heads(self, branch=None, refs=None, patterns=None,  # pylint: disable=R0915
+                   push_all=False, fullname=False, skip_validation=False,
                    force=False, sha1tag=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
@@ -232,7 +232,8 @@ class GitProject(Project, GitCommand):
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
-        elif not (sha1tag or GitProject.has_changes(local_heads, fullname)
+        elif not (sha1tag or patterns
+                  or GitProject.has_changes(local_heads, fullname)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
             if skip_validation:
@@ -256,6 +257,15 @@ class GitProject(Project, GitCommand):
 
             if head != origin and head in local_heads:
                 continue
+
+            if patterns:
+                for pattern in patterns:
+                    if re.match(pattern, head):
+                        break
+                else:
+                    logger.warning(
+                        '"%s" does not match provied patterns', head)
+                    continue
 
             if not fullname:
                 head = os.path.basename(head)
@@ -352,8 +362,9 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def push_tags(self, tags=None, refs=None, force=False, fullname=False,
-                  skip_validation=False, logger=None, *args, **kws):
+    def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
+                  force=False, fullname=False, skip_validation=False,
+                  logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -368,7 +379,8 @@ class GitProject(Project, GitCommand):
         else:
             local_tags.append(tags)
 
-        if not (tags or GitProject.has_changes(local_tags, fullname)
+        if not (tags or patterns
+                or GitProject.has_changes(local_tags, fullname)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
             if skip_validation:
@@ -389,6 +401,16 @@ class GitProject(Project, GitCommand):
 
         for origin in local_tags:
             tag = origin
+
+            if patterns:
+                for pattern in patterns:
+                    if re.match(pattern, tag):
+                        break
+                else:
+                    logger.warning(
+                        '"%s" does not match provied patterns', tag)
+                    continue
+
             if not fullname:
                 tag = os.path.basename(tag)
             if not tag:

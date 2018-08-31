@@ -100,6 +100,18 @@ class SubCommand(object):
             help='push all tags to the remote. Once option "--all" is set, it '
                  'is enabled except "--no-tags" is set explicitly')
 
+        options.add_option(
+            '--branch-pattern', '--head-pattern',
+            dest='head_pattern', action='append',
+            help='push the matched heads with regex patterns. The replacement '
+                 'rules could be used to update the remote head name')
+
+        options.add_option(
+            '--tag-pattern',
+            dest='tag_pattern', action='append',
+            help='push the matched tags with regex patterns. The replacement '
+                 'rule could be used to update the remote tag names')
+
         return options
 
     def _options_jobs(self, optparse):
