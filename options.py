@@ -86,7 +86,19 @@ class Values(optparse.Values):
                 opt = option and Values._getopt(option, attr)
                 st_b = opt and opt.action in ('store_true', 'store_false')
 
-                if override:
+                if opt and opt.action == 'append' \
+                        and self.__dict__.get(attr) is not None \
+                        and getattr(values, attr) is not None:
+                    self._origins.set(attr, 'mixed')
+                    vals = self.__dict__[attr]
+                    if isinstance(vals, tuple):
+                        vals = list(vals)
+                    elif not isinstance(vals, list):
+                        vals = list([vals])
+
+                    vals.extend(getattr(values, attr))
+                    self.ensure_value(attr, vals)
+                elif override:
                     if getattr(values, attr) is None:
                         if attr in self.__dict__:
                             del self.__dict__[attr]
