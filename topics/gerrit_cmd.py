@@ -71,9 +71,7 @@ class GerritCmd(Command):
             args = list()
             cp_value = optcp and optcp.boolean(optcp.empty_commit)
             if initial_commit or cp_value:
-                if cp_value == False:
-                    pass
-                else:
+                if cp_value != False:
                     args.append('--empty-commit')
 
             # description=False means --no-description to suppress the function
