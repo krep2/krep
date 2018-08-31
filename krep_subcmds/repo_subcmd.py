@@ -313,7 +313,9 @@ this command.
                 project.revision,
                 RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
-                push_all=options.all,
+                options.head_pattern,
+                push_all=options.all or (
+                    options.head_pattern and options.heads),
                 fullname=options.keep_name,
                 skip_validation=options.skip_validation,
                 force=options.force,
@@ -329,6 +331,7 @@ this command.
             res = project.push_tags(
                 None, RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
+                options.tag_pattern,
                 fullname=options.keep_name,
                 skip_validation=options.skip_validation,
                 force=options.force,
