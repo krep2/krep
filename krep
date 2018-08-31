@@ -125,7 +125,8 @@ def _get_named_options(name):
     return optparse
 
 
-def run(name, opts, args, optparse=None, defopts=None, ignore_except=False):  # pylint: disable=R0913
+def run(name, opts, args, optparse=None,   # pylint: disable=R0913,R0914,R0915
+        defopts=None, ignore_except=False):
     logger = Logger.get_logger(name)
 
     lopts = Values(opts)

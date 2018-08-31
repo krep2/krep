@@ -270,7 +270,7 @@ class GitProject(Project, GitCommand):
                         break
                 else:
                     logger.warning(
-                        '"%s" does not match provied patterns' % head)
+                        '"%s" does not match provied patterns', head)
                     continue
 
             if not fullname:
@@ -356,9 +356,9 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def push_tags(self, tags=None, refs=None, patterns=None, force=False,
-                  fullname=False, skip_validation=False, no_thin=False,
-                  logger=None, *args, **kws):
+    def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
+                  force=False, fullname=False, skip_validation=False,
+                  no_thin=False, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -394,7 +394,7 @@ class GitProject(Project, GitCommand):
                         break
                 else:
                     logger.warning(
-                        '"%s" does not match provied patterns' % tag)
+                        '"%s" does not match provied patterns', tag)
                     continue
 
             if not fullname:
