@@ -202,10 +202,10 @@ The format of the plain-text configuration file can refer to the topic
         files.extend(args[:])
 
         for batch in files:
-            if os.path.exists(batch):
+            if os.path.isfile(batch):
                 ret = _batch(batch) and ret
             else:
-                logger.error('cannot open batch file %s', batch)
+                logger.error('cannot find batch file %s', batch)
                 ret = False
 
             if not ret and not options.ignore_errors:

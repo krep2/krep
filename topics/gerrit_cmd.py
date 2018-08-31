@@ -20,30 +20,6 @@ class GerritCmd(Command):
         self.projects = list()
         self.ssh = FileUtils.find_execute('ssh')
 
-    @staticmethod
-    def options(optparse):
-        options = optparse.get_option_group('--refs') or \
-            optparse.add_option_group('Remote options')
-        options.add_option(
-            '--disable-gerrit',
-            dest='enable_gerrit', action='store_false', default=True,
-            help='Enable gerrit server')
-        options.add_option(
-            '--remote', '--server', '--gerrit-server',
-            dest='remote', action='store',
-            help='Set gerrit url for the repository management')
-        options.add_option(
-            '--repo-create',
-            dest='repo_create', action='store_true', default=False,
-            help='Create the repository by default: %default')
-        # Not to set the default for no-option
-        options.add_option(
-            '--description', '--repo-description',
-            dest='description', action='store',
-            help='Set the repository description in gerrit when creating the '
-                 'new repository. If not set, the default string will be '
-                 'used. "--no-description" could suppress the description')
-
     def set_dirty(self, dirty):
         self.dirty = dirty
 
@@ -95,9 +71,7 @@ class GerritCmd(Command):
             args = list()
             cp_value = optcp and optcp.boolean(optcp.empty_commit)
             if initial_commit or cp_value:
-                if cp_value == False:
-                    pass
-                else:
+                if cp_value != False:
                     args.append('--empty-commit')
 
             # description=False means --no-description to suppress the function
