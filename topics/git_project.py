@@ -454,10 +454,13 @@ class GitProject(Project, GitCommand):
         if not revision:
             revision = self.revision
 
+        ret = 0
         if offsite:
-            ret = self.init()
-            ret &= self.commit(
-                '--allow-empty', '--no-edit', '-m', 'Init the empty repository')
+            if not self.exists_():
+                ret = self.init()
+                ret &= self.commit(
+                    '--allow-empty', '--no-edit', '-m',
+                    'Init the empty repository')
         elif self.remote:
             logger.info('Clone %s', self)
 
