@@ -207,7 +207,7 @@ class GitProject(Project, GitCommand):
         return ret == 0
 
     @staticmethod
-    def has_changes(names, keepname=False):
+    def has_name_changes(names, keepname=False):
         if keepname:
             return False
 
@@ -233,7 +233,7 @@ class GitProject(Project, GitCommand):
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
         elif not (sha1tag or patterns
-                  or GitProject.has_changes(local_heads, fullname)
+                  or GitProject.has_name_changes(local_heads, fullname)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
             if skip_validation:
@@ -379,7 +379,7 @@ class GitProject(Project, GitCommand):
             local_tags.append(tags)
 
         if not (tags or patterns
-                or GitProject.has_changes(local_tags, fullname)
+                or GitProject.has_name_changes(local_tags, fullname)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
             if skip_validation:
