@@ -48,7 +48,7 @@ And the `repo-mirror` command supports [git-repo] projects, for example, [AOSP]
 project:
 
 ```bash
-$ krep repo-mirror --remote git://some-git-server --refs aosp --all \
+$ krep repo-mirror --remote git://some-git-server --head-refs aosp --all \
   --manifest-url git://android.googlesource.com/platform/manifest
 ```
 
