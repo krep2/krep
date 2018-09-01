@@ -15,8 +15,7 @@ except ImportError:
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
-from topics import Gerrit, Logger, RepoSubcmd, PkgImportSubcmd, \
-    RaiseExceptionIfOptionMissed
+from topics import Gerrit, Logger, RaiseExceptionIfOptionMissed
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
