@@ -294,6 +294,7 @@ class _XmlConfigFile(_ConfigFile):
                             'pattern', 'exclude-pattern', 'rp-pattern',
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
+                        _setattr(cfg, 'pattern', [])
                         _setattr(cfg, 'pattern', pattern)
                     else:
                         _handle_patterns(cfg, child)
