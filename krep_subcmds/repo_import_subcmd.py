@@ -15,7 +15,8 @@ except ImportError:
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
-from topics import Gerrit, Logger, RaiseExceptionIfOptionMissed
+from topics import ConfigFile, Logger, RaiseExceptionIfOptionMissed, \
+    SubCommandWithThread
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
@@ -36,32 +37,50 @@ be used to define the wash-out and generate the final commit.
 """
 
     def options(self, optparse):
-        RepoSubcmd.options(self, optparse, inherited=True)
-        PkgImportSubcmd.options(self, optparse, external=True)
+        RepoSubcmd.options(self, optparse, inherited=True, modules=globals())
+        options = optparse.get_option_group('--all') or \
+            optparse.add_option_group('Import options')
+        options.add_option(
+            '--label', '--tag', '--revision',
+            dest='tag', action='store',
+            help='Import version for the import')
 
     def get_name(self, options):
         return options.name or '[-]'
 
     @staticmethod
-    def push(project, pattern, gerrit, options, remote, name, root, revision):
+    def push(project, options, config, logger, rootdir):
         project_name = str(project)
         logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
             name=project_name)
 
+        filters = list()
         logger.info('Start processing ...')
-        path = os.path.join(
-            root, pattern.replace('loc,location', project.name))
 
-        if path:
-            if os.path.exists(path):
+        path = rootdir
+        pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
+        if pvalues:
+            filters.extend(getattr(pvalues, 'include') or list())
+            filters.extend([
+                '!%s' % p for p in getattr(pvalues, 'exclude') or list()])
+
+            location = getattr(pvalues, 'location')
+            if location:
+                path = os.path.join(rootdir, location)
+
+        if os.path.exists(path):
+            if len(filters) > 0:
+                # don't pass project_name, which will be showed in commit
+                # message and confuse the user to see different projects
                 _, tags = PkgImportSubcmd.do_import(
-                    project, options, name, path, revision, None, logger)
+                    project, options, '', path, options.tag, filters, logger)
             else:
-                logger.error('Location "%s" is not existed')
-                return
+                logger.warning(
+                    'No provided location for "%s" to import', project_name)
+                return -1
         else:
-            logger.warning('No matched location for update')
-            return
+            logger.warning('"%s" is not existed', path)
+            return -1
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
@@ -95,28 +114,29 @@ be used to define the wash-out and generate the final commit.
             'post-push', options, dryrun=options.dryrun)
 
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
-        SubCommand.execute(self, options, option_import=True, *args, **kws)
-
-        logger = Logger.get_logger()  # pylint: disable=E1101
+        SubCommandWithThread.execute(self, options, *args, **kws)
 
         RaiseExceptionIfOptionMissed(
-            options.remote, 'remote (--remote) is not set')
+            len(args), "No directories specified to import")
 
-        if options.prefix and not options.endswith('/'):
-            options.prefix += '/'
+        RaiseExceptionIfOptionMissed(
+            options.tag, "No label specified for the import")
 
         if not options.offsite:
-            self.init_and_sync(options)
+            self.init_and_sync(options, update=False)
 
-        ulp = urlparse(options.remote)
-        if not ulp.scheme:
-            remote = options.remote
-            options.remote = 'git://%s' % options.remote
-        else:
-            remote = ulp.netloc.strip('/')
+        cfg = ConfigFile(
+            SubCommandWithThread.get_absolute_running_file_name(
+                options, options.config_file))
 
-        gerrit = Gerrit(remote)
-        projects = self.fetch_projects_in_manifest(options)
+        options.filter_out_sccs = True
 
-        return self.run_with_thread(  # pylint: disable=E1101
-            options.job, projects, RepoImportSubcmd.push, gerrit, options, remote)
+        for arg in args:
+            self.run_with_thread(  # pylint: disable=E1101
+                options.job,
+                self.fetch_projects_in_manifest(options),
+                RepoImportSubcmd.push, options, cfg,
+                Logger.get_logger(),  # pylint: disable=E1101
+                arg)
+
+        return 0
