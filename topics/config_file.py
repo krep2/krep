@@ -33,6 +33,7 @@ class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
     PATTERN_PREFIX = 'pattern'
     PROJECT_PREFIX = 'project'
+    LOCATION_PREFIX = 'location'
     FILE_PREFIX = 'file'
     HOOK_PREFIX = "hook"
 
@@ -324,6 +325,45 @@ class _XmlConfigFile(_ConfigFile):
             cfg = self._new_value(_ConfigFile.FILE_PREFIX)
             for child in proj.childNodes:
                 _handle_patterns(cfg, child)
+        elif proj.nodeName == 'locations':
+            def _handle_locations(name, path, nodes):
+                cfg = self._new_value(
+                    '%s.%s' % (ConfigFile.LOCATION_PREFIX, name))
+                _setattr(cfg, 'exclude', [])
+                _setattr(cfg, 'include', [])
+                _setattr(cfg, 'location', path)
+
+                for node in nodes:
+                    if node.nodeName == 'include-dir':
+                        item = _getattr(node, 'name')
+                        _setattr(cfg, 'include', '%s/' % item)
+
+                        excd = _getattr(node, 'exclude-dirs')
+                        excf = _getattr(node, 'exclude-files')
+
+                        if excd:
+                            for exc in excd.split(','):
+                                _setattr(
+                                    cfg, 'exclude',
+                                    '%s/' % os.path.join(item, exc))
+                        if excf:
+                            for exc in excf.split(','):
+                                _setattr(
+                                    cfg, 'exclude', os.path.join(item, exc))
+                    elif node.nodeName == 'include-file':
+                        _setattr(cfg, 'include', _getattr(node, 'name'))
+                    elif node.nodeName == 'exclude-dir':
+                        _setattr(
+                            cfg, 'exclude', '%s/' % _getattr(node, 'name'))
+                    elif node.nodeName == 'exclude-file':
+                        _setattr(cfg, 'exclude', _getattr(node, 'name'))
+
+            for child in proj.childNodes:
+                if child.nodeName == 'project':
+                    _handle_locations(
+                        _getattr(child, 'name'),
+                        _getattr(child, 'location'),
+                        child.childNodes)
 
 
 class ConfigFile(_ConfigFile):
