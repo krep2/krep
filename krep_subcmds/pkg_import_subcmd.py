@@ -296,7 +296,7 @@ The escaped variants are supported for the imported files including:
 
             timestamp = diff.timestamp
         else:
-            timestamp = FileUtils.last_modifed(workplace)
+            timestamp = FileUtils.last_modified(workplace)
             FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
             FileUtils.copy_files(workplace, project.path)
 
