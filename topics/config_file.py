@@ -377,6 +377,15 @@ class ConfigFile(_ConfigFile):
         else:
             self.inst = _IniConfigFile(filename, content)
 
+    @staticmethod
+    def options(optparse):
+        options = optparse.get_option_group('--working-dir') or \
+            optparse.add_option_group('Global file options')
+        options.add_option(
+            '--config-file',
+            dest='config_file', action='store',
+            help='Set the config file in XML format for configurations')
+
     def get_default(self):
         return self.inst.get_default()
 
