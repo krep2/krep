@@ -218,7 +218,7 @@ this command.
 
         return projects
 
-    def init_and_sync(self, options):
+    def init_and_sync(self, options, update=True):
         self.do_hook(  # pylint: disable=E1101
             'pre-init', options, dryrun=options.dryrun)
 
@@ -249,6 +249,8 @@ this command.
                 # pylint: enable=E1101
 
             res = repo.init()
+        elif not update:
+            return
 
         if res:
             raise DownloadError(
