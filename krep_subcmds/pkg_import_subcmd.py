@@ -267,7 +267,8 @@ The escaped variants are supported for the imported files including:
             message = 'Import %s' % (
                 '%s%s%s' % (
                     name,
-                    revision and ' %s' % options.version_prefix,
+                    (name and revision) and ' %s' % (
+                        options.version_prefix or ''),
                     revision))
 
         message = _handle_message_with_escape(
@@ -329,10 +330,10 @@ The escaped variants are supported for the imported files including:
 
                     tags.append(
                         '%s%s%s' % (
-                            trefs, options.version_prefix, revision))
+                            trefs, options.version_prefix or '', revision))
                 elif revision:
                     tags.append(
-                        '%s%s' % (options.version_prefix, revision))
+                        '%s%s' % (options.version_prefix or '', revision))
 
                 if tags:
                     ret, _ = project.tag(tags[-1])
