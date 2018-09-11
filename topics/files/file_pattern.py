@@ -123,7 +123,7 @@ class FilePattern(object):
 
 class RepoFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'^\.repo/',                          # repo
+        r'!^\.repo/',                            # repo
     )
 
     def __init__(self):
@@ -132,7 +132,7 @@ class RepoFilePattern(FilePattern):
 
 class GitFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'^\.git/', r'\.gitignore',           # git
+        r'!^\.git/', r'!\.gitignore',            # git
     )
 
     def __init__(self):
@@ -141,10 +141,10 @@ class GitFilePattern(FilePattern):
 
 class SccsFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'^CVS/', r'^RCS/', r'^\.cvsignore',  # CVS
-        r'\.svn/',                            # subversion
-        r'^\.hg/', r'\.hgignore',             # mercurial
-        r'^\.git/', r'\.gitignore',           # git
+        r'!^CVS/', r'!^RCS/', r'^!\.cvsignore',  # CVS
+        r'!\.svn/',                              # subversion
+        r'!^\.hg/', r'!\.hgignore',              # mercurial
+        r'!^\.git/', r'!\.gitignore',            # git
     )
 
     def __init__(self):
