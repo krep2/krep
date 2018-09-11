@@ -145,6 +145,10 @@ class FileUtils(object):
 
     @staticmethod
     def copy_file(src, dest):
+        destdir = os.path.dirname(dest)
+        if not os.path.exists(destdir):
+            os.makdirs(destdir)
+
         if os.path.islink(src):
             linkto = os.readlink(src)
             if os.path.isdir(dest):
