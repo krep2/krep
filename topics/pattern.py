@@ -397,16 +397,19 @@ matching.
 
     @staticmethod
     def options(optparse):
-        options = optparse.get_option_group('--job') or \
-            optparse.add_option_group('Other options')
-        options.add_option(
-            '-p', '--pattern',
-            dest='pattern', action='append',
-            help='Set the patterns for the command')
+        options = optparse.get_option_group('--working-dir') or \
+            optparse.add_option_group('Global file options')
         options.add_option(
             '--pattern-file',
             dest='pattern_file', action='store',
             help='Set the pattern file in XML format for patterns')
+
+        options = optparse.get_option_group('--force') or \
+            optparse.add_option_group('Global other options')
+        options.add_option(
+            '-p', '--pattern',
+            dest='pattern', action='append',
+            help='Set the patterns for the command')
 
     def _ensure_item(self, category, name, strict=False):
         category = PatternItem.ensure_category(category)
