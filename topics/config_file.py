@@ -124,7 +124,6 @@ class _ConfigFile(object):
         return vals
 
     def get_values(self, section=None, subsection=None):
-        vals = list()
         sname = self._build_name(section, subsection)
 
         if section and subsection:
@@ -140,6 +139,10 @@ class _ConfigFile(object):
         else:
             proposed = self.vals.values()
 
+        if isinstance(proposed, Values):
+            return proposed
+
+        vals = list()
         for value in proposed or list():
             if isinstance(value, list):
                 vals.extend(value)
