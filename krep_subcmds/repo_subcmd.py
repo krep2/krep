@@ -85,9 +85,10 @@ this command.
         ))
     )
 
-    def options(self, optparse, inherited=False):
-        SubCommandWithThread.options(self, optparse, option_remote=True,
-                                     option_import=True, modules=globals())
+    def options(self, optparse, inherited=False, modules=None):
+        SubCommandWithThread.options(
+            self, optparse, option_remote=True,
+            option_import=True, modules=modules or globals())
 
         options = optparse.add_option_group('Repo tool options')
         options.add_option(
