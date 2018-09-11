@@ -30,10 +30,11 @@ class FileDiff(object):
 
         if enable_sccs_pattern:
             self.sccsp = SccsFilePattern()
-            self.pattern += self.sccsp
         else:
             self.sccsp = GitFilePattern()
             self.sccsp += RepoFilePattern()
+
+        self.pattern += self.sccsp
 
     @staticmethod
     def _normalize(path):
@@ -61,7 +62,7 @@ class FileDiff(object):
         for root, dirs, files in os.walk(self.src):
             for name in files:
                 oldf = os.path.join(root, name)
-                if self.pattern.match(oldf[slen:]):
+                if not self.pattern.match(oldf[slen:]):
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
@@ -71,7 +72,7 @@ class FileDiff(object):
             if not ignore_dir:
                 for dname in dirs:
                     oldd = os.path.join(root, dname)
-                    if self.pattern.match_dir(oldd[slen:]):
+                    if not self.pattern.match_dir(oldd[slen:]):
                         continue
 
                     newd = oldd.replace(self.src, self.dest)
@@ -82,7 +83,7 @@ class FileDiff(object):
             if not ignore_dir:
                 for dname in dirs:
                     newd = os.path.join(root, dname)
-                    if self.pattern.match_dir(newd[dlen:]):
+                    if not self.pattern.match_dir(newd[dlen:]):
                         continue
 
                     oldd = newd.replace(self.dest, self.src)
@@ -141,14 +142,13 @@ class FileDiff(object):
                     changes += 1
                     shutil.rmtree(oldd)
 
+        # copy files
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:
                 newd = os.path.join(root, dname)
                 oldd = newd.replace(self.dest, self.src)
-                if self.pattern.match(newd[dlen:]):
-                    debug('filter out %s' % oldd)
-                elif not os.path.lexists(os.path.dirname(oldd)):
-                    debug('ignored %s without dir' % oldd)
+                if not self.pattern.match_dir(newd[dlen:]):
+                    debug('ignore %s with dir pattern' % oldd)
                 elif not os.path.lexists(oldd):
                     debug('makedir %s' % oldd)
                     os.makedirs(oldd)
@@ -166,13 +166,11 @@ class FileDiff(object):
                     self._timestamp = timest.st_mtime
 
                 oldf = newf.replace(self.dest, self.src)
-                if self.pattern.match(newf[dlen:]):
-                    debug('filter out %s' % oldf)
-                elif not os.path.lexists(os.path.dirname(oldf)):
-                    debug('ignored %s without dir' % oldf)
+                if not self.pattern.match(newf[dlen:]):
+                    debug('ignore %s with file pattern' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
-                        debug('copy the link file %s' % oldf)
+                        debug('copy link file %s' % oldf)
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                 elif not os.path.lexists(oldf):
