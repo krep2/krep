@@ -288,7 +288,7 @@ The escaped variants are supported for the imported files including:
                 dname = os.listdir(workplace)
                 logger.info('Go into %s' % workplace)
 
-        if options.washed:
+        if filtered:
             diff = FileDiff(project.path, workplace, filtered,
                             enable_sccs_pattern=options.filter_out_sccs)
             if diff.sync(logger) > 0:
@@ -408,9 +408,11 @@ The escaped variants are supported for the imported files including:
             logger.error('Failed to init the repo %s' % project)
             return False
 
-        filtered_out = list([r'\.git/'])
-        for fout in options.filter_out or list():
-            filtered_out.extend(fout.split(','))
+        filters = list()
+        if options.washed:
+            filters = list([r'\.git/'])
+            for fout in options.filter_out or list():
+                filters.extend(fout.split(','))
 
         tags = list()
         for pkg, pkgname, revision in pkgs:
@@ -422,7 +424,7 @@ The escaped variants are supported for the imported files including:
 
             _, ptags = PkgImportSubcmd.do_import(
                 project, options, pkgname, workplace,
-                revision, filtered_out, logger)
+                revision, filters, logger)
 
             if ptags:
                 tags.extend(ptags)
