@@ -197,7 +197,7 @@ class SubCommand(object):
                 hargs.extend(args)
 
             return SubCommand.run_hook(
-                hook, args,
+                hook, hargs,
                 SubCommand.get_absolute_working_dir(option),
                 dryrun=dryrun)
 
