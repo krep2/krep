@@ -89,7 +89,6 @@ class Values(optparse.Values):
                 if opt and opt.action == 'append' \
                         and self.__dict__.get(attr) is not None \
                         and getattr(values, attr) is not None:
-                    self._origins.set(attr, 'mixed')
                     vals = self.__dict__[attr]
                     if isinstance(vals, tuple):
                         vals = list(vals)
