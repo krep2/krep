@@ -33,6 +33,7 @@ class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
     PATTERN_PREFIX = 'pattern'
     PROJECT_PREFIX = 'project'
+    LOCATION_PREFIX = 'location'
     FILE_PREFIX = 'file'
     HOOK_PREFIX = "hook"
 
@@ -124,7 +125,6 @@ class _ConfigFile(object):
         return vals
 
     def get_values(self, section=None, subsection=None):
-        vals = list()
         sname = self._build_name(section, subsection)
 
         if section and subsection:
@@ -140,6 +140,10 @@ class _ConfigFile(object):
         else:
             proposed = self.vals.values()
 
+        if isinstance(proposed, Values):
+            return proposed
+
+        vals = list()
         for value in proposed or list():
             if isinstance(value, list):
                 vals.extend(value)
@@ -291,6 +295,7 @@ class _XmlConfigFile(_ConfigFile):
                             'pattern', 'exclude-pattern', 'rp-pattern',
                             'replace-pattern'):
                         pattern = PatternFile.parse_pattern_str(child)
+                        _setattr(cfg, 'pattern', [])
                         _setattr(cfg, 'pattern', pattern)
                     else:
                         _handle_patterns(cfg, child)
@@ -320,6 +325,45 @@ class _XmlConfigFile(_ConfigFile):
             cfg = self._new_value(_ConfigFile.FILE_PREFIX)
             for child in proj.childNodes:
                 _handle_patterns(cfg, child)
+        elif proj.nodeName == 'locations':
+            def _handle_locations(name, path, nodes):
+                cfg = self._new_value(
+                    '%s.%s' % (ConfigFile.LOCATION_PREFIX, name))
+                _setattr(cfg, 'exclude', [])
+                _setattr(cfg, 'include', [])
+                _setattr(cfg, 'location', path)
+
+                for node in nodes:
+                    if node.nodeName == 'include-dir':
+                        item = _getattr(node, 'name')
+                        _setattr(cfg, 'include', '%s/' % item)
+
+                        excd = _getattr(node, 'exclude-dirs')
+                        excf = _getattr(node, 'exclude-files')
+
+                        if excd:
+                            for exc in excd.split(','):
+                                _setattr(
+                                    cfg, 'exclude',
+                                    '%s/' % os.path.join(item, exc))
+                        if excf:
+                            for exc in excf.split(','):
+                                _setattr(
+                                    cfg, 'exclude', os.path.join(item, exc))
+                    elif node.nodeName == 'include-file':
+                        _setattr(cfg, 'include', _getattr(node, 'name'))
+                    elif node.nodeName == 'exclude-dir':
+                        _setattr(
+                            cfg, 'exclude', '%s/' % _getattr(node, 'name'))
+                    elif node.nodeName == 'exclude-file':
+                        _setattr(cfg, 'exclude', _getattr(node, 'name'))
+
+            for child in proj.childNodes:
+                if child.nodeName == 'project':
+                    _handle_locations(
+                        _getattr(child, 'name'),
+                        _getattr(child, 'location'),
+                        child.childNodes)
 
 
 class ConfigFile(_ConfigFile):
@@ -333,6 +377,15 @@ class ConfigFile(_ConfigFile):
             self.inst = _JsonConfigFile(filename, content)
         else:
             self.inst = _IniConfigFile(filename, content)
+
+    @staticmethod
+    def options(optparse):
+        options = optparse.get_option_group('--working-dir') or \
+            optparse.add_option_group('Global file options')
+        options.add_option(
+            '--config-file',
+            dest='config_file', action='store',
+            help='Set the config file in XML format for configurations')
 
     def get_default(self):
         return self.inst.get_default()
