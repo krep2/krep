@@ -6,8 +6,8 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-from topics import Command, FileUtils, GitProject, Gerrit, Manifest, \
-    ManifestBuilder, Pattern, SubCommandWithThread, DownloadError, \
+from topics import FileUtils, GitProject, Gerrit, Manifest, ManifestBuilder, \
+ Pattern, RepoProject, SubCommandWithThread, DownloadError, \
     RaiseExceptionIfOptionMissed
 
 
@@ -17,29 +17,6 @@ def sort_project(project):
 
 def sort_project_path(project):
     return project.path
-
-
-class RepoCommand(Command):
-    """Executes a repo sub-command with specified parameters"""
-    def __init__(self, *args, **kws):
-        Command.__init__(self, *args, **kws)
-        self.repo = FileUtils.find_execute('repo')
-
-    def _execute(self, *args, **kws):
-        cli = list()
-        cli.append(self.repo)
-
-        if len(args):
-            cli.extend(args)
-
-        self.new_args(cli, self.get_args())  # pylint: disable=E1101
-        return self.wait(**kws)  # pylint: disable=E1101
-
-    def init(self, *args, **kws):
-        return self._execute('init', *args, **kws)
-
-    def sync(self, *args, **kws):
-        return self._execute('sync', *args, **kws)
 
 
 class RepoSubcmd(SubCommandWithThread):
@@ -58,32 +35,6 @@ managed sub-projects importing to the local server.
 Not like the sub-command "repo-mirror", the manifest git would be handled with
 this command.
 """
-
-    extra_items = (
-        ('Repo options for repo init:', (
-            ('repo-init:platform',
-             'restrict manifest projects to one platform'),
-            ('repo-init:reference', 'location of mirror directory'),
-            ('repo-init:no-clone-bundle',
-             'disable use of /clone.bundle on HTTP/HTTPS'),
-            ('repo-init:repo-url', 'repo repository location'),
-            ('repo-init:repo-branch', 'repo branch or revision'),
-            ('repo-init:no-repo-verify', 'do not verify repo source code'),
-        )),
-        ('Repo options for repo sync:', (
-            ('repo-sync:force-broken',
-             'continue sync even if a project fails'),
-            ('repo-sync:current-branch', 'fetch only current branch'),
-            ('repo-sync:jobs', 'projects to fetch simultaneously'),
-            ('repo-sync:no-clone-bundle',
-             'disable use of /clone.bundle on HTTP/HTTPS'),
-            ('repo-sync:no-repo-verify', 'do not verify repo source code'),
-            ('repo-sync:fetch-submodules', 'fetch submodules from server'),
-            ('repo-sync:optimized-fetch', 'only fetch project fixed to sha1'),
-            ('repo-sync:prune', 'delete refs that no longer exist on remote'),
-            ('repo-sync:no-repo-verify', 'do not verify repo source code'),
-        ))
-    )
 
     def options(self, optparse, inherited=False, modules=None):
         SubCommandWithThread.options(
@@ -224,64 +175,27 @@ this command.
             'pre-init', options, dryrun=options.dryrun)
 
         res = 0
-        if not os.path.exists('.repo'):
+        repo = RepoProject(
+            options.manifest,
+            RepoSubcmd.get_absolute_working_dir(options),
+            options.manifest_branch)
+
+        if offsite:
+            return repo
+        if not repo.exists():
             RaiseExceptionIfOptionMissed(
                 options.manifest, 'manifest (--manifest) is not set')
-            repo = RepoCommand()
-            # pylint: disable=E1101
-            repo.add_args(options.manifest, before='-u')
-            repo.add_args(options.manifest_branch, before='-b')
-            repo.add_args(options.manifest_name, before='-m')
-            repo.add_args('--mirror', condition=options.mirror)
-            # pylint: enable=E1101
-
-            opti = options.extra_values(options.extra_option, 'repo-init')
-            if opti:
-                # pylint: disable=E1101
-                repo.add_args(opti.reference, before='--reference')
-                repo.add_args(opti.platform, before='--platform')
-                repo.add_args(
-                    '--no-clone-bundle', condition=opti.no_clone_bundle)
-
-                repo.add_args(opti.repo_url, before='--repo-url')
-                repo.add_args(opti.repo_branch, before='--repo-branch')
-                repo.add_args(
-                    '--no-repo-verify', condition=opti.no_repo_verify)
-                # pylint: enable=E1101
 
             res = repo.init()
         elif not update:
-            return
+            return repo
 
         if res:
-            raise DownloadError(
-                'Failed to init "%s"' % options.manifest)
+            raise DownloadError('Failed to init "%s"' % options.manifest)
 
         # pylint: disable=E1101
         self.do_hook('post-init', options, dryrun=options.dryrun)
         self.do_hook('pre-sync', options, dryrun=options.dryrun)
-        # pylint: enable=E1101
-
-        repo = RepoCommand()
-        opts = options.extra_values(options.extra_option, 'repo-sync')
-        # pylint: disable=E1101
-        if opts:
-            repo.add_args(
-                '--current-branch', condition=opts.current_branch)
-            repo.add_args(
-                '--force-broken', condition=opts.force_broken)
-            repo.add_args(
-                '--fetch-submodules', condition=opts.fetch_submodules)
-            repo.add_args(
-                '--optimized-fetch', condition=opts.optimized_fetch)
-            repo.add_args('--prune', condition=opts.prune)
-            repo.add_args(
-                '--no-clone-bundle', condition=opts.no_clone_bundle)
-
-        if opts.jobs:
-            repo.add_args(opts.jobs, before='-j')
-        else:
-            repo.add_args(options.job, before='-j')
         # pylint: enable=E1101
 
         res = repo.sync()
@@ -295,6 +209,8 @@ this command.
 
         self.do_hook(  # pylint: disable=E1101
             'post-sync', options, dryrun=options.dryrun)
+
+        return repo
 
     @staticmethod
     def push(project, gerrit, options, remote):
@@ -505,7 +421,7 @@ this command.
         if options.prefix and not options.endswith('/'):
             options.prefix += '/'
 
-        self.init_and_sync(options, options.offsite)
+        repo = self.init_and_sync(options, options.offsite)
 
         ulp = urlparse(options.remote)
         if not ulp.scheme:
