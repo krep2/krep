@@ -127,6 +127,9 @@ be used to define the wash-out and generate the final commit.
             len(args), "No directories specified to import")
 
         RaiseExceptionIfOptionMissed(
+            options.config_file, "No config file specified for the import")
+
+        RaiseExceptionIfOptionMissed(
             options.tag, "No label specified for the import")
 
         if not options.offsite:
