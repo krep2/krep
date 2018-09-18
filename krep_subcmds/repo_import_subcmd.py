@@ -15,8 +15,8 @@ except ImportError:
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
-from topics import ConfigFile, Logger, RaiseExceptionIfOptionMissed, \
-    SubCommandWithThread
+from topics import ConfigFile, FileVersion, key_compare, Logger, \
+    RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
@@ -44,6 +44,13 @@ be used to define the wash-out and generate the final commit.
             '--label', '--tag', '--revision',
             dest='tag', action='store',
             help='Import version for the import')
+
+        options = optparse.get_option_group('-a') or \
+            optparse.add_option_group('Import options')
+        options.add_option(
+            '--keep-order', '--keep-file-order', '--skip-file-sort',
+            dest='keep_order', action='store_true',
+            help='Keep the order of input files or directories without sort')
 
     def get_name(self, options):
         return options.name or '[-]'
@@ -130,6 +137,9 @@ be used to define the wash-out and generate the final commit.
                 options, options.config_file))
 
         options.filter_out_sccs = True
+
+        if not options.keep_order:
+            args = sorted(args, key=key_compare(FileVersion.cmp))
 
         for arg in args:
             self.run_with_thread(  # pylint: disable=E1101
