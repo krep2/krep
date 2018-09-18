@@ -319,24 +319,24 @@ The escaped variants are supported for the imported files including:
 
             tags = list()
             ret = project.commit(*args)
-            if ret == 0:
-                if options.version_template:
-                    tags.append(options.version_template % tmpl)
-                elif options.local and revision:
-                    trefs = SubCommand.override_value(  # pylint: disable=E1101
-                        options.refs, options.tag_refs) or ''
-                    if trefs:
-                        trefs += '/'
 
-                    tags.append(
-                        '%s%s%s' % (
-                            trefs, options.version_prefix or '', revision))
-                elif revision:
-                    tags.append(
-                        '%s%s' % (options.version_prefix or '', revision))
+            if options.version_template:
+                tags.append(options.version_template % tmpl)
+            elif options.local and revision:
+                trefs = SubCommand.override_value(  # pylint: disable=E1101
+                    options.refs, options.tag_refs) or ''
+                if trefs:
+                    trefs += '/'
 
-                if tags:
-                    ret, _ = project.tag(tags[-1])
+                tags.append(
+                    '%s%s%s' % (
+                        trefs, options.version_prefix or '', revision))
+            elif revision:
+                tags.append(
+                    '%s%s' % (options.version_prefix or '', revision))
+
+            if tags:
+                ret, _ = project.tag(tags[-1])
 
         if os.path.lexists(tmpdir):
             try:
