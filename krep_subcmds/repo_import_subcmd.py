@@ -65,15 +65,19 @@ be used to define the wash-out and generate the final commit.
                 path = os.path.join(rootdir, location)
 
         if os.path.exists(path):
-            if len(filters) > 0:
-                # don't pass project_name, which will be showed in commit
-                # message and confuse the user to see different projects
-                _, tags = PkgImportSubcmd.do_import(
-                    project, options, '', path, options.tag, filters, logger)
-            else:
+            if len(filters) == 0:
                 logger.warning(
-                    'No provided location for "%s" to import', project_name)
-                return -1
+                    'No provided filters for "%s" to import', project_name)
+
+            if options.tag:
+                label = options.tag
+            else:
+                label = os.path.basename(rootdir)
+
+            # don't pass project_name, which will be showed in commit
+            # message and confuse the user to see different projects
+            _, tags = PkgImportSubcmd.do_import(
+                project, options, '', path, label, filters, logger)
         else:
             logger.warning('"%s" is not existed', path)
             return -1
@@ -117,9 +121,6 @@ be used to define the wash-out and generate the final commit.
 
         RaiseExceptionIfOptionMissed(
             options.config_file, "No config file specified for the import")
-
-        RaiseExceptionIfOptionMissed(
-            options.tag, "No label specified for the import")
 
         if not options.offsite:
             self.init_and_sync(options, update=False)
