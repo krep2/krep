@@ -134,7 +134,7 @@ be used to define the wash-out and generate the final commit.
         for arg in args:
             self.run_with_thread(  # pylint: disable=E1101
                 options.job,
-                self.fetch_projects_in_manifest(options),
+                RepoSubcmd.fetch_projects_in_manifest(options),
                 RepoImportSubcmd.push, options, cfg,
                 Logger.get_logger(),  # pylint: disable=E1101
                 arg)
