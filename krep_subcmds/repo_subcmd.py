@@ -219,7 +219,7 @@ this command.
 
         return projects
 
-    def init_and_sync(self, options, update=True):
+    def init_and_sync(self, options, offsite=False, update=True):
         self.do_hook(  # pylint: disable=E1101
             'pre-init', options, dryrun=options.dryrun)
 
@@ -505,8 +505,7 @@ this command.
         if options.prefix and not options.endswith('/'):
             options.prefix += '/'
 
-        if not options.offsite:
-            self.init_and_sync(options)
+        self.init_and_sync(options, options.offsite)
 
         ulp = urlparse(options.remote)
         if not ulp.scheme:
