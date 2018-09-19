@@ -118,12 +118,12 @@ class FileDiff(object):
                 if self.sccsp.match(oldf[slen:]):
                     continue
                 elif self.pattern.match(oldf[slen:]):
-                    debug('filter out %s' % oldf)
+                    debug('ignore %s with file pattern' % oldf)
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
                 if not os.path.lexists(newf):
-                    debug('remove file %s' % oldf)
+                    debug('remove %s' % oldf)
                     changes += 1
                     os.unlink(oldf)
 
@@ -132,12 +132,12 @@ class FileDiff(object):
                 if self.sccsp.match_dir(oldd[slen:]):
                     continue
                 elif self.pattern.match_dir(oldd[slen:]):
-                    debug('filter out %s' % oldd)
+                    debug('ignore %s with dir pattern' % oldd)
                     continue
 
                 newd = oldd.replace(self.src, self.dest)
                 if not os.path.lexists(newd):
-                    debug('remove directory %s' % oldd)
+                    debug('remove %s' % oldd)
                     changes += 1
                     shutil.rmtree(oldd)
 
@@ -148,16 +148,14 @@ class FileDiff(object):
                 if self.sccsp.match_dir(newd[dlen:]):
                     continue
                 elif not self.pattern.match_dir(newd[dlen:]):
-                    debug('ignore %s with dir pattern' % oldd)
+                    debug('ignore %s with file pattern' % oldd)
                 elif not os.path.lexists(oldd):
-                    debug('makedir %s' % oldd)
+                    debug('mkdir %s' % oldd)
                     os.makedirs(oldd)
                 elif not os.path.isdir(oldd):
                     debug('type changed %s' % oldd)
                     os.unlink(oldd)
                     os.makedirs(oldd)
-                else:
-                    debug('no change %s' % oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
@@ -172,11 +170,11 @@ class FileDiff(object):
                     debug('ignore %s with file pattern' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
-                        debug('copy link file %s' % oldf)
+                        debug('copy %s' % newf)
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                 elif not os.path.lexists(oldf):
-                    debug('add file %s' % newf)
+                    debug('add %s' % newf)
                     dirn = os.path.dirname(oldf)
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
@@ -185,15 +183,15 @@ class FileDiff(object):
                     changes += 1
                 else:
                     if os.path.islink(oldf):
-                        debug('link file %s' % newf)
+                        debug('link %s' % newf)
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
-                        debug('change file %s' % newf)
+                        debug('change %s' % newf)
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                     else:
-                        debug('no change %s' % newf)
+                        debug('nochange %s' % oldf)
 
         return changes
 
