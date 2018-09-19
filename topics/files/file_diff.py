@@ -118,6 +118,9 @@ class FileDiff(object):
                 oldf = os.path.join(root, name)
                 if not self.sccsp.match(oldf[slen:]):
                     continue
+                elif not self.pattern.match(oldf[slen:]):
+                    debug('ignore %s with file pattern')
+                    continue
 
                 newf = oldf.replace(self.src, self.dest)
                 if not os.path.lexists(newf):
@@ -128,6 +131,9 @@ class FileDiff(object):
             for dname in dirs:
                 oldd = os.path.join(root, dname)
                 if not self.sccsp.match_dir(oldd[slen:]):
+                    continue
+                elif not self.pattern.match_dir(oldd[slen:]):
+                    debug('ignore %s with dir pattern' % oldd)
                     continue
 
                 newd = oldd.replace(self.src, self.dest)
