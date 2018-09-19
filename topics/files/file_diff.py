@@ -156,8 +156,6 @@ class FileDiff(object):
                     debug('type changed %s' % oldd)
                     os.unlink(oldd)
                     os.makedirs(oldd)
-                else:
-                    debug('no change %s' % oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
@@ -174,7 +172,7 @@ class FileDiff(object):
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                 elif not os.path.lexists(oldf):
-                    debug('add file %s' % newf)
+                    debug('add %s' % newf)
                     dirn = os.path.dirname(oldf)
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
@@ -191,7 +189,7 @@ class FileDiff(object):
                         FileUtils.copy_file(newf, oldf)
                         changes += 1
                     else:
-                        debug('no change %s' % newf)
+                        debug('no change %s' % oldf)
 
         return changes
 
