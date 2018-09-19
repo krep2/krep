@@ -54,8 +54,10 @@ class FilePattern(object):
             else:
                 if opposite:
                     fileos.append(pattern)
+                    otheros.append(pattern)
                 else:
                     files.append(pattern)
+                    others.append(pattern)
 
         return files, dirs, others, fileos, diros, otheros
 
