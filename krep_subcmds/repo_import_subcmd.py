@@ -142,6 +142,6 @@ be used to define the wash-out and generate the final commit.
                 RepoSubcmd.fetch_projects_in_manifest(options),
                 RepoImportSubcmd.push, options, cfg,
                 Logger.get_logger(),  # pylint: disable=E1101
-                arg)
+                arg.rstrip('/'))
 
         return 0
