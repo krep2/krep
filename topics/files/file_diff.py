@@ -116,7 +116,10 @@ class FileDiff(object):
         for root, dirs, files in os.walk(self.src):
             for name in files:
                 oldf = os.path.join(root, name)
-                if not self.sccsp.match(oldf[slen:]):
+                if self.sccsp.match(oldf[slen:]):
+                    continue
+                elif self.pattern.match(oldf[slen:]):
+                    debug('filter out %s' % oldf)
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
@@ -127,7 +130,10 @@ class FileDiff(object):
 
             for dname in dirs:
                 oldd = os.path.join(root, dname)
-                if not self.sccsp.match_dir(oldd[slen:]):
+                if self.sccsp.match_dir(oldd[slen:]):
+                    continue
+                elif self.pattern.match_dir(oldd[slen:]):
+                    debug('filter out %s' % oldd)
                     continue
 
                 newd = oldd.replace(self.src, self.dest)
@@ -141,7 +147,9 @@ class FileDiff(object):
             for dname in dirs:
                 newd = os.path.join(root, dname)
                 oldd = newd.replace(self.dest, self.src)
-                if not self.pattern.match_dir(newd[dlen:]):
+                if self.sccsp.match_dir(newd[dlen:]):
+                    continue
+                elif not self.pattern.match_dir(newd[dlen:]):
                     debug('ignore %s with dir pattern' % oldd)
                 elif not os.path.lexists(oldd):
                     debug('makedir %s' % oldd)
@@ -160,7 +168,9 @@ class FileDiff(object):
                     self._timestamp = timest.st_mtime
 
                 oldf = newf.replace(self.dest, self.src)
-                if not self.pattern.match(newf[dlen:]):
+                if self.sccsp.match(newf[dlen:]):
+                    continue
+                elif not self.pattern.match(newf[dlen:]):
                     debug('ignore %s with file pattern' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
