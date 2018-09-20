@@ -16,7 +16,7 @@ from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
 from topics import ConfigFile, FileVersion, key_compare, Logger, \
-    RaiseExceptionIfOptionMissed, SubCommandWithThread
+    Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
