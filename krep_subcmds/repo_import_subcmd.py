@@ -4,8 +4,10 @@ import os
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
+# pylint: disable=W0611
 from topics import ConfigFile, FileVersion, key_compare, Logger, \
-    RaiseExceptionIfOptionMissed, SubCommandWithThread
+    Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
+# pylint: enable=W0611
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
