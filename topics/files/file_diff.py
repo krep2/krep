@@ -116,7 +116,10 @@ class FileDiff(object):
         for root, dirs, files in os.walk(self.src):
             for name in files:
                 oldf = os.path.join(root, name)
-                if not self.sccsp.match(oldf[slen:]):
+                if self.sccsp.match(oldf[slen:]):
+                    continue
+                elif self.pattern.match(oldf[slen:]):
+                    debug('filter out %s' % oldf)
                     continue
                 elif not self.pattern.match(oldf[slen:]):
                     debug('ignore %s with file pattern')
@@ -130,7 +133,10 @@ class FileDiff(object):
 
             for dname in dirs:
                 oldd = os.path.join(root, dname)
-                if not self.sccsp.match_dir(oldd[slen:]):
+                if self.sccsp.match_dir(oldd[slen:]):
+                    continue
+                elif self.pattern.match_dir(oldd[slen:]):
+                    debug('filter out %s' % oldd)
                     continue
                 elif not self.pattern.match_dir(oldd[slen:]):
                     debug('ignore %s with dir pattern' % oldd)
