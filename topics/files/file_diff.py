@@ -30,7 +30,6 @@ class FileDiff(object):
 
         if enable_sccs_pattern:
             self.sccsp = SccsFilePattern()
-            self.pattern += self.sccsp
         else:
             self.sccsp = GitFilePattern()
             self.sccsp += RepoFilePattern()
@@ -61,7 +60,7 @@ class FileDiff(object):
         for root, dirs, files in os.walk(self.src):
             for name in files:
                 oldf = os.path.join(root, name)
-                if self.pattern.match(oldf[slen:]):
+                if not self.pattern.match(oldf[slen:]):
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
@@ -71,7 +70,7 @@ class FileDiff(object):
             if not ignore_dir:
                 for dname in dirs:
                     oldd = os.path.join(root, dname)
-                    if self.pattern.match_dir(oldd[slen:]):
+                    if not self.pattern.match_dir(oldd[slen:]):
                         continue
 
                     newd = oldd.replace(self.src, self.dest)
@@ -82,7 +81,7 @@ class FileDiff(object):
             if not ignore_dir:
                 for dname in dirs:
                     newd = os.path.join(root, dname)
-                    if self.pattern.match_dir(newd[dlen:]):
+                    if not self.pattern.match_dir(newd[dlen:]):
                         continue
 
                     oldd = newd.replace(self.dest, self.src)
@@ -117,7 +116,7 @@ class FileDiff(object):
                 oldf = os.path.join(root, name)
                 if self.sccsp.match(oldf[slen:]):
                     continue
-                elif self.pattern.match(oldf[slen:]):
+                elif not self.pattern.match(oldf[slen:]):
                     debug('ignore %s with file pattern' % oldf)
                     continue
 
@@ -131,7 +130,7 @@ class FileDiff(object):
                 oldd = os.path.join(root, dname)
                 if self.sccsp.match_dir(oldd[slen:]):
                     continue
-                elif self.pattern.match_dir(oldd[slen:]):
+                elif not self.pattern.match_dir(oldd[slen:]):
                     debug('ignore %s with dir pattern' % oldd)
                     continue
 
