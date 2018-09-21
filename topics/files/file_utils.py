@@ -66,11 +66,14 @@ class FileDecompressor(Command):
 class FileVersion(object):
     @staticmethod
     def cmp(va, vb):
+        def _split(ver):
+            return re.split('[-_\.]',  ver)
+
         def _cmp(vva, vvb):
             return (vva > vvb) - (vva < vvb)
 
-        vsa = va.split('.')
-        vsb = vb.split('.')
+        vsa = _split(va)
+        vsb = _split(vb)
 
         for k in range(min(len(vsa), len(vsb))):
             maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
