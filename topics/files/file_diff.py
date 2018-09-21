@@ -166,7 +166,7 @@ class FileDiff(object):
                 if self.sccsp.match(newf[dlen:]):
                     continue
                 elif not self.pattern.match(newf[dlen:]):
-                    debug('ignored %s with dir pattern' % oldf)
+                    debug('ignored %s with file pattern' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
                         debug('copy %s' % newf)
