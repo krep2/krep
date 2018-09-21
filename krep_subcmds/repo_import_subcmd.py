@@ -69,7 +69,8 @@ be used to define the wash-out and generate the final commit.
         if os.path.exists(path):
             if len(filters) == 0:
                 logger.warning(
-                    'No provided filters for "%s" to import', project_name)
+                    'No provided filters for "%s" during importing',
+                    project_name)
 
             if options.tag:
                 label = options.tag
