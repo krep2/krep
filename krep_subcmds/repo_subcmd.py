@@ -178,7 +178,7 @@ this command.
         repo = RepoProject(
             options.manifest,
             RepoSubcmd.get_absolute_working_dir(options),
-            options.manifest_branch)
+            options.manifest_branch, options=options)
 
         if offsite:
             return repo

@@ -1,4 +1,6 @@
 
+import os
+
 from repo_cmd import RepoCommand
 from project import Project
 
@@ -33,7 +35,8 @@ class RepoProject(Project, RepoCommand):
 
     def __init__(self, uri, path=None, revision=None, remote=None,
                  options=None, *args, **kws):
-        Project.__init__(uri, path, revision, remote, *args, **kws)
+        Project.__init__(self, uri, path, revision, remote, *args, **kws)
+        RepoCommand.__init__(self, *args, **kws)
 
         self.options = options
 
@@ -42,12 +45,13 @@ class RepoProject(Project, RepoCommand):
 
     def init(self, *args, **kws):
         self.new_args()
-        self.add_args(options.manifest, before='-u')
-        self.add_args(options.manifest_branch, before='-b')
-        self.add_args(options.manifest_name, before='-m')
-        self.add_args('--mirror', condition=options.mirror)
+        self.add_args(self.options.manifest, before='-u')
+        self.add_args(self.options.manifest_branch, before='-b')
+        self.add_args(self.options.manifest_name, before='-m')
+        self.add_args('--mirror', condition=self.options.mirror)
 
-        opti = options.extra_values(options.extra_option, 'repo-init')
+        opti = self.options.extra_values(
+            self.options.extra_option, 'repo-init')
         if opti:
             self.add_args(opti.reference, before='--reference')
             self.add_args(opti.platform, before='--platform')
@@ -59,11 +63,13 @@ class RepoProject(Project, RepoCommand):
             self.add_args(
                 '--no-repo-verify', condition=opti.no_repo_verify)
 
-        return self.init(*args, **kws)
+        return RepoCommand.init(self, *args, **kws)
 
     def sync(self, *args, **kws):
         self.new_args()
-        opts = options.extra_values(options.extra_option, 'repo-sync')
+
+        opts = self.options.extra_values(
+            self.options.extra_option, 'repo-sync')
         # pylint: disable=E1101
         if opts:
             self.add_args(
@@ -81,9 +87,9 @@ class RepoProject(Project, RepoCommand):
         if opts.jobs:
             self.add_args(opts.jobs, before='-j')
         else:
-            self.add_args(options.job, before='-j')
+            self.add_args(self.options.job, before='-j')
 
-        return self.sync(*args, **kws)
+        return RepoCommand.sync(self, *args, **kws)
 
 
 TOPIC_ENTRY = "RepoProject"

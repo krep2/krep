@@ -6,6 +6,7 @@ class KrepError(Exception):
 class DownloadError(KrepError):
     """Indicate the unsuccessful download."""
 
+
 class HookError(KrepError):
     """Indicate a failed execution of hook."""
 
