@@ -95,7 +95,8 @@ be used to define the wash-out and generate the final commit.
             # don't pass project_name, which will be showed in commit
             # message and confuse the user to see different projects
             _, tags = PkgImportSubcmd.do_import(
-                project, options, '', path, label, filters, logger)
+                project, options, '', path, label, filters, logger,
+                quick_import=False)
         else:
             logger.warning('"%s" is not existed', path)
             return -1
