@@ -28,11 +28,10 @@ class FileDiff(object):
         else:
             self.pattern = FilePattern(pattern)
 
+        self.sccsp = GitFilePattern()
+        self.sccsp += RepoFilePattern()
         if enable_sccs_pattern:
-            self.sccsp = SccsFilePattern()
-        else:
-            self.sccsp = GitFilePattern()
-            self.sccsp += RepoFilePattern()
+            self.sccsp += SccsFilePattern()
 
     @staticmethod
     def _normalize(path):
