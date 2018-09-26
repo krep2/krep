@@ -65,6 +65,12 @@ be used to define the wash-out and generate the final commit.
             location = getattr(pvalues, 'location')
             if location:
                 path = os.path.join(rootdir, location)
+            else:
+                logger.error('location is undefined for "%s"', project_name)
+                return 0
+        else:
+            logger.warning('"%s" is undefined', project_name)
+            return 0
 
         if os.path.exists(path):
             if len(filters) == 0:
