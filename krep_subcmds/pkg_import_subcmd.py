@@ -289,17 +289,17 @@ The escaped variants are supported for the imported files including:
                 dname = os.listdir(workplace)
                 logger.info('Go into %s' % workplace)
 
-        if filtered:
+        if quick_import:
+            timestamp = FileUtils.last_modified(workplace)
+            FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
+            FileUtils.copy_files(workplace, project.path)
+        else:
             diff = FileDiff(project.path, workplace, filtered,
                             enable_sccs_pattern=options.filter_out_sccs)
             if diff.sync(logger) > 0:
                 ret = 0
 
             timestamp = diff.timestamp
-        else:
-            timestamp = FileUtils.last_modified(workplace)
-            FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
-            FileUtils.copy_files(workplace, project.path)
 
         if options.washed:
             # wash the directory
