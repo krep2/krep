@@ -143,7 +143,7 @@ class GitFilePattern(FilePattern):
 
 class SccsFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'^CVS/', r'^RCS/', r'^\.cvsignore',  # CVS
+        r'CVS/', r'RCS/', r'\.cvsignore',     # CVS
         r'\.svn/',                            # subversion
         r'^\.hg/', r'\.hgignore',             # mercurial
         r'^\.git/', r'\.gitignore',           # git
