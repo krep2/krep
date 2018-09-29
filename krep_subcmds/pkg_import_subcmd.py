@@ -252,8 +252,9 @@ The escaped variants are supported for the imported files including:
         return len(rets) == len(args), name, rets
 
     @staticmethod
-    def do_import(project, options, name, path, revision,
-                  filtered=None, logger=None, *args, **kws):
+    def do_import(project, options, name, path, revision, subdir=None,
+                  filters=None, logger=None, quick_import=False,
+                  *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -289,12 +290,13 @@ The escaped variants are supported for the imported files including:
                 dname = os.listdir(workplace)
                 logger.info('Go into %s' % workplace)
 
+        psource = os.path.join(project.path, subdir or '')
         if quick_import:
             timestamp = FileUtils.last_modified(workplace)
-            FileUtils.rmtree(project.path, ignore_list=(r'^\.git.*',))
-            FileUtils.copy_files(workplace, project.path)
+            FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
+            FileUtils.copy_files(workplace, psource)
         else:
-            diff = FileDiff(project.path, workplace, filtered,
+            diff = FileDiff(psource, workplace, filters,
                             enable_sccs_pattern=options.filter_out_sccs)
             if diff.sync(logger) > 0:
                 ret = 0
