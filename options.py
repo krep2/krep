@@ -34,13 +34,17 @@ class _Origins(object):
 
 
 class Values(optparse.Values):
-    def __init__(self, defaults=None):
+    def __init__(self, defaults=None, option=None):
         if isinstance(defaults, Values):
             optparse.Values.__init__(self, defaults.__dict__)
             self._origins = _Origins(defaults.__dict__)
         elif isinstance(defaults, dict):
-            optparse.Values.__init__(self, defaults)
-            self._origins = _Origins(defaults)
+            defs = dict()
+            for key, value in defaults.items():
+                defs[key] = Values._secure_value(option, key, value)
+
+            optparse.Values.__init__(self, defs)
+            self._origins = _Origins(defs)
         else:
             optparse.Values.__init__(self)
             self._origins = _Origins()
@@ -50,6 +54,9 @@ class Values(optparse.Values):
 
     @staticmethod
     def _handle_value(val, boolean=False):
+        if val is None:
+            return val
+
         sval = str(val).lower()
         if boolean and sval in ('true', 't', 'yes', 'y', '1'):
             val = True
@@ -80,22 +87,40 @@ class Values(optparse.Values):
 
         return opt
 
+    @staticmethod
+    def _secure_value(option, attr, value):
+        opt = option and Values._getopt(option, attr)
+        st_b = opt and opt.action in ('store_true', 'store_false')
+
+        if opt:
+            if opt.action == 'append':
+                if not (value is None or isinstance(value, (list, tuple))):
+                    return [value]
+            elif opt.action in ('store_true', 'store_false'):
+                return Values.boolean(value)
+
+        return Values._handle_value(value)
+
     def join(self, values, option=None, override=True, origin=None):
         if values is not None:
             for attr in values.__dict__:
                 opt = option and Values._getopt(option, attr)
-                st_b = opt and opt.action in ('store_true', 'store_false')
-
                 if opt and opt.action == 'append' \
-                        and self.__dict__.get(attr) is not None \
                         and getattr(values, attr) is not None:
-                    vals = self.__dict__[attr]
+                    vals = self.__dict__.get(attr)
+                    if vals is None:
+                        vals = list()
                     if isinstance(vals, tuple):
                         vals = list(vals)
                     elif not isinstance(vals, list):
                         vals = list([vals])
 
-                    vals.extend(getattr(values, attr))
+                    valn = getattr(values, attr)
+                    if isinstance(valn, (tuple, list)):
+                        vals.extend(valn)
+                    else:
+                        vals.append(valn)
+
                     self.ensure_value(attr, vals)
                 elif override:
                     if getattr(values, attr) is None:
@@ -106,16 +131,16 @@ class Values(optparse.Values):
                     self._origins.set(attr, origin)
                     setattr(
                         self, attr,
-                        Values._handle_value(
-                            getattr(values, attr), boolean=st_b))
+                        Values._secure_value(
+                            option, attr, getattr(values, attr)))
                 else:
                     if getattr(values, attr) is None:
                         continue
 
                     self._origins.set(attr, origin)
                     self.ensure_value(
-                        attr, Values._handle_value(
-                            getattr(values, attr), boolean=st_b))
+                        attr, Values._secure_value(
+                            option, attr, getattr(values, attr)))
 
     def __nonzero__(self):
         return self.__bool__()
