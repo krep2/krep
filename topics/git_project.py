@@ -237,7 +237,7 @@ class GitProject(Project, GitCommand):
         if not logger:
             logger = Logger.get_logger()
 
-        if not isinstance(patterns, (list, tuple)):
+        if patterns and not isinstance(patterns, (list, tuple)):
             patterns = [patterns]
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
