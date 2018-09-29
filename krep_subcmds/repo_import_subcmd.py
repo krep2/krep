@@ -64,13 +64,14 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         logger.info('Start processing ...')
 
-        path = rootdir
+        path, subdir = rootdir, ''
         pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
             filters.extend(getattr(pvalues, 'include') or list())
             filters.extend([
                 '!%s' % p for p in getattr(pvalues, 'exclude') or list()])
 
+            subdir = getattr(pvalues, 'subdir')
             locations = getattr(pvalues, 'location')
             if locations:
                 for location in sorted(locations.split('|'), reverse=True):
@@ -99,8 +100,8 @@ be used to define the wash-out and generate the final commit.
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         _, tags = PkgImportSubcmd.do_import(
-            project, options, '', path, label, filters, logger,
-            quick_import=False)
+            project, options, '', path, label, subdir=subdir,
+            filters=filters, logger=logger, quick_import=False)
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
