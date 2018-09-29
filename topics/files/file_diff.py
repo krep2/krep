@@ -137,7 +137,10 @@ class FileDiff(object):
                 if not os.path.lexists(newd):
                     debug('remove %s' % oldd)
                     changes += 1
-                    shutil.rmtree(oldd)
+                    if os.path.islink(oldd):
+                        os.remove(oldd)
+                    else:
+                        shutil.rmtree(oldd)
 
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:
