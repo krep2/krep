@@ -448,11 +448,10 @@ this command.
                 return
 
         if options.output_xml_file or options.map_file:
-            if options.map_file:
-                RepoSubcmd.build_map_file(options, projects)
-
             if options.output_xml_file:
                 RepoSubcmd.build_xml_file(options, projects, True)
+            else:
+                RepoSubcmd.build_map_file(options, projects)
 
             return
 
