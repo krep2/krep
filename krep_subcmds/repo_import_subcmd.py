@@ -71,9 +71,15 @@ be used to define the wash-out and generate the final commit.
             filters.extend([
                 '!%s' % p for p in getattr(pvalues, 'exclude') or list()])
 
-            location = getattr(pvalues, 'location')
-            if location:
-                path = os.path.join(rootdir, location)
+            locations = getattr(pvalues, 'location')
+            if locations:
+                for location in sorted(locations.split('|'), reverse=True):
+                    path = os.path.join(rootdir, location)
+                    if os.path.exists(path):
+                        break
+                else:
+                    logger.warning('"%s" is not existed', path)
+                    return -1
             else:
                 logger.error('location is undefined for "%s"', project_name)
                 return 0
@@ -81,25 +87,20 @@ be used to define the wash-out and generate the final commit.
             logger.warning('"%s" is undefined', project_name)
             return 0
 
-        if os.path.exists(path):
-            if len(filters) == 0:
-                logger.warning(
-                    'No provided filters for "%s" during importing',
-                    project_name)
+        if len(filters) == 0:
+            logger.warning(
+                'No provided filters for "%s" during importing', project_name)
 
-            if options.tag:
-                label = options.tag
-            else:
-                label = os.path.basename(rootdir)
-
-            # don't pass project_name, which will be showed in commit
-            # message and confuse the user to see different projects
-            _, tags = PkgImportSubcmd.do_import(
-                project, options, '', path, label, filters, logger,
-                quick_import=False)
+        if options.tag:
+            label = options.tag
         else:
-            logger.warning('"%s" is not existed', path)
-            return -1
+            label = os.path.basename(rootdir)
+
+        # don't pass project_name, which will be showed in commit
+        # message and confuse the user to see different projects
+        _, tags = PkgImportSubcmd.do_import(
+            project, options, '', path, label, filters, logger,
+            quick_import=False)
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
