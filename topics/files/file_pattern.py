@@ -39,14 +39,13 @@ class FilePattern(object):
                 pattern = pattern[1:]
 
             if pattern.endswith('/'):
-
                 if opposite:
                     diros.append(pattern)
                     otheros.append('%s/.?' % pattern.rstrip('/'))
                 else:
                     dirs.append(pattern)
                     others.append('%s/.?' % pattern.rstrip('/'))
-            elif pattern.find('/') > 0:
+            elif pattern.find('/') > -1:
                 if opposite:
                     otheros.append(pattern)
                 else:
@@ -115,10 +114,8 @@ class FilePattern(object):
         try:
             if fullname.endswith('/'):
                 return self._match_dir(fullname)
-            elif fullname.find('/') > 0:
-                return self._match_full(fullname)
             else:
-                return self._match_file(fullname)
+                return self._match_full(fullname)
         except OppositeFail:
             return False
 
