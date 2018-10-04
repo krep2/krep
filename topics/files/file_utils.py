@@ -150,7 +150,7 @@ class FileUtils(object):
     def copy_file(src, dest, symlinks=False):
         destdir = os.path.dirname(dest)
         if not os.path.exists(destdir):
-            os.makdirs(destdir)
+            os.makedirs(destdir)
 
         if symlinks and os.path.islink(src):
             linkto = os.readlink(src)
