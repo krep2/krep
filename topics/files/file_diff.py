@@ -100,7 +100,7 @@ class FileDiff(object):
 
         return False
 
-    def _sync(self, logger=None):  # pylint: disable=R0915
+    def _sync(self, logger=None, symlinks=False):  # pylint: disable=R0915
         changes = 0
 
         def debug(msg):
@@ -172,7 +172,7 @@ class FileDiff(object):
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
                         debug('copy %s' % newf)
-                        FileUtils.copy_file(newf, oldf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                 elif not os.path.lexists(oldf):
                     debug('add %s' % newf)
@@ -180,30 +180,30 @@ class FileDiff(object):
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
 
-                    FileUtils.copy_file(newf, oldf)
+                    FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                     changes += 1
                 else:
                     if os.path.islink(oldf):
                         debug('link %s' % newf)
-                        FileUtils.copy_file(newf, oldf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
                         debug('change %s' % newf)
-                        FileUtils.copy_file(newf, oldf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                     else:
                         debug('nochange %s' % oldf)
 
         return changes
 
-    def sync(self, logger=None, quickcopy=False):
+    def sync(self, logger=None, quickcopy=False, symlinks=True):
         if not quickcopy:
-            ret = self._sync(logger=logger)
+            ret = self._sync(logger=logger, symlinks=symlinks)
         else:
             self._timestamp = FileUtils.last_modified(self.src)
 
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
-            FileUtils.copy_files(self.src, self.dest)
+            FileUtils.copy_files(self.src, self.dest, symlinks=symlinks)
 
         return ret
 

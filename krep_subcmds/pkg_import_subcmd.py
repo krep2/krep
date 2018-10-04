@@ -253,7 +253,7 @@ The escaped variants are supported for the imported files including:
 
     @staticmethod
     def do_import(project, options, name, path, revision, subdir=None,
-                  filters=None, logger=None, quick_import=False,
+                  filters=None, logger=None, quick_import=False, symlinks=True,
                   *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
@@ -294,11 +294,11 @@ The escaped variants are supported for the imported files including:
         if quick_import:
             timestamp = FileUtils.last_modified(workplace)
             FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
-            FileUtils.copy_files(workplace, psource)
+            FileUtils.copy_files(workplace, psource, symlinks=symlinks)
         else:
             diff = FileDiff(psource, workplace, filters,
                             enable_sccs_pattern=options.filter_out_sccs)
-            if diff.sync(logger) > 0:
+            if diff.sync(logger, symlinks=symlinks) > 0:
                 ret = 0
 
             timestamp = diff.timestamp

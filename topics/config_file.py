@@ -326,13 +326,17 @@ class _XmlConfigFile(_ConfigFile):
             for child in proj.childNodes:
                 _handle_patterns(cfg, child)
         elif proj.nodeName == 'locations':
-            def _handle_locations(name, path, subdir, nodes):
+            def _handle_locations(name, path, subdir, symlinks, nodes):
                 cfg = self._new_value(
                     '%s.%s' % (ConfigFile.LOCATION_PREFIX, name))
                 _setattr(cfg, 'exclude', [])
                 _setattr(cfg, 'include', [])
                 _setattr(cfg, 'location', path)
                 _setattr(cfg, 'subdir', subdir)
+                if symlinks is None:
+                    _setattr(cfg, 'symlinks', True)
+                else:
+                    _setattr(cfg, 'symlinks', Values.boolean(symlinks))
 
                 for node in nodes:
                     if node.nodeName == 'include-dir':
@@ -365,6 +369,7 @@ class _XmlConfigFile(_ConfigFile):
                         _getattr(child, 'name'),
                         _getattr(child, 'location'),
                         _getattr(child, 'sub-dir'),
+                        _getattr(child, 'symlinks'),
                         child.childNodes)
 
 
