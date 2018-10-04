@@ -357,6 +357,12 @@ class _XmlConfigFile(_ConfigFile):
                                     cfg, 'exclude', os.path.join(item, exc))
                     elif node.nodeName == 'include-file':
                         _setattr(cfg, 'include', _getattr(node, 'name'))
+                    elif node.nodeName == 'include-files':
+                        dirname = _getattr(node, 'name')
+                        for child in node.childNodes:
+                            _setattr(
+                                cfg, 'include',
+                                os.path.join(dirname, _getattr(child, 'name')))
                     elif node.nodeName == 'exclude-dir':
                         _setattr(
                             cfg, 'exclude', '%s/' % _getattr(node, 'name'))
