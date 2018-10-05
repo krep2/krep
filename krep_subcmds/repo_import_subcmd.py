@@ -64,7 +64,8 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         logger.info('Start processing ...')
 
-        path, subdir, symlinks = rootdir, '', True
+        path, subdir, location = rootdir, '', None
+        symlinks, copyfiles, linkfiles = True, None, None
         pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
             filters.extend(getattr(pvalues, 'include') or list())
@@ -74,18 +75,14 @@ be used to define the wash-out and generate the final commit.
             subdir = getattr(pvalues, 'subdir')
             locations = getattr(pvalues, 'location')
             symlinks = getattr(pvalues, 'symlinks')
+            copyfiles = getattr(pvalues, 'copyfile')
+            linkfiles = getattr(pvalues, 'linkfile')
 
             if locations:
                 for location in sorted(locations.split('|'), reverse=True):
                     path = os.path.join(rootdir, location)
                     if os.path.exists(path):
                         break
-                else:
-                    logger.warning('"%s" is not existed', path)
-                    return -1
-            else:
-                logger.error('location is undefined for "%s"', project_name)
-                return 0
         else:
             logger.warning('"%s" is undefined', project_name)
             return 0
@@ -103,8 +100,8 @@ be used to define the wash-out and generate the final commit.
         # message and confuse the user to see different projects
         _, tags = PkgImportSubcmd.do_import(
             project, options, '', path, label, subdir=subdir,
-            filters=filters, logger=logger, quick_import=False,
-            symlinks=symlinks)
+            filters=filters, logger=logger, imports=False if location else None,
+            symlinks=symlinks, copyfile=copyfile, linkfile=linkfile)
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)

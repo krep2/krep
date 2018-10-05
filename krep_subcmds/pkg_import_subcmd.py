@@ -253,8 +253,8 @@ The escaped variants are supported for the imported files including:
 
     @staticmethod
     def do_import(project, options, name, path, revision, subdir=None,
-                  filters=None, logger=None, quick_import=False, symlinks=True,
-                  *args, **kws):
+                  filters=None, logger=None, imports=False, symlinks=True,
+                  copyfiles=None, linkfiles=None, *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -291,22 +291,37 @@ The escaped variants are supported for the imported files including:
                 logger.info('Go into %s' % workplace)
 
         psource = os.path.join(project.path, subdir or '')
-        if quick_import:
-            timestamp = FileUtils.last_modified(workplace)
-            FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
-            FileUtils.copy_files(workplace, psource, symlinks=symlinks)
-        else:
-            diff = FileDiff(psource, workplace, filters,
-                            enable_sccs_pattern=options.filter_out_sccs)
-            if diff.sync(logger, symlinks=symlinks) > 0:
-                ret = 0
+        if imports is not None:
+            if imports:
+                timestamp = FileUtils.last_modified(workplace)
+                FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
+                FileUtils.copy_files(workplace, psource, symlinks=symlinks)
+            else:
+                diff = FileDiff(psource, workplace, filters,
+                                enable_sccs_pattern=options.filter_out_sccs)
+                if diff.sync(logger, symlinks=symlinks) > 0:
+                    ret = 0
 
-            timestamp = diff.timestamp
+                timestamp = diff.timestamp
 
         if options.washed:
             # wash the directory
             washer = FileWasher()
             washer.wash(workplace)
+
+        if copyfiles:
+            for src, dest in copyfiles:
+                FileUtils.copy_file(
+                    os.path.join(workplace, src),
+                    os.path.join(psource, dest),
+                    symlinks=symlinks)
+
+        if linkfiles:
+            for src, dest in linkfiles:
+                FileUtils.copy_file(
+                    os.path.join(workplace, src),
+                    os.path.join(psource, dest),
+                    symlinks=True)
 
         if ret == 0:
             project.add('--all', '-f', project.path)
