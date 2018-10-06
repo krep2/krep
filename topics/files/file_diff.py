@@ -28,13 +28,10 @@ class FileDiff(object):
         else:
             self.pattern = FilePattern(pattern)
 
+        self.sccsp = GitFilePattern()
+        self.sccsp += RepoFilePattern()
         if enable_sccs_pattern:
-            self.sccsp = SccsFilePattern()
-        else:
-            self.sccsp = GitFilePattern()
-            self.sccsp += RepoFilePattern()
-
-        self.pattern += self.sccsp
+            self.sccsp += SccsFilePattern()
 
     @staticmethod
     def _normalize(path):
@@ -103,7 +100,7 @@ class FileDiff(object):
 
         return False
 
-    def _sync(self, logger=None):  # pylint: disable=R0915
+    def _sync(self, logger=None, symlinks=False):  # pylint: disable=R0915
         changes = 0
 
         def debug(msg):
@@ -116,42 +113,50 @@ class FileDiff(object):
         for root, dirs, files in os.walk(self.src):
             for name in files:
                 oldf = os.path.join(root, name)
-                if not self.sccsp.match(oldf[slen:]):
+                if self.sccsp.match(oldf[slen:]):
+                    continue
+                elif not self.pattern.match(oldf[slen:]):
+                    debug('ignore %s with file pattern' % oldf)
                     continue
 
                 newf = oldf.replace(self.src, self.dest)
                 if not os.path.lexists(newf):
-                    debug('remove file %s' % oldf)
+                    debug('remove %s' % oldf)
                     changes += 1
                     os.unlink(oldf)
 
             for dname in dirs:
                 oldd = os.path.join(root, dname)
-                if not self.sccsp.match_dir(oldd[slen:]):
+                if self.sccsp.match_dir(oldd[slen:]):
+                    continue
+                elif not self.pattern.match_dir(oldd[slen:]):
+                    debug('ignore %s with dir pattern' % oldd)
                     continue
 
                 newd = oldd.replace(self.src, self.dest)
                 if not os.path.lexists(newd):
-                    debug('remove directory %s' % oldd)
+                    debug('remove %s' % oldd)
                     changes += 1
-                    shutil.rmtree(oldd)
+                    if os.path.islink(oldd):
+                        os.remove(oldd)
+                    else:
+                        shutil.rmtree(oldd)
 
-        # copy files
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:
                 newd = os.path.join(root, dname)
                 oldd = newd.replace(self.dest, self.src)
-                if not self.pattern.match_dir(newd[dlen:]):
-                    debug('ignore %s with dir pattern' % oldd)
+                if self.sccsp.match_dir(newd[dlen:]):
+                    continue
+                elif not self.pattern.match_dir(newd[dlen:]):
+                    debug('ignore %s with file pattern' % oldd)
                 elif not os.path.lexists(oldd):
-                    debug('makedir %s' % oldd)
+                    debug('mkdir %s' % oldd)
                     os.makedirs(oldd)
                 elif not os.path.isdir(oldd):
                     debug('type changed %s' % oldd)
                     os.unlink(oldd)
                     os.makedirs(oldd)
-                else:
-                    debug('no change %s' % oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
@@ -160,43 +165,45 @@ class FileDiff(object):
                     self._timestamp = timest.st_mtime
 
                 oldf = newf.replace(self.dest, self.src)
-                if not self.pattern.match(newf[dlen:]):
+                if self.sccsp.match(newf[dlen:]):
+                    continue
+                elif not self.pattern.match(newf[dlen:]):
                     debug('ignore %s with file pattern' % oldf)
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
-                        debug('copy link file %s' % oldf)
-                        FileUtils.copy_file(newf, oldf)
+                        debug('copy %s' % newf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                 elif not os.path.lexists(oldf):
-                    debug('add file %s' % newf)
+                    debug('add %s' % newf)
                     dirn = os.path.dirname(oldf)
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
 
-                    FileUtils.copy_file(newf, oldf)
+                    FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                     changes += 1
                 else:
                     if os.path.islink(oldf):
-                        debug('link file %s' % newf)
-                        FileUtils.copy_file(newf, oldf)
+                        debug('link %s' % newf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
-                        debug('change file %s' % newf)
-                        FileUtils.copy_file(newf, oldf)
+                        debug('change %s' % newf)
+                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
                         changes += 1
                     else:
-                        debug('no change %s' % newf)
+                        debug('nochange %s' % oldf)
 
         return changes
 
-    def sync(self, logger=None, quickcopy=False):
+    def sync(self, logger=None, quickcopy=False, symlinks=True):
         if not quickcopy:
-            ret = self._sync(logger=logger)
+            ret = self._sync(logger=logger, symlinks=symlinks)
         else:
             self._timestamp = FileUtils.last_modified(self.src)
 
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
-            FileUtils.copy_files(self.src, self.dest)
+            FileUtils.copy_files(self.src, self.dest, symlinks=symlinks)
 
         return ret
 

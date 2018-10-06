@@ -66,11 +66,14 @@ class FileDecompressor(Command):
 class FileVersion(object):
     @staticmethod
     def cmp(va, vb):
+        def _split(ver):
+            return re.split('[-_\.]',  ver)
+
         def _cmp(vva, vvb):
             return (vva > vvb) - (vva < vvb)
 
-        vsa = va.split('.')
-        vsb = vb.split('.')
+        vsa = _split(va)
+        vsb = _split(vb)
 
         for k in range(min(len(vsa), len(vsb))):
             maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
@@ -144,12 +147,12 @@ class FileUtils(object):
         return timestamp
 
     @staticmethod
-    def copy_file(src, dest):
+    def copy_file(src, dest, symlinks=False):
         destdir = os.path.dirname(dest)
         if not os.path.exists(destdir):
-            os.makdirs(destdir)
+            os.makedirs(destdir)
 
-        if os.path.islink(src):
+        if symlinks and os.path.islink(src):
             linkto = os.readlink(src)
             if os.path.isdir(dest):
                 shutil.rmtree(dest)
@@ -192,7 +195,7 @@ class FileUtils(object):
             shutil.rmtree(dest)
 
     @staticmethod
-    def copy_files(src, dest, ignore_list=None):
+    def copy_files(src, dest, ignore_list=None, symlinks=False):
         for name in os.listdir(src):
             matched = False
             for pattern in ignore_list or list():
@@ -210,9 +213,10 @@ class FileUtils(object):
                 if not os.path.exists(dname):
                     os.makedirs(dname)
 
-                FileUtils.copy_files(sname, dname, ignore_list=ignore_list)
+                FileUtils.copy_files(
+                    sname, dname, ignore_list=ignore_list, symlinks=symlinks)
             else:
-                FileUtils.copy_file(sname, dname)
+                FileUtils.copy_file(sname, dname, symlinks=symlinks)
 
     @staticmethod
     def extract_file(src, dest):
