@@ -89,7 +89,7 @@ class SubCommand(object):
         # Not to set the default for no-option
         options.add_option(
             '--branches', '--heads',
-            dest='branches', action='store_true',
+            dest='heads', action='store_true',
             help='push all branches to the remote. Once option "--all" is '
                  'set, it is enabled except "--no-branches" or "--no-heads" '
                  'is set explicitly')
