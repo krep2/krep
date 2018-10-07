@@ -15,11 +15,11 @@ def _setattr(obj, name, value):
     name = name.replace('-', '_')
     if hasattr(obj, name):
         values = getattr(obj, name)
-        if values and not isinstance(values, list):
+        if values is not None and not isinstance(values, list):
             values = [values]
 
     if values is not None:
-        if isinstance(value, (list, tuple)):
+        if isinstance(value, list):
             values.extend(value)
         else:
             values.append(value)
