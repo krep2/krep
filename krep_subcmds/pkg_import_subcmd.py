@@ -1,4 +1,5 @@
 
+import glob
 import hashlib
 import os
 import re
@@ -311,17 +312,28 @@ The escaped variants are supported for the imported files including:
 
         if copyfiles:
             for src, dest in copyfiles:
-                FileUtils.copy_file(
-                    os.path.join(workplace, src),
-                    os.path.join(psource, dest),
-                    symlinks=symlinks)
+                names = glob.glob(os.path.join(workplace, src))
+                filename = '' if not names else names[0]
+                if os.path.exists(filename):
+                    mtime = FileUtils.last_modified(filename)
+                    if mtime > timestamp:
+                        timestamp = mtime
+                    logger.debug('copy %s', src)
+                    FileUtils.copy_file(
+                        filename, os.path.join(psource, dest),
+                        symlinks=symlinks)
 
         if linkfiles:
             for src, dest in linkfiles:
-                FileUtils.copy_file(
-                    os.path.join(workplace, src),
-                    os.path.join(psource, dest),
-                    symlinks=True)
+                names = glob.glob(os.path.join(workplace, src))
+                filename = '' if not names else names[0]
+                if os.path.exists(filename):
+                    mtime = FileUtils.last_modified(filename)
+                    if mtime > timestamp:
+                        timestamp = mtime
+                    logger.debug('link %s', src)
+                    FileUtils.copy_file(
+                        filename, os.path.join(psource, dest), symlinks=True)
 
         if ret == 0:
             project.add('--all', '-f', project.path)
