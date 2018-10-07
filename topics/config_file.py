@@ -331,8 +331,8 @@ class _XmlConfigFile(_ConfigFile):
                     '%s.%s' % (ConfigFile.LOCATION_PREFIX, name))
                 _setattr(cfg, 'exclude', [])
                 _setattr(cfg, 'include', [])
-                _setattr(cfg, 'copyfile', [])
-                _setattr(cfg, 'linkfile', [])
+                _setattr(cfg, 'copy-file', [])
+                _setattr(cfg, 'link-file', [])
                 _setattr(cfg, 'location', path)
                 _setattr(cfg, 'subdir', subdir)
                 if symlinks is None:
@@ -370,16 +370,14 @@ class _XmlConfigFile(_ConfigFile):
                             cfg, 'exclude', '%s/' % _getattr(node, 'name'))
                     elif node.nodeName == 'exclude-file':
                         _setattr(cfg, 'exclude', _getattr(node, 'name'))
-                    elif node.nodeName == 'copy-files':
-                        for child in node.childNodes:
-                            _setattr(
-                                cfg, 'copyfile', (_getattr(child, 'src'),
-                                    _getattr(child, 'dest')))
-                    elif node.nodeName == 'link-files':
-                        for child in node.childNodes:
-                            _setattr(
-                                cfg, 'linkfile', (_getattr(child, 'src'),
-                                    _getattr(child, 'dest')))
+                    elif node.nodeName == 'copy-file':
+                        _setattr(
+                            cfg, 'copyfile',
+                            (_getattr(node, 'src'), _getattr(node, 'dest')))
+                    elif node.nodeName == 'link-file':
+                        _setattr(
+                            cfg, 'linkfile',
+                            (_getattr(node, 'src'), _getattr(node, 'dest')))
 
             for child in proj.childNodes:
                 if child.nodeName == 'project':

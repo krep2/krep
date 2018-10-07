@@ -65,7 +65,7 @@ be used to define the wash-out and generate the final commit.
         logger.info('Start processing ...')
 
         path, subdir, location = rootdir, '', None
-        symlinks, copyfiles, linkfiles = True, None, None
+        symlinks, copyfile, linkfile = True, None, None
         pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
             filters.extend(getattr(pvalues, 'include') or list())
@@ -75,8 +75,8 @@ be used to define the wash-out and generate the final commit.
             subdir = getattr(pvalues, 'subdir')
             locations = getattr(pvalues, 'location')
             symlinks = getattr(pvalues, 'symlinks')
-            copyfiles = getattr(pvalues, 'copyfile')
-            linkfiles = getattr(pvalues, 'linkfile')
+            copyfile = getattr(pvalues, 'copyfile')
+            linkfile = getattr(pvalues, 'linkfile')
 
             if locations:
                 for location in sorted(locations.split('|'), reverse=True):
@@ -101,7 +101,7 @@ be used to define the wash-out and generate the final commit.
         _, tags = PkgImportSubcmd.do_import(
             project, options, '', path, label, subdir=subdir,
             filters=filters, logger=logger, imports=False if location else None,
-            symlinks=symlinks, copyfile=copyfile, linkfile=linkfile)
+            symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile)
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
