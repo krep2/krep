@@ -227,177 +227,49 @@ class _JsonConfigFile(_ConfigFile):
                 _setattr(cfg, name, value)
 
 
-class _XmlConfigFile(_ConfigFile):
+class XmlConfigFile(_ConfigFile):
+    """It delegates to handle element "global-options" only.
+       Other depends on inherited implementation."""
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
 
-        self._parse_xml(filename, pi)
-
-    def _parse_xml(self, filename, pi=None):  # pylint: disable=R0914
-        def _getattr(node, name, default=None):
-            if node.hasAttribute(name):
-                return node.getAttribute(name)
-            else:
-                return default
-
-        def _handle_patterns(cfg, node):
-            if node.nodeName in (
-                    'patterns', 'exclude-patterns', 'replace-patterns'):
-                patterns = PatternFile.parse_patterns_str(node)
-                for pattern in patterns:
-                    _setattr(cfg, 'pattern', pattern)
-
         root = xml.dom.minidom.parse(filename)
+        for node in root.childNodes:
+            self.parse(node, pi)
 
-        default = self._new_value(_ConfigFile.DEFAULT_CONFIG)
+    def parse_global(self, node, config=None):
+        name = self.get_attr(node, 'name')
+        value = self.get_attr(node, 'value', 'true')
 
-        proj = root.childNodes[0]
+        if not config:
+            config = Values()
 
-        if proj.nodeName == 'projects':
-            def _parse_global(node):
-                _setattr(default, _getattr(node, 'name'),
-                         _getattr(node, 'value', 'true'))
+        if name and value:
+            self.set_attr(config, name, value)
 
-            def _parse_include(node):
-                name = _getattr(node, 'name')
-                if name and not os.path.isabs(name):
-                    name = os.path.join(os.path.dirname(self.filename), name)
+        return config
 
-                xvals = _XmlConfigFile(name, self.get_default())
-                return name, xvals
-
-            def _parse_hook(cfg, node):
-                name = _getattr(node, 'name')
-                filen = _getattr(node, 'file')
-                if filen and not os.path.isabs(filen):
-                    filen = os.path.join(
-                        os.path.dirname(self.filename), filen)
-
-                _setattr(cfg, 'hook-%s' % name, filen)
+    def parse(self, node, pi=None):  # pylint: disable=R0914
+        # it delegates only to handle global options
+        config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
+        for node in root.childNodes:
+            if node.nodeName == 'global-option':
+                self.parse_global(node, config)
+            elif node.nodeName == 'global-options':
                 for child in node.childNodes:
-                    if child.nodeName == 'args':
-                        _setattr(cfg, 'hook-%s-%s' % (name, child.nodeName),
-                                 _getattr(child, 'value'))
+                    if node.nodeName == 'option':
+                        self.parse_global(node, config)
 
-            def _parse_project(node):
-                name = _getattr(node, 'name')
-                cfg = self._new_value(
-                    '%s.%s' % (_ConfigFile.PROJECT_PREFIX, name))
-                group = _getattr(node, 'group')
-                if group:
-                    _setattr(cfg, 'group', group)
+    @staticmethod
+    def get_attr(node, name, default=None):
+        if node.hasAttribute(name):
+            return node.getAttribute(name)
+        else:
+            return default
 
-                for child in node.childNodes:
-                    if child.nodeName == 'args':
-                        _setattr(cfg, child.nodeName, _getattr(child, 'value'))
-                    elif child.nodeName == 'option':
-                        name = _getattr(child, 'name')
-                        value = _getattr(child, 'value')
-                        _setattr(cfg, name, value)
-                    elif child.nodeName == 'hook':
-                        _parse_hook(cfg, child)
-                    elif child.nodeName == 'include':
-                        name, xvals = _parse_include(child)
-                        # only pattern supported and need to export explicitly
-                        val = xvals.get_value(ConfigFile.FILE_PREFIX)
-                        if val and val.pattern:  # pylint: disable=E1103
-                            _setattr(cfg, 'pattern', val.pattern)  # pylint: disable=E1103
-                    elif child.nodeName in (
-                            'pattern', 'exclude-pattern', 'rp-pattern',
-                            'replace-pattern'):
-                        pattern = PatternFile.parse_pattern_str(child)
-                        _setattr(cfg, 'pattern', [])
-                        _setattr(cfg, 'pattern', pattern)
-                    else:
-                        _handle_patterns(cfg, child)
-
-                cfg.join(self.get_default(), override=False)
-                if pi is not None:
-                    cfg.join(pi, override=False)
-
-            for node in proj.childNodes:
-                if node.nodeName in ('global_option', 'global-option'):
-                    _parse_global(node)
-                elif node.nodeName == 'project':
-                    _parse_project(node)
-                elif node.nodeName == 'hook':
-                    _parse_hook(default, node)
-                elif node.nodeName == 'include':
-                    name, xvals = _parse_include(node)
-                    self._new_value(
-                        '%s.%s' % (_ConfigFile.FILE_PREFIX, name), xvals)
-
-                    val = xvals.get_value(ConfigFile.FILE_PREFIX)
-                    if val and val.pattern:  # pylint: disable=E1103
-                        self._new_value(
-                            '%s.%s' % (_ConfigFile.FILE_PREFIX, 'pattern'),
-                            val.pattern)  # pylint: disable=E1103
-        elif proj.nodeName == 'patterns':
-            cfg = self._new_value(_ConfigFile.FILE_PREFIX)
-            for child in proj.childNodes:
-                _handle_patterns(cfg, child)
-        elif proj.nodeName == 'locations':
-            def _handle_locations(name, path, subdir, symlinks, nodes):
-                cfg = self._new_value(
-                    '%s.%s' % (ConfigFile.LOCATION_PREFIX, name))
-                _setattr(cfg, 'exclude', [])
-                _setattr(cfg, 'include', [])
-                _setattr(cfg, 'copy-file', [])
-                _setattr(cfg, 'link-file', [])
-                _setattr(cfg, 'location', path)
-                _setattr(cfg, 'subdir', subdir)
-                if symlinks is None:
-                    _setattr(cfg, 'symlinks', True)
-                else:
-                    _setattr(cfg, 'symlinks', Values.boolean(symlinks))
-
-                for node in nodes:
-                    if node.nodeName == 'include-dir':
-                        item = _getattr(node, 'name')
-                        _setattr(cfg, 'include', '%s/' % item)
-
-                        excd = _getattr(node, 'exclude-dirs')
-                        excf = _getattr(node, 'exclude-files')
-
-                        if excd:
-                            for exc in excd.split(','):
-                                _setattr(
-                                    cfg, 'exclude',
-                                    '%s/' % os.path.join(item, exc))
-                        if excf:
-                            for exc in excf.split(','):
-                                _setattr(
-                                    cfg, 'exclude', os.path.join(item, exc))
-                    elif node.nodeName == 'include-file':
-                        _setattr(cfg, 'include', _getattr(node, 'name'))
-                    elif node.nodeName == 'include-files':
-                        dirname = _getattr(node, 'name')
-                        for child in node.childNodes:
-                            _setattr(
-                                cfg, 'include',
-                                os.path.join(dirname, _getattr(child, 'name')))
-                    elif node.nodeName == 'exclude-dir':
-                        _setattr(
-                            cfg, 'exclude', '%s/' % _getattr(node, 'name'))
-                    elif node.nodeName == 'exclude-file':
-                        _setattr(cfg, 'exclude', _getattr(node, 'name'))
-                    elif node.nodeName == 'copy-file':
-                        _setattr(
-                            cfg, 'copyfile',
-                            (_getattr(node, 'src'), _getattr(node, 'dest')))
-                    elif node.nodeName == 'link-file':
-                        _setattr(
-                            cfg, 'linkfile',
-                            (_getattr(node, 'src'), _getattr(node, 'dest')))
-
-            for child in proj.childNodes:
-                if child.nodeName == 'project':
-                    _handle_locations(
-                        _getattr(child, 'name'),
-                        _getattr(child, 'location'),
-                        _getattr(child, 'sub-dir'),
-                        _getattr(child, 'symlinks'),
-                        child.childNodes)
+    @staticmethod
+    def set_attr(obj, name, value):
+        _setattr(obj, name, value)
 
 
 class ConfigFile(_ConfigFile):
@@ -405,8 +277,8 @@ class ConfigFile(_ConfigFile):
         _ConfigFile.__init__(self, filename)
 
         content = self.read().lstrip()
-        if content[:6].lower().startswith('<?xml'):
-            self.inst = _XmlConfigFile(filename)
+        if content.startswith('<?xml'):
+            self.inst = XmlConfigFile(filename)
         elif content.startswith('{'):
             self.inst = _JsonConfigFile(filename, content)
         else:
@@ -434,4 +306,4 @@ class ConfigFile(_ConfigFile):
         return self.inst.get_values(section, subsection)
 
 
-TOPIC_ENTRY = 'ConfigFile'
+TOPIC_ENTRY = 'ConfigFile, XmlConfigFile'
