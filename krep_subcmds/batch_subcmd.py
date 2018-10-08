@@ -2,9 +2,114 @@
 import os
 import re
 
-from topics import ConfigFile, SubCommandWithThread, \
-    RaiseExceptionIfOptionMissed
+from topics import PatternFile, SubCommandWithThread, \
+    RaiseExceptionIfOptionMissed, KrepXmlConfigFile
 from options import Values
+
+
+# pylint: disable=E1101
+class BatchXmlConfigFile(KrepXmlConfigFile):
+    def __init__(self, filename, pi=None):
+        KrepXmlConfigFile.__init__(self, filename, pi)
+
+    def parse_include(self, node):
+        name = self.get_attr(node, 'name')
+        if name and not os.path.isabs(name):
+            name = os.path.join(os.path.dirname(self.filename), name)
+
+        xvals = KrepXmlConfigFile(name, self.get_default())
+        return name, xvals
+
+    def parse_hook(self, node, config=None):
+        name = self.get_attr(node, 'name')
+        filen = self.get_attr(node, 'file')
+        if filen and not os.path.isabs(filen):
+            filen = os.path.join(
+                os.path.dirname(self.filename), filen)
+
+        if not config:
+            config = Values()
+
+        self.set_attr(config, 'hook-%s' % name, filen)
+        for child in node.childNodes:
+            if child.nodeName == 'args':
+                self.set_attr(
+                    config, 'hook-%s-%s' % (name, child.nodeName),
+                    self.get_attr(child, 'value'))
+
+    def parse_project(self, node, pi=None, config=None):
+        name = self.get_attr(node, 'name')
+        group = self.get_attr(node, 'group')
+
+        if not config:
+            config = Values()
+
+        if group:
+            self.set_attr(config, 'group', group)
+
+        for child in node.childNodes:
+            if child.nodeName == 'args':
+                self.set_attr(
+                    config, child.nodeName, self.get_attr(child, 'value'))
+            elif child.nodeName == 'option':
+                name = self.get_attr(child, 'name')
+                value = self.get_attr(child, 'value')
+                self.set_attr(config, name, value)
+            elif child.nodeName == 'hook':
+                self.parse_hook(child, config)
+            elif child.nodeName == 'include':
+                _, xvals = self.parse_include(child)
+                # only pattern supported and need to export explicitly
+                val = xvals.get_value(KrepXmlConfigFile.FILE_PREFIX)
+                if val and val.pattern:  # pylint: disable=E1103
+                    self.set_attr(config, 'pattern', val.pattern)  # pylint: disable=E1103
+            elif child.nodeName in (
+                    'pattern', 'exclude-pattern', 'rp-pattern',
+                    'replace-pattern'):
+                pattern = PatternFile.parse_pattern_str(child)
+                self.set_attr(config, 'pattern', [])
+                self.set_attr(config, 'pattern', pattern)
+            else:
+                self.parse_patterns(child, config)
+
+        config.join(self.get_default(), override=False)
+        if pi is not None:
+            config.join(pi, override=False)
+
+        return config
+
+    def parse(self, node, pi=None):  # pylint: disable=R0914
+        if node.nodeName != 'projects':
+            return
+
+        default = self._get_value(KrepXmlConfigFile.DEFAULT_CONFIG)
+        for child in node.childNodes:
+            if child.nodeName in ('global_option', 'global-option'):
+                self.parse_global(child, default)
+            elif child.nodeName == 'project':
+                self._add_value(
+                    '%s.%s' % (
+                        KrepXmlConfigFile.PROJECT_PREFIX,
+                        self.get_attr(child, 'name')),
+                    self.parse_project(child, pi=pi))
+            elif child.nodeName == 'hook':
+                self.parse_hook(child, default)
+            elif child.nodeName == 'include':
+                _, xvals = self.parse_include(child)
+                # record included file name
+                self._new_value(
+                    '%s.%s' % (
+                        KrepXmlConfigFile.FILE_PREFIX,
+                        self.get_attr(child, 'name')),
+                    xvals)
+
+                # record the patterns only from included file
+                val = xvals.get_value(KrepXmlConfigFile.FILE_PREFIX)
+                if val and val.pattern:  # pylint: disable=E1103
+                    self._new_value(
+                        '%s.%s' % (KrepXmlConfigFile.FILE_PREFIX, 'pattern'),
+                        val.pattern)  # pylint: disable=E1103
+# pylint: enable=E1101
 
 
 class BatchSubcmd(SubCommandWithThread):
@@ -141,11 +246,11 @@ The format of the plain-text configuration file can refer to the topic
                       ignore_except=ignore_error)
 
         def _batch(batch):
-            conf = ConfigFile(batch)
+            conf = BatchXmlConfigFile(batch)
 
             projs, nprojs, tprojs = list(), list(), list()
-            for name in conf.get_names('project') or list():
-                projects = conf.get_values(name)
+            for name in conf.get_names('project') or list():  # pylint: disable=E1101
+                projects = conf.get_values(name)  # pylint: disable=E1101
                 if not isinstance(projects, list):
                     projects = [projects]
 
@@ -153,7 +258,7 @@ The format of the plain-text configuration file can refer to the topic
                 for project in projects:
                     proj = Values()
                     # remove the prefix 'project.'
-                    proj_name = conf.get_subsection_name(name)
+                    proj_name = conf.get_subsection_name(name)  # pylint: disable=E1101
                     setattr(proj, 'name', proj_name)
                     if _filter_with_group(project, proj_name, options.group):
                         optparse = self._cmdopt(project.schema)  # pylint: disable=E1101
