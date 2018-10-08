@@ -3,11 +3,35 @@ import os
 import threading
 
 from command import Command
-from config_file import ConfigFile
+from config_file import XmlConfigFile
 from debug import Debug
 from error import HookError
 from logger import Logger
-from pattern import Pattern
+from options import Values
+from pattern import Pattern, PatternFile
+
+
+class KrepXmlConfigFile(XmlConfigFile):
+    def __init__(self, filename, pi=None):
+        XmlConfigFile.__init__(self, filename, pi)
+
+    def parse_patterns(self, node, config=None):
+        if not config:
+            config = Values()
+
+        if node.nodeName in (
+                'patterns', 'exclude-patterns', 'replace-patterns'):
+            patterns = PatternFile.parse_patterns_str(node)
+            for pattern in patterns:
+                self.set_attr(config, 'pattern', pattern)
+
+        return config
+
+    def parse(self, node, pi=None):  # pylint: disable=R0914
+        if node.nodeName == 'patterns':
+            cfg = self._new_value(XmlConfigFile.FILE_PREFIX)
+            for child in node.childNodes:
+                self.parse_patterns(child, cfg)
 
 
 class SubCommand(object):
@@ -205,11 +229,11 @@ class SubCommand(object):
             patterns += Pattern(options.pattern)
 
         if options.pattern_file:
-            cfg = ConfigFile(
+            cfg = KrepXmlConfigFile(
                 SubCommand.get_absolute_running_file_name(
                     options, options.pattern_file))
 
-            val = cfg.get_value(ConfigFile.FILE_PREFIX)
+            val = cfg.get_value(KrepXmlConfigFile.FILE_PREFIX)
             if val:
                 patterns += val.pattern  # pylint: disable=E1103
 
@@ -377,4 +401,4 @@ class SubCommandWithThread(SubCommand):
         return ret
 
 
-TOPIC_ENTRY = 'SubCommand, SubCommandWithThread'
+TOPIC_ENTRY = 'SubCommand, SubCommandWithThread, KrepXmlConfigFile'
