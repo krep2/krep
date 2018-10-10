@@ -1,4 +1,5 @@
 
+import glob
 import hashlib
 import os
 import re
@@ -291,7 +292,8 @@ The escaped variants are supported for the imported files including:
                 logger.info('Go into %s' % workplace)
 
         psource = os.path.join(project.path, subdir or '')
-        if imports is not None:
+        timestamp = FileUtils.last_modified(workplace, recursive=False)
+        if imports is not None and os.path.exists(workplace):
             if imports:
                 timestamp = FileUtils.last_modified(workplace)
                 FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
