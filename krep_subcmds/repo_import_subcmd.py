@@ -19,6 +19,46 @@ from topics import ConfigFile, FileVersion, key_compare, Logger, \
     Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
+class RepoImportXmlConfigFile(KrepXmlConfigFile):
+    LOCATION_PREFIX = "locations"
+
+    def __init__(self, filename, pi=None):
+        KrepXmlConfigFile.__init__(self, filename, pi)
+
+    def parse(self, node, pi=None):  # pylint: disable=R0914
+        if node.nodeName != 'locations':
+            return
+
+        cfg = self._new_value(
+            '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX, name))
+
+        _setattr(cfg, 'exclude', [])
+        _setattr(cfg, 'include', [])
+        _setattr(cfg, 'location', path)
+
+        for child in node:
+            if child.nodeName == 'include-dir':
+                item = _getattr(child, 'name')
+                _setattr(cfg, 'include', '%s/' % item)
+
+                excd = _getattr(child, 'exclude-dirs')
+                excf = _getattr(child, 'exclude-files')
+
+                if excd:
+                    for exc in excd.split(','):
+                        _setattr(
+                            cfg, 'exclude', '%s/' % os.path.join(item, exc))
+                if excf:
+                    for exc in excf.split(','):
+                        _setattr(cfg, 'exclude', os.path.join(item, exc))
+            elif child.nodeName == 'include-file':
+                _setattr(cfg, 'include', _getattr(child, 'name'))
+            elif child.nodeName == 'exclude-dir':
+                _setattr(cfg, 'exclude', '%s/' % _getattr(child, 'name'))
+            elif child.nodeName == 'exclude-file':
+                _setattr(cfg, 'exclude', _getattr(child, 'name'))
+
+
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
     COMMAND = 'repo-import'
     ALIASES = ()
@@ -66,7 +106,9 @@ be used to define the wash-out and generate the final commit.
 
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
-        pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
+
+        pvalues = config.get_value(
+            RepoImportXmlConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
             filters.extend(getattr(pvalues, 'include') or list())
             filters.extend([
@@ -146,14 +188,14 @@ be used to define the wash-out and generate the final commit.
         if not options.offsite:
             self.init_and_sync(options, update=False)
 
-        cfg = ConfigFile(
-            SubCommandWithThread.get_absolute_running_file_name(
-                options, options.config_file))
-
         options.filter_out_sccs = True
 
         if not options.keep_order:
             args = sorted(args, key=key_compare(FileVersion.cmp))
+
+        cfg = RepoImportXmlConfigFile(
+            SubCommandWithThread.get_absolute_running_file_name(
+                options, options.config_file))
 
         for arg in args:
             self.run_with_thread(  # pylint: disable=E1101
