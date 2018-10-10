@@ -1,13 +1,80 @@
 
 import os
 
+from options import Values
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
 # pylint: disable=W0611
-from topics import ConfigFile, FileVersion, key_compare, Logger, \
-    Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
+from topics import ConfigFile, FileVersion, key_compare, KrepXmlConfigFile, \
+    Logger, Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
 # pylint: enable=W0611
+
+
+# pylint: disable=E1101
+class RepoImportXmlConfigFile(KrepXmlConfigFile):
+    LOCATION_PREFIX = "locations"
+
+    def __init__(self, filename, pi=None):
+        KrepXmlConfigFile.__init__(self, filename, pi)
+
+    def parse(self, node, pi=None):  # pylint: disable=R0914
+        if node.nodeName != 'locations':
+            return
+
+        for child in node.childNodes:
+            self._parse_project(child)
+
+    def _parse_project(self, node):
+        if node.nodeName != 'project':
+            return
+
+        cfg = self._new_value(
+            '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
+                       self.get_attr(node, 'name')))
+
+        self.set_attr(cfg, 'exclude', [])
+        self.set_attr(cfg, 'include', [])
+        self.set_attr(cfg, 'copyfile', [])
+        self.set_attr(cfg, 'linkfile', [])
+        self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
+        self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
+        self.set_attr(
+            cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
+
+        for child in node.childNodes:
+            if child.nodeName == 'include-dir':
+                item = self.get_attr(child, 'name')
+                self.set_attr(cfg, 'include', '%s/' % item)
+
+                excd = self.get_attr(child, 'exclude-dirs')
+                excf = self.get_attr(child, 'exclude-files')
+
+                if excd:
+                    for exc in excd.split(','):
+                        self.set_attr(
+                            cfg, 'exclude', '%s/' % os.path.join(item, exc))
+                if excf:
+                    for exc in excf.split(','):
+                        self.set_attr(cfg, 'exclude', os.path.join(item, exc))
+            elif child.nodeName == 'include-file':
+                self.set_attr(cfg, 'include', self.get_attr(child, 'name'))
+            elif child.nodeName == 'exclude-dir':
+                self.set_attr(
+                    cfg, 'exclude', '%s/' % self.get_attr(child, 'name'))
+            elif child.nodeName == 'exclude-file':
+                self.set_attr(cfg, 'exclude', self.get_attr(child, 'name'))
+            elif child.nodeName == 'copy-file':
+                self.set_attr(
+                    cfg, 'copyfile',
+                    (self.get_attr(child, 'src'),
+                     self.get_attr(child, 'dest')))
+            elif child.nodeName == 'link-file':
+                self.set_attr(
+                    cfg, 'linkfile',
+                    (self.get_attr(child, 'src'),
+                     self.get_attr(child, 'dest')))
+# pylint: enable=E1101
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
@@ -57,7 +124,9 @@ be used to define the wash-out and generate the final commit.
 
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
-        pvalues = config.get_value(ConfigFile.LOCATION_PREFIX, project_name)
+
+        pvalues = config.get_value(
+            RepoImportXmlConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
             filters.extend(getattr(pvalues, 'include') or list())
             filters.extend([
@@ -137,14 +206,14 @@ be used to define the wash-out and generate the final commit.
         if not options.offsite:
             self.init_and_sync(options, update=False)
 
-        cfg = ConfigFile(
-            SubCommandWithThread.get_absolute_running_file_name(
-                options, options.config_file))
-
         options.filter_out_sccs = True
 
         if not options.keep_order:
             args = sorted(args, key=key_compare(FileVersion.cmp))
+
+        cfg = RepoImportXmlConfigFile(
+            SubCommandWithThread.get_absolute_running_file_name(
+                options, options.config_file))
 
         for arg in args:
             self.run_with_thread(  # pylint: disable=E1101
