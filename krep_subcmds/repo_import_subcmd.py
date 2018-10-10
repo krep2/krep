@@ -138,6 +138,11 @@ be used to define the wash-out and generate the final commit.
         else:
             label = os.path.basename(rootdir)
 
+        if not (copyfile or linkfile) and not (
+                location and os.path.exists(os.path.join(rootdir, location))):
+            logger.warning('Ignored as nothing to import')
+            return 0
+
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         _, tags = PkgImportSubcmd.do_import(
