@@ -8,7 +8,9 @@ fetch the supported attributes.
 """
 
 
+import contextlib
 import os
+import sys
 import xml.dom.minidom
 
 from collections import namedtuple
@@ -418,7 +420,20 @@ store the live manifest nodes into files.
         return doc
 
     def save(self):
-        with open(self.filename, 'w') as filep:
+        @contextlib.contextmanager
+        def _open(output, mode):
+            if output:
+                fp = open(output, mode)
+            else:
+                fp = sys.stdout
+
+            try:
+                yield fp
+            finally:
+                if fp is not sys.stdout:
+                    fp.close()
+
+        with _open(self.filename, 'w') as filep:
             doc = self.xml()
             doc.writexml(filep, '', '  ', '\n', 'utf-8')
 
