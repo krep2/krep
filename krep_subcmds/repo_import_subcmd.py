@@ -15,8 +15,8 @@ except ImportError:
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
-from topics import ConfigFile, FileVersion, key_compare, Logger, \
-    Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
+from topics import ConfigFile, FileVersion, key_compare, KrepXmlConfigFile, \
+    Logger, Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
 class RepoImportXmlConfigFile(KrepXmlConfigFile):
