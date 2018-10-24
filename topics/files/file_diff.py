@@ -150,13 +150,9 @@ class FileDiff(object):
                     continue
                 elif not self.pattern.match_dir(newd[dlen:]):
                     debug('ignore %s with file pattern' % oldd)
-                elif not os.path.lexists(oldd):
-                    debug('mkdir %s' % oldd)
-                    os.makedirs(oldd)
-                elif not os.path.isdir(oldd):
+                elif os.path.exists(oldd) and not os.path.isdir(oldd):
                     debug('type changed %s' % oldd)
                     os.unlink(oldd)
-                    os.makedirs(oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
