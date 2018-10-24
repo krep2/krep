@@ -556,4 +556,4 @@ matching.
         return False
 
 
-TOPIC_ENTRY = 'Pattern'
+TOPIC_ENTRY = 'Pattern, PatternFile'
