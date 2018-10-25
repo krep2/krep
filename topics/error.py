@@ -11,10 +11,6 @@ class HookError(KrepError):
     """Indicate a failed execution of hook."""
 
 
-class HookError(KrepError):
-    """Indicate a failed execution of hook."""
-
-
 class OptionMissedError(KrepError):
     """Indicate the missed option."""
 

@@ -2,11 +2,13 @@
 import os
 import re
 
-from topics import ConfigFile, SubCommandWithThread, \
+
+from topics import PatternFile, SubCommandWithThread, \
     RaiseExceptionIfOptionMissed, KrepXmlConfigFile
 from options import Values
 
 
+# pylint: disable=E1101
 class BatchXmlConfigFile(KrepXmlConfigFile):
     def __init__(self, filename, pi=None):
         KrepXmlConfigFile.__init__(self, filename, pi)
@@ -48,7 +50,8 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
 
         for child in node.childNodes:
             if child.nodeName == 'args':
-                self.set_attr(config, child.nodeName, _getattr(child, 'value'))
+                self.set_attr(
+                    config, child.nodeName, self.get_attr(child, 'value'))
             elif child.nodeName == 'option':
                 name = self.get_attr(child, 'name')
                 value = self.get_attr(child, 'value')
@@ -56,7 +59,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             elif child.nodeName == 'hook':
                 self.parse_hook(child, config)
             elif child.nodeName == 'include':
-                name, xvals = self.parse_include(child)
+                _, xvals = self.parse_include(child)
                 # only pattern supported and need to export explicitly
                 val = xvals.get_value(KrepXmlConfigFile.FILE_PREFIX)
                 if val and val.pattern:  # pylint: disable=E1103
@@ -93,7 +96,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             elif child.nodeName == 'hook':
                 self.parse_hook(child, default)
             elif child.nodeName == 'include':
-                name, xvals = self.parse_include(child)
+                _, xvals = self.parse_include(child)
                 # record included file name
                 self._new_value(
                     '%s.%s' % (
@@ -107,6 +110,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                     self._new_value(
                         '%s.%s' % (KrepXmlConfigFile.FILE_PREFIX, 'pattern'),
                         val.pattern)  # pylint: disable=E1103
+# pylint: enable=E1101
 
 
 class BatchSubcmd(SubCommandWithThread):
@@ -248,8 +252,8 @@ The format of the plain-text configuration file can refer to the topic
             conf = BatchXmlConfigFile(batch)
 
             projs, nprojs, tprojs = list(), list(), list()
-            for name in conf.get_names('project') or list():
-                projects = conf.get_values(name)
+            for name in conf.get_names('project') or list():  # pylint: disable=E1101
+                projects = conf.get_values(name)  # pylint: disable=E1101
                 if not isinstance(projects, list):
                     projects = [projects]
 
@@ -257,7 +261,7 @@ The format of the plain-text configuration file can refer to the topic
                 for project in projects:
                     proj = Values()
                     # remove the prefix 'project.'
-                    proj_name = conf.get_subsection_name(name)
+                    proj_name = conf.get_subsection_name(name)  # pylint: disable=E1101
                     setattr(proj, 'name', proj_name)
                     if _filter_with_group(project, proj_name, options.group):
                         optparse = self._cmdopt(project.schema)  # pylint: disable=E1101

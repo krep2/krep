@@ -6,7 +6,6 @@ import xml.dom.minidom
 
 from error import ProcessingError
 from options import Values
-from pattern import PatternFile
 
 
 def _setattr(obj, name, value):
@@ -31,11 +30,7 @@ def _setattr(obj, name, value):
 
 class _ConfigFile(object):
     DEFAULT_CONFIG = '#%^(DEFAULT%%_'
-    PATTERN_PREFIX = 'pattern'
-    PROJECT_PREFIX = 'project'
-    LOCATION_PREFIX = 'location'
     FILE_PREFIX = 'file'
-    HOOK_PREFIX = "hook"
 
     def __init__(self, filename=None):
         self.vals = dict()
