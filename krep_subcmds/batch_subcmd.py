@@ -2,9 +2,9 @@
 import os
 import re
 
-from topics import PatternFile, SubCommandWithThread, \
-    RaiseExceptionIfOptionMissed, KrepXmlConfigFile
 from options import Values
+from topics import KrepXmlConfigFile, PatternFile, \
+    RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
 # pylint: disable=E1101
