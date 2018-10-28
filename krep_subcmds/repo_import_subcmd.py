@@ -1,24 +1,17 @@
 
-import hashlib
 import os
-import re
-import stat
-import shutil
-import tempfile
-import time
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
-
+from options import Values
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
+# pylint: disable=W0611
 from topics import ConfigFile, FileVersion, key_compare, KrepXmlConfigFile, \
     Logger, Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
+# pylint: enable=W0611
 
 
+# pylint: disable=E1101
 class RepoImportXmlConfigFile(KrepXmlConfigFile):
     LOCATION_PREFIX = "locations"
 
@@ -29,34 +22,59 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         if node.nodeName != 'locations':
             return
 
+        for child in node.childNodes:
+            self._parse_project(child)
+
+    def _parse_project(self, node):
+        if node.nodeName != 'project':
+            return
+
         cfg = self._new_value(
-            '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX, name))
+            '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
+                       self.get_attr(node, 'name')))
 
-        _setattr(cfg, 'exclude', [])
-        _setattr(cfg, 'include', [])
-        _setattr(cfg, 'location', path)
+        self.set_attr(cfg, 'exclude', [])
+        self.set_attr(cfg, 'include', [])
+        self.set_attr(cfg, 'copyfile', [])
+        self.set_attr(cfg, 'linkfile', [])
+        self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
+        self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
+        self.set_attr(
+            cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
 
-        for child in node:
+        for child in node.childNodes:
             if child.nodeName == 'include-dir':
-                item = _getattr(child, 'name')
-                _setattr(cfg, 'include', '%s/' % item)
+                item = self.get_attr(child, 'name')
+                self.set_attr(cfg, 'include', '%s/' % item)
 
-                excd = _getattr(child, 'exclude-dirs')
-                excf = _getattr(child, 'exclude-files')
+                excd = self.get_attr(child, 'exclude-dirs')
+                excf = self.get_attr(child, 'exclude-files')
 
                 if excd:
                     for exc in excd.split(','):
-                        _setattr(
+                        self.set_attr(
                             cfg, 'exclude', '%s/' % os.path.join(item, exc))
                 if excf:
                     for exc in excf.split(','):
-                        _setattr(cfg, 'exclude', os.path.join(item, exc))
+                        self.set_attr(cfg, 'exclude', os.path.join(item, exc))
             elif child.nodeName == 'include-file':
-                _setattr(cfg, 'include', _getattr(child, 'name'))
+                self.set_attr(cfg, 'include', self.get_attr(child, 'name'))
             elif child.nodeName == 'exclude-dir':
-                _setattr(cfg, 'exclude', '%s/' % _getattr(child, 'name'))
+                self.set_attr(
+                    cfg, 'exclude', '%s/' % self.get_attr(child, 'name'))
             elif child.nodeName == 'exclude-file':
-                _setattr(cfg, 'exclude', _getattr(child, 'name'))
+                self.set_attr(cfg, 'exclude', self.get_attr(child, 'name'))
+            elif child.nodeName == 'copy-file':
+                self.set_attr(
+                    cfg, 'copyfile',
+                    (self.get_attr(child, 'src'),
+                     self.get_attr(child, 'dest')))
+            elif child.nodeName == 'link-file':
+                self.set_attr(
+                    cfg, 'linkfile',
+                    (self.get_attr(child, 'src'),
+                     self.get_attr(child, 'dest')))
+# pylint: enable=E1101
 
 
 class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
@@ -76,7 +94,7 @@ the local changes to the repositories and upload. A config file could
 be used to define the wash-out and generate the final commit.
 """
 
-    def options(self, optparse):
+    def options(self, optparse):  # pylint: disable=W0221
         RepoSubcmd.options(self, optparse, inherited=True, modules=globals())
         options = optparse.get_option_group('--all') or \
             optparse.add_option_group('Import options')
@@ -96,7 +114,7 @@ be used to define the wash-out and generate the final commit.
         return options.name or '[-]'
 
     @staticmethod
-    def push(project, options, config, logger, rootdir):
+    def push(project, options, config, logger, rootdir):  # pylint: disable=W0221
         project_name = str(project)
         logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
             name=project_name)

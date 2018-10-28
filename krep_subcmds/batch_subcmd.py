@@ -2,14 +2,15 @@
 import os
 import re
 
-
-from topics import PatternFile, SubCommandWithThread, \
-    RaiseExceptionIfOptionMissed, KrepXmlConfigFile
 from options import Values
+from topics import KrepXmlConfigFile, PatternFile, \
+    RaiseExceptionIfOptionMissed, SubCommandWithThread
 
 
 # pylint: disable=E1101
 class BatchXmlConfigFile(KrepXmlConfigFile):
+    PROJECT_PREFIX = "project"
+
     def __init__(self, filename, pi=None):
         KrepXmlConfigFile.__init__(self, filename, pi)
 
@@ -61,7 +62,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             elif child.nodeName == 'include':
                 _, xvals = self.parse_include(child)
                 # only pattern supported and need to export explicitly
-                val = xvals.get_value(KrepXmlConfigFile.FILE_PREFIX)
+                val = xvals.get_value(BatchXmlConfigFile.FILE_PREFIX)
                 if val and val.pattern:  # pylint: disable=E1103
                     self.set_attr(config, 'pattern', val.pattern)  # pylint: disable=E1103
             elif child.nodeName in (
@@ -83,14 +84,14 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         if node.nodeName != 'projects':
             return
 
-        default = self._get_value(KrepXmlConfigFile.DEFAULT_CONFIG)
+        default = self._get_value(BatchXmlConfigFile.DEFAULT_CONFIG)
         for child in node.childNodes:
             if child.nodeName in ('global_option', 'global-option'):
                 self.parse_global(child, default)
             elif child.nodeName == 'project':
                 self._add_value(
                     '%s.%s' % (
-                        KrepXmlConfigFile.PROJECT_PREFIX,
+                        BatchXmlConfigFile.PROJECT_PREFIX,
                         self.get_attr(child, 'name')),
                     self.parse_project(child, pi=pi))
             elif child.nodeName == 'hook':
@@ -100,15 +101,15 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                 # record included file name
                 self._new_value(
                     '%s.%s' % (
-                        KrepXmlConfigFile.FILE_PREFIX,
+                        BatchXmlConfigFile.FILE_PREFIX,
                         self.get_attr(child, 'name')),
                     xvals)
 
                 # record the patterns only from included file
-                val = xvals.get_value(KrepXmlConfigFile.FILE_PREFIX)
+                val = xvals.get_value(BatchXmlConfigFile.FILE_PREFIX)
                 if val and val.pattern:  # pylint: disable=E1103
                     self._new_value(
-                        '%s.%s' % (KrepXmlConfigFile.FILE_PREFIX, 'pattern'),
+                        '%s.%s' % (BatchXmlConfigFile.FILE_PREFIX, 'pattern'),
                         val.pattern)  # pylint: disable=E1103
 # pylint: enable=E1101
 
@@ -252,7 +253,8 @@ The format of the plain-text configuration file can refer to the topic
             conf = BatchXmlConfigFile(batch)
 
             projs, nprojs, tprojs = list(), list(), list()
-            for name in conf.get_names('project') or list():  # pylint: disable=E1101
+            projects = conf.get_names(BatchXmlConfigFile.PROJECT_PREFIX)
+            for name in projects or list():
                 projects = conf.get_values(name)  # pylint: disable=E1101
                 if not isinstance(projects, list):
                     projects = [projects]

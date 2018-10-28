@@ -6,9 +6,9 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-from topics import FileUtils, GitProject, Gerrit, Manifest, ManifestBuilder, \
- Pattern, RepoProject, SubCommandWithThread, DownloadError, \
-    RaiseExceptionIfOptionMissed
+from topics import DownloadError, FileUtils, Gerrit, GitProject, Manifest,  \
+    ManifestBuilder, Pattern, RaiseExceptionIfOptionMissed, RepoProject, \
+    SubCommandWithThread
 
 
 def sort_project(project):
