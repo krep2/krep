@@ -38,7 +38,8 @@ class FilePattern(object):
                 opposite = True
                 pattern = pattern[1:]
 
-            if pattern.endswith('/'):
+            if pattern.endswith('/') or pattern.endswith('/$'):
+                pattern = pattern.rstrip('$')
                 if opposite:
                     diros.append(pattern)
                     otheros.append('%s/.?' % pattern.rstrip('/'))
