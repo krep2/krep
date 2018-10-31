@@ -226,9 +226,6 @@ this command.
             'pre-push', options, dryrun=options.dryrun)
 
         optgp = options.extra_values(options.extra_option, 'git-push')
-        no_thin = optgp and optgp.boolean(optgp.no_thin)
-        skip_validation = options.skip_validation or (
-            optgp and optgp.boolean(optgp.skip_validation))
 
         # push the heads
         if RepoSubcmd.override_value(  # pylint: disable=E1101
@@ -238,11 +235,10 @@ this command.
                 RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
+                optons=optgp,
                 push_all=options.all or (
                     options.head_pattern and options.heads),
                 fullname=options.keep_name,
-                skip_validation=skip_validation,
-                no_thin=no_thin,
                 force=options.force,
                 sha1tag=options.sha1_tag,
                 dryrun=options.dryrun,
@@ -257,9 +253,8 @@ this command.
                 None, RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
                 options.tag_pattern,
+                options=optgp,
                 fullname=options.keep_name,
-                skip_validation=skip_validation,
-                no_thin=no_thin,
                 force=options.force,
                 dryrun=options.dryrun,
                 logger=logger)
