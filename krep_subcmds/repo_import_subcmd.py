@@ -42,51 +42,10 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
 
-        def is_regex_end(name):
-            une = name.replace('\\\\', '_')
-
-            return une.endswith('$') and not une.endswith('\$')
-
-        # trim works if both start and end are false
-        def _trimr(name, start=False, end=False):
-            if name.startswith('^') and (start or not end):
-                name = name[1:]
-            if is_regex_end(name) and (end or not start):
-                name = name[:-1]
-
-            return name
-
-        def _secure_join(dirname, filename=None):
-            ending = is_regex_end(dirname) or is_regex_end(filename)
-
-            ret = _trimr(dirname, end=True)
-            ret = ret.rstrip('/')
-            if filename:
-                ret += '/%s' % _trimr(filename)
-
-            if ending:
-                ret += '$'
-
-            return ret
-
-        def _append_slash_to_regex(dirname, subdir=None):
-            ending = is_regex_end(dirname) or is_regex_end(subdir)
-
-            ret = _trimr(dirname, end=True)
-            ret = ret.rstrip('/')
-            if subdir:
-                ret += '/%s' % _trimr(subdir)
-
-            ret += '/'
-            if ending:
-                ret += '$'
-
-            return ret
-
         for child in node.childNodes:
             if child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
-                self.set_attr(cfg, 'include', _append_slash_to_regex(item))
+                self.set_attr(cfg, 'include', '%s/' % item)
 
                 excd = self.get_attr(child, 'exclude-dirs')
                 excf = self.get_attr(child, 'exclude-files')
@@ -94,16 +53,15 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 if excd:
                     for exc in excd.split(','):
                         self.set_attr(
-                            cfg, 'exclude', _append_slash_to_regex(item, exc))
+                            cfg, 'exclude', '%s/' % os.path.join(item, exc))
                 if excf:
                     for exc in excf.split(','):
-                        self.set_attr(cfg, 'exclude', _secure_join(item, exc))
+                        self.set_attr(cfg, 'exclude', os.path.join(item, exc))
             elif child.nodeName == 'include-file':
                 self.set_attr(cfg, 'include', self.get_attr(child, 'name'))
             elif child.nodeName == 'exclude-dir':
                 self.set_attr(
-                    cfg, 'exclude',
-                    _append_slash_to_regex(self.get_attr(child, 'name')))
+                    cfg, 'exclude', '%s/' % self.get_attr(child, 'name'))
             elif child.nodeName == 'exclude-file':
                 self.set_attr(cfg, 'exclude', self.get_attr(child, 'name'))
             elif child.nodeName == 'copy-file':
