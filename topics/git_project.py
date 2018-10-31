@@ -43,6 +43,9 @@ class GitProject(Project, GitCommand):
     CATEGORY_REVISION = 'r,rev,revision'
 
     extra_items = (
+        ('Git options for git-commit:', (
+            ('git-commit:date', 'Update the commit time'),
+        )),
         ('Git options for git-push:', (
             ('git-push:no-thin', 'Don\'t use thin transfer'),
             ('git-push:skip-validation', 'Don\'t validate the commit number'),
