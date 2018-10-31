@@ -17,12 +17,10 @@ class FileDecompressor(Command):
 
     COMMAND_FOR_EXTENSION = (
         ('.tar', ('tar', 'xf')),
-        ('.tar.gz', ('tar', 'xzf')),
+        (('.tgz', '.tar.gz'), ('tar', 'xzf')),
         ('.tar.bz2', ('tar', 'xjf')),
         ('.tar.xz', ('tar', 'xJf')),
-        ('.tgz', ('tar', 'xzf')),
-        ('.gz', ('gunzip', '--keep')),
-        ('.gzip', ('gunzip', '--keep')),
+        (('.gz', '.gzip'), ('gunzip', '--keep')),
         ('.bz2', ('bzip',)),
         ('.zip', ('unzip',)),
         ('.7z', ('p7zip', '-d'), ('keep',)),
