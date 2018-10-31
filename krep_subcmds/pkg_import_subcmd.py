@@ -346,7 +346,12 @@ The escaped variants are supported for the imported files including:
 
             args.append('-m')
             args.append(message)
-            args.append('--date="%s"' % time.ctime(timestamp))
+
+            optgc = options.extra_values(options.extra_option, 'git-commit')
+            if optgc and optgc.date:
+                args.append('--date="%s"' % optgc.date.strip('\'"'))
+            else:
+                args.append('--date="%s"' % time.ctime(timestamp))
 
             ret = project.commit(*args)
 
