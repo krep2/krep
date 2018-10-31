@@ -147,6 +147,7 @@ class RepoFilePattern(FilePattern):
 class GitFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
         r'^\.git/', r'\.gitignore',             # git
+        r'^\.gitattributes',
     )
 
     def __init__(self):
