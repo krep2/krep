@@ -126,9 +126,6 @@ replaced by GIT_URL."""
             'pre-push', options, dryrun=options.dryrun)
 
         optgp = options.extra_values(options.extra_option, 'git-push')
-        no_thin = optgp and optgp.no_thin
-        skip_validation = options.skip_validation or (
-            optgp and optgp.skip_validation)
 
         # push the branches
         if self.override_value(  # pylint: disable=E1101
@@ -138,10 +135,9 @@ replaced by GIT_URL."""
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
+                options=optgp,
                 push_all=options.all or options.revision is None,
                 fullname=options.keep_name,
-                skip_validation=skip_validation,
-                no_thin=no_thin,
                 force=options.force,
                 dryrun=options.dryrun)
 
@@ -157,8 +153,7 @@ replaced by GIT_URL."""
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
                 options.tag_pattern,
-                skip_validation=skip_validation,
-                no_thin=no_thin,
+                options=optgp,
                 fullname=options.keep_name,
                 force=options.force,
                 dryrun=options.dryrun)
