@@ -6,8 +6,9 @@ from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
 # pylint: disable=W0611
-from topics import ConfigFile, FileVersion, key_compare, KrepXmlConfigFile, \
-    Logger, Pattern, RaiseExceptionIfOptionMissed, SubCommandWithThread
+from topics import ConfigFile, FileVersion, GitProject, key_compare, \
+    KrepXmlConfigFile, Logger, Pattern, RaiseExceptionIfOptionMissed, \
+    SubCommandWithThread
 # pylint: enable=W0611
 
 
@@ -171,6 +172,8 @@ be used to define the wash-out and generate the final commit.
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
 
+        optgp = options.extra_values(options.extra_option, 'git-push')
+
         # push the branches
         if RepoImportSubcmd.override_value(  # pylint: disable=E1101
                 options.branches, options.all):
@@ -178,6 +181,7 @@ be used to define the wash-out and generate the final commit.
                 project.revision,
                 RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
+                options=optgp,
                 fullname=True,
                 dryrun=options.dryrun,
                 logger=logger)
@@ -190,6 +194,7 @@ be used to define the wash-out and generate the final commit.
             res = project.push_tags(
                 tags, RepoImportSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
+                options=optgp,
                 fullname=True,
                 dryrun=options.dryrun,
                 logger=logger)
