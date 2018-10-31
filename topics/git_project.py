@@ -42,6 +42,13 @@ class GitProject(Project, GitCommand):
     CATEGORY_TAGS = 't,tag,revision'
     CATEGORY_REVISION = 'r,rev,revision'
 
+    extra_items = (
+        ('Git options for git-push:', (
+            ('git-push:no-thin', 'Don\'t use thin transfer'),
+            ('git-push:skip-validation', 'Don\'t validate the commit number'),
+        )),
+    )
+
     """Manages the git repository as a project"""
     def __init__(self, uri, worktree=None, gitdir=None, revision='master',
                  remote=None, pattern=None, bare=False, *args, **kws):
@@ -218,21 +225,20 @@ class GitProject(Project, GitCommand):
         return False
 
     @staticmethod
-    def _push_options(options, skip_validation=False, no_thin=False, *args):
-        if skip_validation:
-            options.extend(['-o', 'skip-validation'])
-        if no_thin:
-            options.append('--no-thin')
+    def _push_args(parameters, options, *args):
+        if options and options.skip_validation:
+            parameters.extend(['-o', 'skip-validation'])
+        if options and options.no_thin:
+            parameters.append('--no-thin')
 
         if len(args):
-            options.extend(args)
+            parameters.extend(args)
 
-        return options
+        return parameters
 
     def push_heads(self, branch=None, refs=None, patterns=None,  # pylint: disable=R0915
-                   push_all=False, fullname=False, skip_validation=False,
-                   force=False, sha1tag=None, no_thin=False, logger=None,
-                   *args, **kws):
+                   options=None, push_all=False, fullname=False, force=False,
+                   sha1tag=None, logger=None, *args, **kws):
 
         if not logger:
             logger = Logger.get_logger()
@@ -253,8 +259,8 @@ class GitProject(Project, GitCommand):
                   or GitProject.has_name_changes(local_heads, fullname)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
-            cargs = GitProject._push_options(
-                list(), skip_validation, no_thin,
+            cargs = GitProject._push_args(
+                list(), options,
                 '%srefs/heads/*:refs/heads/%s*' % (
                     '+' if force else '', refs),
                 *args)
@@ -330,8 +336,8 @@ class GitProject(Project, GitCommand):
 
             ret = 0
             if not skip:
-                cargs = GitProject._push_options(
-                    list(), skip_validation, no_thin,
+                cargs = GitProject._push_args(
+                    list(), options,
                     '%s%s:%s' % (
                         '+' if force else '', local_ref, remote_ref),
                     *args)
@@ -346,8 +352,8 @@ class GitProject(Project, GitCommand):
                     equals = _sha1_equals(sha1, origin)
 
                 if not equals or force:
-                    cargs = GitProject._push_options(
-                        list(), skip_validation, no_thin,
+                    cargs = GitProject._push_args(
+                        list(), options,
                         '%s%s:%s' % (
                             '+' if force else '', local_ref, sha1tag),
                         *args)
@@ -360,8 +366,8 @@ class GitProject(Project, GitCommand):
         return ret
 
     def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
-                  force=False, fullname=False, skip_validation=False,
-                  no_thin=False, logger=None, *args, **kws):
+                  force=False, fullname=False, options=None, logger=None,
+                  *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -380,8 +386,8 @@ class GitProject(Project, GitCommand):
                 or GitProject.has_name_changes(local_tags, fullname)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
-            cargs = GitProject._push_options(
-                list(), skip_validation, no_thin,
+            cargs = GitProject._push_args(
+                list(), options,
                 '%srefs/tags/*:refs/tags/%s*' % (
                     '+' if force else '', refs),
                 *args)
@@ -440,8 +446,8 @@ class GitProject(Project, GitCommand):
                     logger.info('%s is up-to-date', remote_tag)
                     continue
 
-            cargs = GitProject._push_options(
-                list(), skip_validation, no_thin,
+            cargs = GitProject._push_args(
+                list(), options,
                 '%srefs/tags/%s:%s' % (
                     '+' if force else '', origin, remote_tag),
                 *args)
