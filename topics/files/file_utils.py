@@ -229,7 +229,6 @@ class FileUtils(object):
             sname = os.path.join(src, name)
             dname = os.path.join(dest, name)
             if os.path.isdir(sname):
-                dname = os.path.join(dest, name)
                 if not os.path.exists(dname):
                     os.makedirs(dname)
 
