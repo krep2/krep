@@ -176,6 +176,19 @@ class FileUtils(object):
             shutil.copy2(src, dest)
 
     @staticmethod
+    def link_file(src, dest):
+        destdir = os.path.dirname(dest)
+        if not os.path.exists(destdir):
+            os.makedirs(destdir)
+
+        if os.path.isdir(dest):
+            shutil.rmtree(dest)
+        elif os.path.lexists(dest):
+            os.unlink(dest)
+
+        os.symlink(src, dest)
+
+    @staticmethod
     def rmtree(dest, ignore_list=None):
         for name in os.listdir(dest):
             matched = False
