@@ -333,8 +333,7 @@ The escaped variants are supported for the imported files including:
                     if mtime > timestamp:
                         timestamp = mtime
                     logger.debug('link %s', src)
-                    FileUtils.copy_file(
-                        filename, os.path.join(psource, dest), symlinks=True)
+                    FileUtils.link_file(src, os.path.join(psource, dest))
 
         if ret == 0:
             project.add('--all', '-f', project.path)
