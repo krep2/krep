@@ -46,10 +46,21 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         for child in node.childNodes:
             if child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
-                self.set_attr(cfg, 'include', '%s/' % item)
-
+                incd = self.get_attr(child, 'dirs')
+                incf = self.get_attr(child, 'files')
                 excd = self.get_attr(child, 'exclude-dirs')
                 excf = self.get_attr(child, 'exclude-files')
+
+                if incd:
+                    for inc in incd.split(','):
+                        self.set_attr(
+                            cfg, 'include', '%s/' % os.path.join(item, inc))
+                if incf:
+                    for inc in incf.split(','):
+                        self.set_attr(cfg, 'include', os.path.join(item, inc))
+
+                if not (incd or incf):
+                    self.set_attr(cfg, 'include', '%s/' % item)
 
                 if excd:
                     for exc in excd.split(','):
