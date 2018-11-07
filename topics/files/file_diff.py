@@ -150,6 +150,11 @@ class FileDiff(object):
                     continue
                 elif not self.pattern.match_dir(newd[dlen:]):
                     debug('ignore %s with file pattern' % oldd)
+                elif os.path.islink(newd):
+                    if not self._equal_link(oldd, newd):
+                        debug('mkdir %s' % newd)
+                        FileUtils.copy_file(newd, oldd, symlinks=symlinks)
+                        changes += 1
                 elif os.path.exists(oldd) and not os.path.isdir(oldd):
                     debug('type changed %s' % oldd)
                     os.unlink(oldd)
