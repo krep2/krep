@@ -39,22 +39,34 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         for cname in names:
             self._new_value(cname, conf.get_values(cname))
 
-    def _parse_project(self, node):
-        cfg = self._new_value(
+    def _parse_project(self, node, name=None, subdir=False):
+        self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
-                       self.get_attr(node, 'name')))
+                       name or self.get_attr(node, 'name')), [])
 
+        active = False
+
+        cfg = Values()
         self.set_attr(cfg, 'exclude', [])
         self.set_attr(cfg, 'include', [])
         self.set_attr(cfg, 'copyfile', [])
         self.set_attr(cfg, 'linkfile', [])
-        self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
+        if subdir:
+            self.set_attr(cfg, 'subdir', self.get_attr(node, 'name'))
+        else:
+            self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
+
         self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
 
         for child in node.childNodes:
-            if child.nodeName == 'include-dir':
+            if child.nodeName == 'subdir':
+                active = True
+
+                self._parse_project(
+                    child, name=self.get_attr(node, 'name'), subdir=True)
+            elif child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
                 cpfs = self.get_attr(child, 'copy')
                 lkfs = self.get_attr(child, 'link')
@@ -113,6 +125,14 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                     cfg, 'linkfile',
                     (self.get_attr(child, 'src'),
                      self.get_attr(child, 'dest')))
+
+        if not active:
+            self._new_value(
+                '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
+                           name or self.get_attr(node, 'name')), cfg)
+        elif cfg and (getattr(cfg, 'include') or getattr(cfg, 'exclude')):
+            print('Warning: "%s" defined, all other values ignored' %
+                  self.get_attr(node, 'name'))
 # pylint: enable=E1101
 
 
@@ -153,29 +173,23 @@ be used to define the wash-out and generate the final commit.
         return options.name or '[-]'
 
     @staticmethod
-    def push(project, options, config, logger, rootdir):  # pylint: disable=W0221
-        project_name = str(project)
-        logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
-            name=project_name)
-
+    def do_import_with_config(project, options, pvalue, logger, rootdir):
         filters = list()
-        logger.info('Start processing ...')
+        project_name = "%s/subdir" % str(project)
 
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
 
-        pvalues = config.get_value(
-            RepoImportXmlConfigFile.LOCATION_PREFIX, project_name)
-        if pvalues:
-            filters.extend(getattr(pvalues, 'include') or list())
+        if pvalue:
+            filters.extend(getattr(pvalue, 'include') or list())
             filters.extend([
-                '!%s' % p for p in getattr(pvalues, 'exclude') or list()])
+                '!%s' % p for p in getattr(pvalue, 'exclude') or list()])
 
-            subdir = getattr(pvalues, 'subdir')
-            locations = getattr(pvalues, 'location')
-            symlinks = getattr(pvalues, 'symlinks')
-            copyfile = getattr(pvalues, 'copyfile')
-            linkfile = getattr(pvalues, 'linkfile')
+            subdir = getattr(pvalue, 'subdir')
+            locations = getattr(pvalue, 'location')
+            symlinks = getattr(pvalue, 'symlinks')
+            copyfile = getattr(pvalue, 'copyfile')
+            linkfile = getattr(pvalue, 'linkfile')
 
             if locations:
                 for location in sorted(locations.split('|'), reverse=True):
@@ -184,28 +198,56 @@ be used to define the wash-out and generate the final commit.
                         break
         else:
             logger.warning('"%s" is undefined', project_name)
-            return 0
+            return 1
 
         if len(filters) == 0:
             logger.warning(
                 'No provided filters for "%s" during importing', project_name)
+
+        if not (copyfile or linkfile) and not (
+                location and os.path.exists(os.path.join(rootdir, location))):
+            logger.warning('Ignored as nothing to import')
+            return 1
 
         if options.tag:
             label = options.tag
         else:
             label = os.path.basename(rootdir)
 
-        if not (copyfile or linkfile) and not (
-                location and os.path.exists(os.path.join(rootdir, location))):
-            logger.warning('Ignored as nothing to import')
-            return 0
-
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         _, tags = PkgImportSubcmd.do_import(
             project, options, '', path, label, subdir=subdir,
-            filters=filters, logger=logger, imports=False if location else None,
+            filters=filters, logger=logger,
+            imports=False if location else None,
             symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile)
+
+        return 0
+
+    @staticmethod
+    def push(project, options, config, logger, rootdir):  # pylint: disable=W0221
+        project_name = str(project)
+        logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
+            name=project_name)
+
+        logger.info('Start processing ...')
+
+        pvalues = config.get_values(
+            RepoImportXmlConfigFile.LOCATION_PREFIX, project_name)
+        if pvalues:
+            pass
+        else:
+            logger.warning('"%s" is undefined', project_name)
+            return 0
+
+        ret = 0
+        for pvalue in pvalues:
+            ret += RepoImportSubcmd.do_import_with_config(
+                project, options, pvalue, logger, rootdir)
+
+        # all subdirs return without results, ignore finally
+        if ret == len(pvalues):
+            return 0
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
