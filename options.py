@@ -146,7 +146,8 @@ class Values(optparse.Values):
         return self.__bool__()
 
     def __bool__(self):
-        return len(self.__dict__) != 0
+        # ignore '_origins'
+        return len(self.__dict__) > 1
 
     def __getattr__(self, attr):
         return self.__dict__.get(_ensure_attr(attr))
