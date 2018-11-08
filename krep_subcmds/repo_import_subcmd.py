@@ -24,12 +24,22 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             return
 
         for child in node.childNodes:
-            self._parse_project(child)
+            if child.nodeName == 'project':
+                self._parse_project(child)
+            elif child.nodeName == 'include':
+                self._parse_include(child)
+
+    def _parse_include(self, node):
+        fname = self.get_attr(node, 'name')
+        if not os.path.isabs(fname):
+            fname = os.path.join(os.path.dirname(self.filename), fname)
+
+        conf = RepoImportXmlConfigFile(fname)
+        names = conf.get_names(RepoImportXmlConfigFile.LOCATION_PREFIX)
+        for cname in names:
+            self._new_value(cname, conf.get_values(cname))
 
     def _parse_project(self, node):
-        if node.nodeName != 'project':
-            return
-
         cfg = self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
                        self.get_attr(node, 'name')))
