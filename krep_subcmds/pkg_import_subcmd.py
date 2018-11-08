@@ -459,7 +459,7 @@ The escaped variants are supported for the imported files including:
 
             _, ptags = PkgImportSubcmd.do_import(
                 project, options, pkgname, workplace,
-                revision, filters, logger)
+                revision, filters=filters, logger=logger)
 
             if ptags:
                 tags.extend(ptags)
