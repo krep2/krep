@@ -175,7 +175,7 @@ be used to define the wash-out and generate the final commit.
     @staticmethod
     def do_import_with_config(project, options, pvalue, logger, rootdir):
         filters = list()
-        project_name = "%s/subdir" % str(project)
+        project_name = "%s" % str(project)
 
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
@@ -186,6 +186,9 @@ be used to define the wash-out and generate the final commit.
                 '!%s' % p for p in getattr(pvalue, 'exclude') or list()])
 
             subdir = getattr(pvalue, 'subdir')
+            if subdir:
+                project_name += '/subdir'
+
             locations = getattr(pvalue, 'location')
             symlinks = getattr(pvalue, 'symlinks')
             copyfile = getattr(pvalue, 'copyfile')
