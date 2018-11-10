@@ -130,7 +130,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             self._new_value(
                 '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
                            name or self.get_attr(node, 'name')), cfg)
-        elif cfg and (getattr(cfg, 'include') or getattr(cfg, 'exclude')):
+        elif cfg and (cfg.include or cfg.exclude or cfg.copyfile or cfg.linkfile):
             print('Warning: "%s" defined, all other values ignored' %
                   self.get_attr(node, 'name'))
 # pylint: enable=E1101
