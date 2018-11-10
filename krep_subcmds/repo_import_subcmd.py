@@ -173,7 +173,7 @@ be used to define the wash-out and generate the final commit.
         return options.name or '[-]'
 
     @staticmethod
-    def do_import_with_config(project, options, pvalue, logger, rootdir):
+    def do_import_with_config(project, options, pvalue, logger, rootdir, force=False):
         filters = list()
         project_name = "%s" % str(project)
 
@@ -219,16 +219,17 @@ be used to define the wash-out and generate the final commit.
 
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
-        _, tags = PkgImportSubcmd.do_import(
+        ret, _ = PkgImportSubcmd.do_import(
             project, options, '', path, label, subdir=subdir,
             filters=filters, logger=logger,
             imports=False if location else None,
-            symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile)
+            symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile,
+			force=force)
 
-        return 0
+        return ret
 
     @staticmethod
-    def push(project, options, config, logger, rootdir):  # pylint: disable=W0221
+    def push(project, options, config, logger, rootdirs):  # pylint: disable=W0221
         project_name = str(project)
         logger = RepoSubcmd.get_logger(  # pylint: disable=E1101
             name=project_name)
@@ -243,14 +244,17 @@ be used to define the wash-out and generate the final commit.
             logger.warning('"%s" is undefined', project_name)
             return 0
 
-        ret = 0
-        for pvalue in pvalues:
-            ret += RepoImportSubcmd.do_import_with_config(
-                project, options, pvalue, logger, rootdir)
+        changed = False
+        for rootdir in rootdirs:
+            res = 0
+            for pvalue in pvalues:
+                if RepoImportSubcmd.do_import_with_config(
+                        project, options, pvalue, logger, rootdir, changed):
+					res += 1
 
-        # all subdirs return without results, ignore finally
-        if ret == len(pvalues):
-            return 0
+            # all subdirs return without results, ignore finally
+            if res != len(pvalues):
+                changed = True
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
@@ -258,7 +262,7 @@ be used to define the wash-out and generate the final commit.
         optgp = options.extra_values(options.extra_option, 'git-push')
 
         # push the branches
-        if RepoImportSubcmd.override_value(  # pylint: disable=E1101
+        if changed and RepoImportSubcmd.override_value(  # pylint: disable=E1101
                 options.branches, options.all):
             res = project.push_heads(
                 project.revision,
@@ -272,7 +276,7 @@ be used to define the wash-out and generate the final commit.
                 logger.error('failed to push heads')
 
         # push the tags
-        if RepoImportSubcmd.override_value(  # pylint: disable=E1101
+        if changed and RepoImportSubcmd.override_value(  # pylint: disable=E1101
                 options.tags, options.all):
             res = project.push_tags(
                 tags, RepoImportSubcmd.override_value(  # pylint: disable=E1101
@@ -308,12 +312,11 @@ be used to define the wash-out and generate the final commit.
             SubCommandWithThread.get_absolute_running_file_name(
                 options, options.config_file))
 
-        for arg in args:
-            self.run_with_thread(  # pylint: disable=E1101
-                options.job,
-                RepoSubcmd.fetch_projects_in_manifest(options),
-                RepoImportSubcmd.push, options, cfg,
-                Logger.get_logger(),  # pylint: disable=E1101
-                arg.rstrip('/'))
+        self.run_with_thread(  # pylint: disable=E1101
+            options.job,
+            RepoSubcmd.fetch_projects_in_manifest(options),
+            RepoImportSubcmd.push, options, cfg,
+            Logger.get_logger(),  # pylint: disable=E1101
+            args)
 
         return 0
