@@ -192,8 +192,8 @@ be used to define the wash-out and generate the final commit.
             linkfile = getattr(pvalue, 'linkfile')
 
             if locations:
-                for location in sorted(locations.split('|'), reverse=True):
-                    path = os.path.join(rootdir, location)
+                for location in reversed(locations.split('|')):
+                    path = os.path.join(rootdir, location.strip())
                     if os.path.exists(path):
                         break
         else:
