@@ -216,6 +216,8 @@ class FileUtils(object):
 
     @staticmethod
     def copy_files(src, dest, ignore_list=None, symlinks=False):
+        ret = 0
+
         for name in os.listdir(src):
             matched = False
             for pattern in ignore_list or list():
@@ -232,10 +234,13 @@ class FileUtils(object):
                 if not os.path.exists(dname):
                     os.makedirs(dname)
 
-                FileUtils.copy_files(
+                ret += FileUtils.copy_files(
                     sname, dname, ignore_list=ignore_list, symlinks=symlinks)
             else:
                 FileUtils.copy_file(sname, dname, symlinks=symlinks)
+                ret += 1
+
+        return ret
 
     @staticmethod
     def extract_file(src, dest):
