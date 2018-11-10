@@ -255,7 +255,7 @@ The escaped variants are supported for the imported files including:
     @staticmethod
     def do_import(project, options, name, path, revision, subdir=None,
                   filters=None, logger=None, imports=False, symlinks=True,
-                  copyfiles=None, linkfiles=None, *args, **kws):
+                  copyfiles=None, linkfiles=None, force=False, *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -350,6 +350,7 @@ The escaped variants are supported for the imported files including:
 
             ret = project.commit(*args)
 
+        if (count > 0 or force) and not ret:
             if options.version_template:
                 tags.append(options.version_template % tmpl)
             elif options.local and revision:
