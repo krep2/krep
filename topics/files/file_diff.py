@@ -204,7 +204,7 @@ class FileDiff(object):
             self._timestamp = FileUtils.last_modified(self.src)
 
             FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
-            FileUtils.copy_files(self.src, self.dest, symlinks=symlinks)
+            ret = FileUtils.copy_files(self.src, self.dest, symlinks=symlinks)
 
         return ret
 
