@@ -283,7 +283,7 @@ The escaped variants are supported for the imported files including:
             FileUtils.extract_file(path, tmpdir)
             workplace = tmpdir
 
-        ret = 0
+        count = 0
         if options.auto_detect:
             dname = os.listdir(workplace)
             while 0 < len(dname) < 2:
@@ -301,8 +301,7 @@ The escaped variants are supported for the imported files including:
             else:
                 diff = FileDiff(psource, workplace, filters,
                                 enable_sccs_pattern=options.filter_out_sccs)
-                if diff.sync(logger, symlinks=symlinks) > 0:
-                    ret = 0
+                count = diff.sync(logger, symlinks=symlinks)
 
                 timestamp = diff.timestamp
 
@@ -323,6 +322,7 @@ The escaped variants are supported for the imported files including:
                     FileUtils.copy_file(
                         filename, os.path.join(psource, dest),
                         symlinks=symlinks)
+                    count += 1
 
         if linkfiles:
             for src, dest in linkfiles:
@@ -334,8 +334,10 @@ The escaped variants are supported for the imported files including:
                         timestamp = mtime
                     logger.debug('link %s', src)
                     FileUtils.link_file(src, os.path.join(psource, dest))
+                    count += 1
 
-        if ret == 0:
+        ret, tags = 0, list()
+        if count > 0:
             project.add('--all', '-f', project.path)
 
             args = list()
@@ -346,7 +348,6 @@ The escaped variants are supported for the imported files including:
             args.append(message)
             args.append('--date="%s"' % time.ctime(timestamp))
 
-            tags = list()
             ret = project.commit(*args)
 
             if options.version_template:
@@ -373,7 +374,7 @@ The escaped variants are supported for the imported files including:
             except OSError as e:
                 logger.exception(e)
 
-        return ret == 0, tags
+        return count > 0 and ret == 0, tags
 
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
         SubCommand.execute(self, options, option_import=True, *args, **kws)
