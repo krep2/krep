@@ -207,9 +207,9 @@ be used to define the wash-out and generate the final commit.
             logger.warning(
                 'No provided filters for "%s" during importing', project_name)
 
-        if not (copyfile or linkfile) and not (
-                location and os.path.exists(os.path.join(rootdir, location))):
-            logger.warning('Ignored as nothing to import')
+        if location and not os.path.exists(os.path.join(rootdir, location)):
+            logger.warning(
+                '"%s" is not existed', os.path.join(rootdir, location))
             return 1
 
         if options.tag:
