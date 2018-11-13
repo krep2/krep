@@ -367,7 +367,10 @@ The escaped variants are supported for the imported files including:
                     '%s%s' % (options.version_prefix or '', revision))
 
             if tags:
-                ret, _ = project.tag(tags[-1])
+                if options.force:
+                    ret, _ = project.tag(tags[-1], '--force')
+                else:
+                    ret, _ = project.tag(tags[-1])
 
         if os.path.lexists(tmpdir):
             try:
