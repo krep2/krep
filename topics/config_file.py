@@ -141,7 +141,7 @@ class _ConfigFile(object):
                 if section != _ConfigFile.FILE_PREFIX and \
                         isinstance(value, _ConfigFile):
                     proposed.extend(value.get_values(section, subsection))
-                if key.startswith(sname):
+                if key == sname or key.startswith('%s.' % sname):
                     proposed.append(value)
         else:
             proposed = self.vals.values()
