@@ -350,7 +350,7 @@ The escaped variants are supported for the imported files including:
 
             ret = project.commit(*args)
 
-        if (count > 0 or force) and not ret:
+        if count > 0 or force:
             if options.version_template:
                 tags.append(options.version_template % tmpl)
             elif options.local and revision:
