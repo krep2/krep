@@ -130,7 +130,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             self._new_value(
                 '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
                            name or self.get_attr(node, 'name')), cfg)
-        elif cfg and (cfg.include or cfg.exclude or cfg.copyfile or cfg.linkfile):
+        elif cfg and (
+                cfg.include or cfg.exclude or cfg.copyfile or cfg.linkfile):
             print('Warning: "%s" defined, all other values ignored' %
                   self.get_attr(node, 'name'))
 # pylint: enable=E1101
@@ -173,7 +174,8 @@ be used to define the wash-out and generate the final commit.
         return options.name or '[-]'
 
     @staticmethod
-    def do_import_with_config(project, options, pvalue, logger, rootdir, force=False):
+    def do_import_with_config(project, options, pvalue, logger, rootdir,
+                              force=False):
         filters = list()
         project_name = "%s" % str(project)
 
@@ -249,8 +251,9 @@ be used to define the wash-out and generate the final commit.
             res = 0
             for pvalue in pvalues:
                 if RepoImportSubcmd.do_import_with_config(
-                        project, options, pvalue, logger, rootdir, changed):
-					res += 1
+                        project, options, pvalue, logger, rootdir,
+                        changed or options.force):
+                    res += 1
 
             # all subdirs return without results, ignore finally
             if res != len(pvalues):
