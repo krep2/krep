@@ -182,12 +182,13 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         project_name = "%s" % str(project)
 
-        strict = False
+        cleanup, strict = False, False
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
 
         if pvalue:
             strict = pvalue.strict
+            cleanup = pvalue.include and not pvalue.exclue
             filters.extend(pvalue.include or list())
             filters.extend([
                 '!%s' % p for p in pvalue.exclude or list()])
@@ -231,7 +232,7 @@ be used to define the wash-out and generate the final commit.
             filters=filters, logger=logger,
             imports=False if location else None,
             symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile,
-			force=force, strict=strict)
+			force=force, cleanup=cleanup, strict=strict)
 
         return ret
 
