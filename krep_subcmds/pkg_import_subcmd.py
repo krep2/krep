@@ -255,7 +255,8 @@ The escaped variants are supported for the imported files including:
     @staticmethod
     def do_import(project, options, name, path, revision, subdir=None,
                   filters=None, logger=None, imports=False, symlinks=True,
-                  copyfiles=None, linkfiles=None, force=False, *args, **kws):
+                  copyfiles=None, linkfiles=None, force=False, strict=False,
+                  *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -293,15 +294,20 @@ The escaped variants are supported for the imported files including:
 
         psource = os.path.join(project.path, subdir or '')
         timestamp = FileUtils.last_modified(workplace, recursive=False)
+
+        scmtool = project if strict else None
         if imports is not None and os.path.exists(workplace):
             if imports:
                 timestamp = FileUtils.last_modified(workplace)
-                FileUtils.rmtree(psource, ignore_list=(r'^\.git.*',))
-                FileUtils.copy_files(workplace, psource, symlinks=symlinks)
+                FileUtils.rmtree(
+                    psource, ignore_list=(r'^\.git.*',), scmtool=scmtool)
+                FileUtils.copy_files(
+                    workplace, psource, symlinks=symlinks, scmtool=scmtool)
             else:
-                diff = FileDiff(psource, workplace, filters,
-                                enable_sccs_pattern=options.filter_out_sccs)
-                count = diff.sync(logger, symlinks=symlinks)
+                diff = FileDiff(
+                    psource, workplace, filters,
+                    enable_sccs_pattern=options.filter_out_sccs)
+                count = diff.sync(logger, symlinks=symlinks, scmtool=scmtool)
 
                 timestamp = diff.timestamp
 
@@ -310,35 +316,37 @@ The escaped variants are supported for the imported files including:
             washer = FileWasher()
             washer.wash(workplace)
 
-        if copyfiles:
-            for src, dest in copyfiles:
-                names = glob.glob(os.path.join(workplace, src))
-                filename = '' if not names else names[0]
-                if os.path.exists(filename):
-                    mtime = FileUtils.last_modified(filename)
-                    if mtime > timestamp:
-                        timestamp = mtime
-                    logger.debug('copy %s', src)
-                    FileUtils.copy_file(
-                        filename, os.path.join(psource, dest),
-                        symlinks=symlinks)
-                    count += 1
+        for src, dest in copyfiles or list():
+            names = glob.glob(os.path.join(workplace, src))
+            filename = '' if not names else names[0]
+            if os.path.exists(filename):
+                mtime = FileUtils.last_modified(filename)
+                if mtime > timestamp:
+                    timestamp = mtime
 
-        if linkfiles:
-            for src, dest in linkfiles:
-                names = glob.glob(os.path.join(workplace, src))
-                filename = '' if not names else names[0]
-                if os.path.exists(filename):
-                    mtime = FileUtils.last_modified(filename)
-                    if mtime > timestamp:
-                        timestamp = mtime
-                    logger.debug('link %s', src)
-                    FileUtils.link_file(src, os.path.join(psource, dest))
-                    count += 1
+                logger.debug('copy %s', src)
+                FileUtils.copy_file(
+                    filename, os.path.join(psource, dest),
+                    symlinks=symlinks, scmtool=scmtool)
+                count += 1
+
+        for src, dest in linkfiles or list():
+            names = glob.glob(os.path.join(workplace, src))
+            filename = '' if not names else names[0]
+            if os.path.exists(filename):
+                mtime = FileUtils.last_modified(filename)
+                if mtime > timestamp:
+                    timestamp = mtime
+
+                logger.debug('link %s', src)
+                FileUtils.link_file(
+                    src, os.path.join(psource, dest), scmtool=scmtool)
+                count += 1
 
         ret, tags = 0, list()
         if count > 0:
-            project.add('--all', '-f', project.path)
+            if not strict:
+                project.add('--all', '-f', project.path)
 
             args = list()
             if options.author:
