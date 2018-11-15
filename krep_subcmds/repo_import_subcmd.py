@@ -42,7 +42,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
     def _parse_project(self, node, name=None, subdir=False):
         self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
-                       name or self.get_attr(node, 'name')), [])
+                       name or self.get_attr(node, 'name')),
+            [], override=self.get_attr(node, 'override'))
 
         active = False
 
@@ -59,6 +60,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
+        self.set_attr(cfg, 'override', self.get_attr(node, 'override'))
 
         for child in node.childNodes:
             if child.nodeName == 'subdir':
