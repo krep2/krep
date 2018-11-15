@@ -36,8 +36,8 @@ class _ConfigFile(object):
         self.vals = dict()
         self.filename = os.path.realpath(filename)
 
-    def _add_value(self, name, val):
-        if name not in self.vals:
+    def _add_value(self, name, val, override=False):
+        if override or name not in self.vals:
             self.vals[name] = val
         else:
             if not isinstance(self.vals[name], list):
@@ -47,8 +47,9 @@ class _ConfigFile(object):
 
         return val
 
-    def _new_value(self, name, vals=None):
-        return self._add_value(name, vals or Values())
+    def _new_value(self, name, vals=None, override=False):
+        return self._add_value(
+            name, Values() if vals is None else vals, override)
 
     def _get_value(self, name):
         vals = self.vals.get(name)
