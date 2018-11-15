@@ -154,42 +154,66 @@ class FileUtils(object):
         return timestamp
 
     @staticmethod
-    def copy_file(src, dest, symlinks=False):
+    def _rmtree(filename, scmtool=None):
+        if scmtool:
+            scmtool.rm('-rf', filename)
+        elif os.path.islink(filename):
+            os.unlink(filename)
+        elif os.path.exists(filename):
+            shutil.rmtree(filename)
+
+    @staticmethod
+    def _symlink(src, dest, scmtool):
         destdir = os.path.dirname(dest)
         if not os.path.exists(destdir):
             os.makedirs(destdir)
 
+        os.symlink(src, dest)
+        if scmtool:
+            scmtool.add(dest)
+
+    @staticmethod
+    def _unlink(filename, scmtool=None):
+        if scmtool:
+            scmtool.rm('-rf', filename)
+        else:
+            os.unlink(filename)
+
+    @staticmethod
+    def copy_file(src, dest, symlinks=False, scmtool=None):
         if symlinks and os.path.islink(src):
             linkto = os.readlink(src)
             if os.path.isdir(dest):
-                shutil.rmtree(dest)
+                FileUtils._rmtree(dest, scmtool=scmtool)
             elif os.path.lexists(dest):
-                os.unlink(dest)
+                FileUtils._unlink(dest, scmtool=scmtool)
 
-            os.symlink(linkto, dest)
+            FileUtils._symlink(linkto, dest, scmtool=scmtool)
         else:
             if os.path.isdir(dest):
-                shutil.rmtree(dest)
+                FileUtils._rmtree(dest, scmtool=scmtool)
             elif os.path.lexists(dest):
-                os.unlink(dest)
+                FileUtils._unlink(dest, scmtool=scmtool)
+
+            destdir = os.path.dirname(dest)
+            if not os.path.exists(destdir):
+                os.makedirs(destdir)
 
             shutil.copy2(src, dest)
+            if scmtool:
+                scmtool.add(dest, '--force')
 
     @staticmethod
-    def link_file(src, dest):
-        destdir = os.path.dirname(dest)
-        if not os.path.exists(destdir):
-            os.makedirs(destdir)
-
+    def link_file(src, dest, scmtool=None):
         if os.path.isdir(dest):
-            shutil.rmtree(dest)
+            FileUtils._rmtree(dest, scmtool=scmtool)
         elif os.path.lexists(dest):
-            os.unlink(dest)
+            FileUtils._unlink(dest, scmtool=scmtool)
 
-        os.symlink(src, dest)
+        FileUtils._symlink(src, dest, scmtool=scmtool)
 
     @staticmethod
-    def rmtree(dest, ignore_list=None):
+    def rmtree(dest, ignore_list=None, scmtool=None):
         for name in os.listdir(dest):
             matched = False
             if os.path.isdir(os.path.join(dest, name)):
@@ -206,16 +230,23 @@ class FileUtils(object):
                 continue
 
             filename = os.path.join(dest, name)
-            if os.path.isdir(filename):
-                FileUtils.rmtree(filename, ignore_list=ignore_list)
+            if os.path.islink(filename):
+                FileUtils._unlink(filename, scmtool=scmtool)
+            elif os.path.isdir(filename):
+                FileUtils.rmtree(
+                    filename, ignore_list=ignore_list, scmtool=scmtool)
             else:
-                os.unlink(filename)
+                FileUtils._unlink(filename, scmtool=scmtool)
 
-        if len(os.listdir(dest)) == 0:
-            shutil.rmtree(dest)
+
+        if os.path.exists(dest) and len(os.listdir(dest)) == 0:
+            if os.path.islink(dest):
+                FileUtils._unlink(filename, scmtool=scmtool)
+            else:
+                FileUtils._rmtree(dest, scmtool=scmtool)
 
     @staticmethod
-    def copy_files(src, dest, ignore_list=None, symlinks=False):
+    def copy_files(src, dest, ignore_list=None, symlinks=False, scmtool=None):
         ret = 0
 
         for name in os.listdir(src):
@@ -235,9 +266,11 @@ class FileUtils(object):
                     os.makedirs(dname)
 
                 ret += FileUtils.copy_files(
-                    sname, dname, ignore_list=ignore_list, symlinks=symlinks)
+                    sname, dname, ignore_list=ignore_list, symlinks=symlinks,
+                    scmtool=scmtool)
             else:
-                FileUtils.copy_file(sname, dname, symlinks=symlinks)
+                FileUtils.copy_file(
+                    sname, dname, symlinks=symlinks, scmtool=scmtool)
                 ret += 1
 
         return ret
