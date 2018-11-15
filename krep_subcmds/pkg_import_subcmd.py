@@ -255,8 +255,8 @@ The escaped variants are supported for the imported files including:
     @staticmethod
     def do_import(project, options, name, path, revision, subdir=None,
                   filters=None, logger=None, imports=False, symlinks=True,
-                  copyfiles=None, linkfiles=None, force=False, strict=False,
-                  *args, **kws):
+                  copyfiles=None, linkfiles=None, force=False, cleanup=False,
+                  strict=False, *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -297,10 +297,12 @@ The escaped variants are supported for the imported files including:
 
         scmtool = project if strict else None
         if imports is not None and os.path.exists(workplace):
-            if imports:
-                timestamp = FileUtils.last_modified(workplace)
+            if cleanup or imports:
                 FileUtils.rmtree(
                     psource, ignore_list=(r'^\.git.*',), scmtool=scmtool)
+
+            if imports:
+                timestamp = FileUtils.last_modified(workplace)
                 FileUtils.copy_files(
                     workplace, psource, symlinks=symlinks, scmtool=scmtool)
             else:
