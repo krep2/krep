@@ -183,18 +183,18 @@ be used to define the wash-out and generate the final commit.
         symlinks, copyfile, linkfile = True, None, None
 
         if pvalue:
-            filters.extend(getattr(pvalue, 'include') or list())
+            filters.extend(pvalue.include or list())
             filters.extend([
-                '!%s' % p for p in getattr(pvalue, 'exclude') or list()])
+                '!%s' % p for p in pvalue.exclude or list()])
 
             subdir = getattr(pvalue, 'subdir')
             if subdir:
                 project_name += '/subdir'
 
-            locations = getattr(pvalue, 'location')
-            symlinks = getattr(pvalue, 'symlinks')
-            copyfile = getattr(pvalue, 'copyfile')
-            linkfile = getattr(pvalue, 'linkfile')
+            locations = pvalue.location
+            symlinks = pvalue.symlinks
+            copyfile = pvalue.copyfile
+            linkfile = pvalue.linkfile
 
             if locations:
                 for location in reversed(locations.split('|')):
