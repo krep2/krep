@@ -60,6 +60,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
+        self.set_attr(cfg, 'cleanup', self.get_attr(node, 'cleanup'))
         self.set_attr(cfg, 'strict', self.get_attr(node, 'strict'))
         self.set_attr(cfg, 'override', self.get_attr(node, 'override'))
 
@@ -188,7 +189,7 @@ be used to define the wash-out and generate the final commit.
 
         if pvalue:
             strict = pvalue.strict
-            cleanup = pvalue.include and not pvalue.exclue
+            cleanup = pvalue.cleanup
             filters.extend(pvalue.include or list())
             filters.extend([
                 '!%s' % p for p in pvalue.exclude or list()])
