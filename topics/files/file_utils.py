@@ -216,13 +216,13 @@ class FileUtils(object):
     def rmtree(dest, ignore_list=None, scmtool=None):
         for name in os.listdir(dest):
             matched = False
+
+            nname = name
             if os.path.isdir(os.path.join(dest, name)):
-                # OS doesn't complain the trailing backslash, but patterns use
-                # it to treat the name with trailing backslash as directories
-                name += '/'
+                nname += '/'
 
             for pattern in ignore_list or list():
-                if re.match(pattern, name) is not None:
+                if re.match(pattern, nname) is not None:
                     matched = True
                     break
 
