@@ -230,20 +230,14 @@ class FileUtils(object):
                 continue
 
             filename = os.path.join(dest, name)
-            if os.path.islink(filename):
-                FileUtils._unlink(filename, scmtool=scmtool)
-            elif os.path.isdir(filename):
+            if os.path.isdir(filename) and not os.path.islink(filename):
                 FileUtils.rmtree(
                     filename, ignore_list=ignore_list, scmtool=scmtool)
             else:
                 FileUtils._unlink(filename, scmtool=scmtool)
 
-
         if os.path.exists(dest) and len(os.listdir(dest)) == 0:
-            if os.path.islink(dest):
-                FileUtils._unlink(filename, scmtool=scmtool)
-            else:
-                FileUtils._rmtree(dest, scmtool=scmtool)
+            FileUtils._rmtree(dest, scmtool=scmtool)
 
     @staticmethod
     def copy_files(src, dest, ignore_list=None, symlinks=False, scmtool=None):
