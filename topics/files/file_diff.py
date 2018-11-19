@@ -100,12 +100,22 @@ class FileDiff(object):
 
         return False
 
-    def _sync(self, logger=None, symlinks=False):  # pylint: disable=R0915
+    def _sync(self, logger=None, symlinks=False, scmtool=None):  # pylint: disable=R0915
         changes = 0
 
         def debug(msg):
             if logger:
                 logger.debug(msg)
+
+        def unlink(filename):
+            if scmtool:
+                scmtool.rm('-rf', filename)
+            elif os.path.islink(filename):
+                os.unlink(filename)
+            elif os.path.isdir(filename):
+                shutil.rmtree(filename)
+            else:
+                os.unlink(filename)
 
         slen = len(self.src) + 1
         dlen = len(self.dest) + 1
@@ -123,7 +133,7 @@ class FileDiff(object):
                 if not os.path.lexists(newf):
                     debug('remove %s' % oldf)
                     changes += 1
-                    os.unlink(oldf)
+                    unlink(oldf)
 
             for dname in dirs:
                 oldd = os.path.join(root, dname)
@@ -137,10 +147,7 @@ class FileDiff(object):
                 if not os.path.lexists(newd):
                     debug('remove %s' % oldd)
                     changes += 1
-                    if os.path.islink(oldd):
-                        os.remove(oldd)
-                    else:
-                        shutil.rmtree(oldd)
+                    unlink(oldd)
 
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:
@@ -150,9 +157,14 @@ class FileDiff(object):
                     continue
                 elif not self.pattern.match_dir(newd[dlen:]):
                     debug('ignore %s with file pattern' % oldd)
+                elif os.path.islink(newd):
+                    if not self._equal_link(oldd, newd):
+                        debug('mkdir %s' % newd)
+                        FileUtils.copy_file(newd, oldd, symlinks=symlinks)
+                        changes += 1
                 elif os.path.exists(oldd) and not os.path.isdir(oldd):
                     debug('type changed %s' % oldd)
-                    os.unlink(oldd)
+                    unlink(oldd)
 
             for name in files:
                 newf = os.path.join(root, name)
@@ -168,7 +180,8 @@ class FileDiff(object):
                 elif os.path.islink(newf):
                     if not self._equal_link(oldf, newf):
                         debug('copy %s' % newf)
-                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
+                        FileUtils.copy_file(
+                            newf, oldf, symlinks=symlinks, scmtool=scmtool)
                         changes += 1
                 elif not os.path.lexists(oldf):
                     debug('add %s' % newf)
@@ -176,30 +189,36 @@ class FileDiff(object):
                     if not os.path.lexists(dirn):
                         os.makedirs(dirn)
 
-                    FileUtils.copy_file(newf, oldf, symlinks=symlinks)
+                    FileUtils.copy_file(
+                        newf, oldf, symlinks=symlinks, scmtool=scmtool)
                     changes += 1
                 else:
                     if os.path.islink(oldf):
                         debug('link %s' % newf)
-                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
+                        FileUtils.copy_file(
+                            newf, oldf, symlinks=symlinks, scmtool=scmtool)
                         changes += 1
                     elif not filecmp.cmp(newf, oldf):
                         debug('change %s' % newf)
-                        FileUtils.copy_file(newf, oldf, symlinks=symlinks)
+                        FileUtils.copy_file(
+                            newf, oldf, symlinks=symlinks, scmtool=scmtool)
                         changes += 1
                     else:
                         debug('nochange %s' % oldf)
 
         return changes
 
-    def sync(self, logger=None, quickcopy=False, symlinks=True):
+    def sync(self, logger=None, quickcopy=False, symlinks=True, scmtool=None):
         if not quickcopy:
-            ret = self._sync(logger=logger, symlinks=symlinks)
+            ret = self._sync(logger=logger, symlinks=symlinks, scmtool=scmtool)
         else:
             self._timestamp = FileUtils.last_modified(self.src)
 
-            FileUtils.rmtree(self.dest, ignore_list=self.sccsp.get_patterns())
-            FileUtils.copy_files(self.src, self.dest, symlinks=symlinks)
+            FileUtils.rmtree(
+                self.dest, ignore_list=self.sccsp.get_patterns(),
+                scmtool=scmtool)
+            ret = FileUtils.copy_files(
+                self.src, self.dest, symlinks=symlinks, scmtool=scmtool)
 
         return ret
 

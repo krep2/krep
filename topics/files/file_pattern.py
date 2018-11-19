@@ -32,19 +32,34 @@ class FilePattern(object):
         files, dirs, others = list(), list(), list()
         fileos, diros, otheros = list(), list(), list()
 
+        def _secure_name(pattern):
+            segs = pattern.replace('//', '/').split('$/')
+            name = segs.pop(0)
+            for seg in segs:
+                if name.endswith('\\'):
+                    name += '\\$'
+
+                if not name.endswith('/'):
+                  name += '/'
+
+                name += seg
+
+            return name.replace('/^', '/')
+
         for pattern in patterns or list():
             opposite = False
             if pattern.startswith('!'):
                 opposite = True
                 pattern = pattern[1:]
 
-            if pattern.endswith('/'):
+            pattern = _secure_name(pattern)
+            if pattern.endswith(('/', '/$')):
                 if opposite:
                     diros.append(pattern)
-                    otheros.append('%s/.?' % pattern.rstrip('/'))
+                    otheros.append(_secure_name('%s/.?' % pattern))
                 else:
                     dirs.append(pattern)
-                    others.append('%s/.?' % pattern.rstrip('/'))
+                    others.append(_secure_name('%s/.?' % pattern))
             elif pattern.find('/') > -1:
                 if opposite:
                     otheros.append(pattern)
@@ -131,7 +146,8 @@ class RepoFilePattern(FilePattern):
 
 class GitFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'^\.git/', r'\.gitignore',           # git
+        r'^\.git/', r'\.gitignore',             # git
+        r'^\.gitattributes',
     )
 
     def __init__(self):
@@ -140,10 +156,10 @@ class GitFilePattern(FilePattern):
 
 class SccsFilePattern(FilePattern):
     FILTER_OUT_PATTERN = (
-        r'CVS/', r'RCS/', r'\.cvsignore',     # CVS
-        r'\.svn/',                            # subversion
-        r'^\.hg/', r'\.hgignore',             # mercurial
-        r'^\.git/', r'\.gitignore',           # git
+        r'CVS/', r'RCS/', r'\.cvsignore',       # CVS
+        r'\.svn/',                              # subversion
+        r'^\.hg/', r'\.hgignore', r'\.hgtags',  # mercurial
+        r'^\.git/', r'\.gitignore',             # git
     )
 
     def __init__(self):
