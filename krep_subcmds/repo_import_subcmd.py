@@ -57,6 +57,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         else:
             self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
 
+        self.set_attr(cfg, 'path', self.get_attr(node, 'path'))
         self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
@@ -248,7 +249,13 @@ be used to define the wash-out and generate the final commit.
         pvalues = config.get_values(
             RepoImportXmlConfigFile.LOCATION_PREFIX, project_name)
         if pvalues:
-            pass
+            pvals = [pvalue for pvalue in pvalues if pvalue.path is not None]
+            if len(pvals) not in (0, len(pvalues)):
+                logger.error(
+                    'not all items of "%s" has defined "path"',
+                    project_name)
+
+                return 1
         else:
             logger.warning('"%s" is undefined', project_name)
             return 0
@@ -257,6 +264,10 @@ be used to define the wash-out and generate the final commit.
         for rootdir in rootdirs:
             res = 0
             for pvalue in pvalues:
+                if pvalue.path and project.path != \
+                        os.path.join(options.working_dir, pvalue.path):
+                    continue
+
                 if RepoImportSubcmd.do_import_with_config(
                         project, options, pvalue, logger, rootdir,
                         changed or options.force):
