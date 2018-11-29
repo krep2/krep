@@ -65,12 +65,6 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                 val = xvals.get_value(BatchXmlConfigFile.FILE_PREFIX)
                 if val and val.pattern:  # pylint: disable=E1103
                     self.set_attr(config, 'pattern', val.pattern)  # pylint: disable=E1103
-            elif child.nodeName in (
-                    'pattern', 'exclude-pattern', 'rp-pattern',
-                    'replace-pattern'):
-                pattern = PatternFile.parse_pattern_str(child)
-                self.set_attr(config, 'pattern', [])
-                self.set_attr(config, 'pattern', pattern)
             else:
                 self.parse_patterns(child, config)
 
