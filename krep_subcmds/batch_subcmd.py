@@ -62,9 +62,12 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             elif child.nodeName == 'include':
                 _, xvals = self.parse_include(child)
                 # only pattern supported and need to export explicitly
-                val = xvals.get_value(BatchXmlConfigFile.FILE_PREFIX)
-                if val and val.pattern:  # pylint: disable=E1103
-                    self.set_attr(config, 'pattern', val.pattern)  # pylint: disable=E1103
+                vals = xvals.get_values(BatchXmlConfigFile.FILE_PREFIX)
+                for val in vals:
+                  # pylint: disable=E1103
+                  if val and val.pattern:
+                      self.set_attr(config, 'pattern', val.pattern)
+                  # pylint: enable=E1103
             else:
                 self.parse_patterns(child, config)
 
@@ -75,6 +78,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         return config
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
+        if node.nodeName == 'patterns':
+            KrepXmlConfigFile.parse(self, node, pi)
+
         if node.nodeName != 'projects':
             return
 
@@ -95,6 +101,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                 # record included file name
                 self._new_value(
                     '%s.%s' % (BatchXmlConfigFile.FILE_PREFIX, name), xvals)
+            else:
+                self.parse_patterns(child, default)
+
 # pylint: enable=E1101
 
 
