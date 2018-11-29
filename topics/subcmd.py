@@ -16,7 +16,7 @@ class KrepXmlConfigFile(XmlConfigFile):
         XmlConfigFile.__init__(self, filename, pi)
 
     def parse_patterns(self, node, config=None):
-        if not config:
+        if config is None:
             config = Values()
 
         if node.nodeName in (
@@ -24,6 +24,12 @@ class KrepXmlConfigFile(XmlConfigFile):
             patterns = PatternFile.parse_patterns_str(node)
             for pattern in patterns:
                 self.set_attr(config, 'pattern', pattern)
+        elif node.nodeName in (
+                'pattern', 'exclude-pattern', 'rp-pattern',
+                'replace-pattern'):
+            pattern = PatternFile.parse_pattern_str(node)
+            self.set_attr(config, 'pattern', [])
+            self.set_attr(config, 'pattern', pattern)
 
         return config
 
