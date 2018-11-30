@@ -333,7 +333,8 @@ class GitProject(Project, GitCommand):
                     "remote branch %s equals to an existed SHA-1, which "
                     "isn't normal. Ignoring ...", remote_ref)
                 skip = True
-            elif _sha1_equals(remote_heads.get(remote_ref), sha1):
+            elif remote_heads.get(remote_ref) and \
+                    _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
                 skip = True
 
