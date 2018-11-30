@@ -235,7 +235,7 @@ this command.
                 RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
-                optons=optgp,
+                options=optgp,
                 push_all=options.all or (
                     options.head_pattern and options.heads),
                 fullname=options.keep_name,
