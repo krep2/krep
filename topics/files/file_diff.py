@@ -168,9 +168,9 @@ class FileDiff(object):
 
             for name in files:
                 newf = os.path.join(root, name)
-                timest = os.lstat(newf)
-                if timest.st_mtime > self._timestamp:
-                    self._timestamp = timest.st_mtime
+                timest = FileUtils.last_modified(newf)
+                if timest > self._timestamp:
+                    self._timestamp = timest
 
                 oldf = newf.replace(self.dest, self.src)
                 if self.sccsp.match(newf[dlen:]):
