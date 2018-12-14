@@ -137,6 +137,16 @@ class FileUtils(object):
     def last_modified(path, recursive=True):
         def _modified_time(filename):
             if os.path.exists(filename):
+                while os.path.islink(filename):
+                    name = os.readlink(filename)
+                    if not os.path.isabs(name):
+                        name = os.path.join(os.path.dirname(filename), name)
+
+                    if os.path.exists(name):
+                        filename = name
+                    else:
+                        continue
+
                 stat = os.lstat(filename)
                 return stat.st_mtime
             else:
