@@ -295,8 +295,12 @@ this command.
             if key in projv:
                 path, groups = projv[key]
 
+            revision = project.revision
+            if revision.startswith(default.remote + '/'):
+                 revision = revision[len(default.remote) + 1]
+
             builder.project(
-                project.uri, path, project.revision, groups,
+                project.uri, path, revision, groups,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
