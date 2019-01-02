@@ -160,8 +160,7 @@ this command.
                 copyfiles=node.copyfiles,
                 linkfiles=node.linkfiles)
 
-            if project.is_sha1(node.revision) and \
-                    project.rev_existed(node.revision):
+            if project.is_sha1(node.revision):
                 project.revision = '%s' % node.revision
             else:
                 project.revision = '%s/%s' % (node.remote, node.revision)
