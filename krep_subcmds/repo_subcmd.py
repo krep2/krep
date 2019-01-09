@@ -267,13 +267,13 @@ this command.
 
     @staticmethod
     def build_xml_file(options, projects, sort=False):
-        _project_key = lambda name, path, rev: '%s"%s"%s' % (name, path, rev)
+        _project_key = lambda name, rev: '%s"%s' % (name, rev)
 
-        prjv = dict()
+        projv = dict()
         manifest = RepoSubcmd.get_manifest(options)
         for project in manifest.get_projects():
-            prjv[_project_key(project.name, project.path, project.revision)] \
-                = project.groups
+            projv[_project_key(project.name, project.revision)] = (
+                project.path, project.groups)
 
         builder = ManifestBuilder(
             options.output_xml_file,
@@ -293,9 +293,9 @@ this command.
         for project in projects:
             path, groups = project.path, None
 
-            key = _project_key(project.source, project.path, project.revision)
-            if key in prjv:
-                groups = prjv[key]
+            key = _project_key(project.source, project.revision)
+            if key in projv:
+                path, groups = projv[key]
 
             revision = project.revision
             if revision.startswith(default.remote + '/'):
