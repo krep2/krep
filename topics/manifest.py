@@ -86,7 +86,6 @@ class _XmlProject(object):  # pylint: disable=R0902
         self.path = path
         self.revision = revision
         self.groups = groups
-        self.groups = groups
         self.remote = remote
         self.rebase = rebase
         self.upstream = upstream
@@ -103,19 +102,27 @@ class _XmlProject(object):  # pylint: disable=R0902
 
         remote = None
         if self.remote and remotes:
-            remote = remotes.get(self.remote)
+            for item in remotes:
+                if self.remote == item.name:
+                    remote = item.name
+                    revision = item.revision
+                    break
+
         if not remote and self.revision:
             for item in remotes:
                 if item.revision == self.revision:
-                    remote = item
+                    remote = item.name
+                    revision = self.revision
                     break
+
         if not remote:
-            remote = default
-        revision = None if remote is None else remote.revision
+            remote = default.remote
+            revision = default.revision
+
         if revision != self.revision:
             _setattr(e, 'revision', self.revision)
-        elif remote != default and not self.remote:
-            _setattr(e, 'remote', remote.name)
+        if remote and self.remote and self.remote != remote:
+            _setattr(e, 'remote', remote)
         _setattr(e, 'upstream', self.upstream)
         _setattr(e, 'groups', self.groups)
         for item in self.copyfiles:
