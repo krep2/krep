@@ -240,6 +240,7 @@ this command.
                 fullname=options.keep_name,
                 force=options.force,
                 sha1tag=options.sha1_tag,
+                git_repo=True,
                 dryrun=options.dryrun,
                 logger=logger)
             if res != 0:
