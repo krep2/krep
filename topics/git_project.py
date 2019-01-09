@@ -172,13 +172,16 @@ class GitProject(Project, GitCommand):
 
         return ret, heads
 
-    def get_local_heads(self, local=False):
+    def get_local_heads(self, local=False, git_repo=False):
         heads = dict()
         ret, lines = self.branch('-lva')
         if ret == 0:
             for line in lines.split('\n'):
                 line = line.strip()
-                if re.search(r'^\s*remotes/.*/HEAD', line):
+                if re.search(r'^remotes/.*/HEAD', line):
+                    continue
+                elif line.startswith('remotes/m/') and git_repo:
+                    # created by git-repo, ignore
                     continue
                 elif line.startswith('*'):
                     line = line[1:].lstrip()
@@ -239,9 +242,10 @@ class GitProject(Project, GitCommand):
 
         return parameters
 
-    def push_heads(self, branch=None, refs=None, patterns=None,  # pylint: disable=R0915
-                   options=None, push_all=False, fullname=False, force=False,
-                   sha1tag=None, logger=None, *args, **kws):
+    def push_heads(  # pylint: disable=R0915
+            self, branch=None, refs=None, patterns=None, options=None,
+            push_all=False, fullname=False, force=False, git_repo=False,
+            sha1tag=None, logger=None, *args, **kws):
 
         if not logger:
             logger = Logger.get_logger()
@@ -250,7 +254,7 @@ class GitProject(Project, GitCommand):
             patterns = [patterns]
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
-        ret, local_heads = self.get_local_heads(local=True)
+        ret, local_heads = self.get_local_heads(local=True, git_repo=git_repo)
         ret, remote_heads = self.get_remote_heads()
         ret, remote_tags = self.get_remote_tags()
 
