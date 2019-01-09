@@ -267,13 +267,10 @@ this command.
 
     @staticmethod
     def build_xml_file(options, projects, sort=False):
-        _project_key = lambda name, rev: '%s"%s' % (name, rev)
-
-        projv = dict()
+        origins = dict()
         manifest = RepoSubcmd.get_manifest(options)
         for project in manifest.get_projects():
-            projv[_project_key(project.name, project.revision)] = (
-                project.path, project.groups)
+            origins[project.path] = project
 
         builder = ManifestBuilder(
             options.output_xml_file,
@@ -291,18 +288,13 @@ this command.
             projects.sort(key=sort_project_path)
 
         for project in projects:
-            path, groups = project.path, None
-
-            key = _project_key(project.source, project.revision)
-            if key in projv:
-                path, groups = projv[key]
-
             revision = project.revision
             if revision.startswith(default.remote + '/'):
                  revision = revision[len(default.remote) + 1]
 
             builder.project(
-                project.uri, path, revision, groups,
+                project.uri, project.path, revision,
+                origins[project.path].groups,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
@@ -321,7 +313,7 @@ this command.
 
         manifest = RepoSubcmd.get_manifest(options)
         for project in manifest.get_projects():
-            origins[project.name] = project
+            origins[project.path] = project
 
         default = manifest.get_default()
         default.remote = options.remote
@@ -355,7 +347,7 @@ this command.
 
             builder.project(
                 name, project.path, project.revision,
-                origins[project.source].groups,
+                origins[project.path].groups,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
