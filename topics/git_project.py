@@ -274,6 +274,7 @@ class GitProject(Project, GitCommand):
 
             return self.push(self.remote, *cargs, **kws)
 
+        prefs = list()
         for origin in local_heads:
             head = _secure_head_name(origin)
 
@@ -346,13 +347,8 @@ class GitProject(Project, GitCommand):
 
             ret = 0
             if not skip:
-                cargs = GitProject._push_args(
-                    list(), options,
-                    '%s%s:%s' % (
-                        '+' if force else '', local_ref, remote_ref),
-                    *args)
-
-                ret = self.push(self.remote, *cargs, **kws)
+                prefs.append(
+                    '%s%s:%s' % ('+' if force else '', local_ref, remote_ref))
 
             if ret == 0 and not push_all and (
                     sha1tag and self.is_sha1(origin)):
@@ -362,16 +358,15 @@ class GitProject(Project, GitCommand):
                     equals = _sha1_equals(sha1, origin)
 
                 if not equals or force:
-                    cargs = GitProject._push_args(
-                        list(), options,
-                        '%s%s:%s' % (
-                            '+' if force else '', local_ref, sha1tag),
-                        *args)
+                    prefs.append(
+                        '%s%s:%s' % ('+' if force else '', local_ref, sha1tag))
 
-                    ret = self.push(self.remote, *cargs, **kws)
+        if prefs:
+            cargs = GitProject._push_args(list(), options, *prefs)
+            ret = self.push(self.remote, *cargs, **kws)
 
-            if ret != 0:
-                logger.error('error to execute git push to %s', self.remote)
+        if ret != 0:
+            logger.error('error to execute git push to %s', self.remote)
 
         return ret
 
