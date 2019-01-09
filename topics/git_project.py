@@ -245,8 +245,7 @@ class GitProject(Project, GitCommand):
     def push_heads(  # pylint: disable=R0915
             self, branch=None, refs=None, patterns=None, options=None,
             push_all=False, fullname=False, force=False, git_repo=False,
-            sha1tag=None, logger=None, *args, **kws):
-
+            mirror=False, sha1tag=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -262,7 +261,7 @@ class GitProject(Project, GitCommand):
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
-        elif not (sha1tag or patterns
+        elif not (not mirror or sha1tag or patterns
                   or GitProject.has_name_changes(local_heads, fullname)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
