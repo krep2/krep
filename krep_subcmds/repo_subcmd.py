@@ -293,8 +293,9 @@ this command.
                  revision = revision[len(default.remote) + 1]
 
             builder.project(
-                project.uri, project.path, revision,
-                origins[project.path].groups,
+                name=project.uri, path=project.path, revision=revision,
+                groups=origins[project.path].groups,
+                upstream=origins[project.path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
@@ -346,8 +347,9 @@ this command.
                 name = maps[name]
 
             builder.project(
-                name, project.path, project.revision,
-                origins[project.path].groups,
+                name=name, path=project.path, revision=project.revision,
+                groups=origins[project.path].groups,
+                upstream=origins[pkey].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
