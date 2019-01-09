@@ -205,7 +205,8 @@ be saved in XML file again with limited attributes.
             revision=_attr2(node, 'revision'),
             remote=_attr2(node, 'remote'),
             groups=_attr2(node, 'groups'),
-            rebase=_attr2(node, 'rebase'))
+            rebase=_attr2(node, 'rebase'),
+            upstream=_attr2(node, 'upstream'))
 
         # annotation, subproject isn't checked
         for child in node.childNodes:
@@ -323,7 +324,8 @@ be saved in XML file again with limited attributes.
                     remote=project.remote or self._default.remote,
                     path=project.path or project.name,
                     revision=_get_revision(project),
-                    groups=project.groups))
+                    groups=project.groups,
+                    upstream=project.upstream))
             projects[-1].add_copy_files(project.copyfiles)
             projects[-1].add_link_files(project.linkfiles)
 
@@ -384,8 +386,11 @@ store the live manifest nodes into files.
         self.append(remote)
 
     def project(self, name, path=None, revision=None, groups=None,
-                remote=None, rebase=None, copyfiles=None, linkfiles=None):
-        project = _XmlProject(name, path, revision, groups, remote, rebase)
+                remote=None, rebase=None, upstream=None,
+                copyfiles=None, linkfiles=None):
+        project = _XmlProject(
+            name=name, path=path, revision=revision, groups=groups,
+            remote=remote, rebase=rebase, upstream=upstream)
         if copyfiles:
             project.add_copy_files(copyfiles)
         if linkfiles:
