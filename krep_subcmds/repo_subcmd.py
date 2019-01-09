@@ -241,6 +241,7 @@ this command.
                 force=options.force,
                 sha1tag=options.sha1_tag,
                 git_repo=True,
+                mirror=options.mirror,
                 dryrun=options.dryrun,
                 logger=logger)
             if res != 0:
