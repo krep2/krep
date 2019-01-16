@@ -118,10 +118,6 @@ The escaped variants are supported for the imported files including:
         options = optparse.get_option_group('-a') or \
             optparse.add_option_group('Import options')
         options.add_option(
-            '--author',
-            dest='author', action='store',
-            help='Set the commit author')
-        options.add_option(
             '--init-path', '--init-import-path',
             dest='init_path', action='store',
             help='Set the initialized path with the provided path or '
@@ -351,17 +347,17 @@ The escaped variants are supported for the imported files including:
                 project.add('--all', '-f', project.path)
 
             args = list()
-            if options.author:
-                args.append('--author="%s"' % options.author)
-
-            args.append('-m')
-            args.append(message)
 
             optgc = options.extra_values(options.extra_option, 'git-commit')
+            if optgc and optgc.author:
+                args.append('--author="%s"' % optgc.author)
             if optgc and optgc.date:
                 args.append('--date="%s"' % optgc.date.strip('\'"'))
             else:
                 args.append('--date="%s"' % time.ctime(timestamp))
+
+            args.append('-m')
+            args.append(message)
 
             ret = project.commit(*args)
 
