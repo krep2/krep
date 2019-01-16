@@ -44,6 +44,7 @@ class GitProject(Project, GitCommand):
 
     extra_items = (
         ('Git options for git-commit:', (
+            ('git-commit:author', 'Update the commit author'),
             ('git-commit:date', 'Update the commit time'),
         )),
         ('Git options for git-push:', (
