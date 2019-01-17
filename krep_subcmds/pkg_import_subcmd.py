@@ -448,8 +448,10 @@ The escaped variants are supported for the imported files including:
             revision=branch,
             remote=remote)
 
+        optgc = options.extra_values(options.extra_option, 'git-clone')
         ret = project.init_or_download(
-            branch, single_branch=True, offsite=options.offsite)
+            branch, single_branch=True, offsite=options.offsite,
+            reference=optgc and optgc.reference)
         if ret != 0:
             logger.error('Failed to init the repo %s' % project)
             return False
