@@ -103,8 +103,10 @@ replaced by GIT_URL."""
 
         ret = 0
         if not options.offsite:
+            optgc = options.extra_values(options.extra_option, 'git-clone')
             ret = project.download(
-                options.git, options.mirror, options.bare)
+                options.git, options.mirror, options.bare,
+                reference=optgc and optgc.reference)
             if ret != 0:
                 raise DownloadError('%s: failed to fetch project' % project)
 
