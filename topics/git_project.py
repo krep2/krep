@@ -43,6 +43,9 @@ class GitProject(Project, GitCommand):
     CATEGORY_REVISION = 'r,rev,revision'
 
     extra_items = (
+        ('Git options for git-clone:', (
+            ('git-clone:reference', 'Set reference repository'),
+        )),
         ('Git options for git-commit:', (
             ('git-commit:author', 'Update the commit author'),
             ('git-commit:date', 'Update the commit time'),
@@ -83,7 +86,7 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.init(self, notdir=True, *cli, **kws)
 
-    def clone(self, url=None, mirror=None, bare=False,
+    def clone(self, url=None, reference=None, bare=False,
               revision=None, single_branch=False, *args, **kws):
         cli = list()
         cli.append(url or self.remote)
@@ -100,8 +103,8 @@ class GitProject(Project, GitCommand):
                 '%s: branch/revision is null, the default branch '
                 'will be used by the git (server)', self.uri)
 
-        if mirror:
-            cli.append('--reference=%s' % mirror)
+        if reference:
+            cli.append('--reference=%s' % reference)
         if single_branch:
             cli.append('--single-branch')
 
@@ -118,7 +121,7 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.clone(self, notdir=True, *cli, **kws)
 
-    def download(self, url=None, mirror=False, bare=False,
+    def download(self, url=None, reference=False, bare=False,
                  revision=None, single_branch=False, *args, **kws):
         if self.exists_() and os.listdir(self.gitdir):
             ret, get_url = self.ls_remote('--get-url')
@@ -140,7 +143,7 @@ class GitProject(Project, GitCommand):
             if url is None:
                 url = self.remote
             ret = self.clone(
-                _ensure_remote(url), mirror=mirror, bare=bare,
+                _ensure_remote(url), reference=reference, bare=bare,
                 revision=revision, single_branch=single_branch, *args, **kws)
 
         if ret == 0:
@@ -465,7 +468,7 @@ class GitProject(Project, GitCommand):
         return ret
 
     def init_or_download(self, revision='master', single_branch=True,
-                         offsite=False):
+                         offsite=False, options=None):
         logger = Logger.get_logger()
 
         if not revision:
@@ -487,12 +490,14 @@ class GitProject(Project, GitCommand):
                     if branch in (revision, 'refs/heads/%s' % revision):
                         ret = self.download(
                             self.remote, revision=revision,
-                            single_branch=single_branch)
+                            single_branch=single_branch,
+                            reference=options and options.reference)
                         break
                 else:
                     ret = self.download(
                         self.remote, revision='master',
-                        single_branch=single_branch)
+                        single_branch=single_branch,
+                        reference=options and options.reference)
 
         if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')
