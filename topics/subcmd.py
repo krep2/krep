@@ -285,7 +285,7 @@ class SubCommand(object):
     @staticmethod
     def override_value(va, vb=None):
         """Overrides the late values if it's not a boolean value."""
-        return vb if vb is not None else va
+        return vb if vb is not None and va is not False else va
 
     @staticmethod
     def do_hook(name, option, args=None, dryrun=False):
