@@ -43,7 +43,11 @@ class GitProject(Project, GitCommand):
     CATEGORY_REVISION = 'r,rev,revision'
 
     extra_items = (
+        ('Git options for git-clone:', (
+            ('git-clone:reference', 'Set reference repository'),
+        )),
         ('Git options for git-commit:', (
+            ('git-commit:author', 'Update the commit author'),
             ('git-commit:date', 'Update the commit time'),
         )),
         ('Git options for git-push:', (
@@ -82,7 +86,7 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.init(self, notdir=True, *cli, **kws)
 
-    def clone(self, url=None, mirror=None, bare=False,
+    def clone(self, url=None, reference=None, bare=False,
               revision=None, single_branch=False, *args, **kws):
         cli = list()
         cli.append(url or self.remote)
@@ -99,8 +103,8 @@ class GitProject(Project, GitCommand):
                 '%s: branch/revision is null, the default branch '
                 'will be used by the git (server)', self.uri)
 
-        if mirror:
-            cli.append('--reference=%s' % mirror)
+        if reference:
+            cli.append('--reference=%s' % reference)
         if single_branch:
             cli.append('--single-branch')
 
@@ -117,7 +121,7 @@ class GitProject(Project, GitCommand):
 
         return GitCommand.clone(self, notdir=True, *cli, **kws)
 
-    def download(self, url=None, mirror=False, bare=False,
+    def download(self, url=None, reference=False, bare=False,
                  revision=None, single_branch=False, *args, **kws):
         if self.exists_() and os.listdir(self.gitdir):
             ret, get_url = self.ls_remote('--get-url')
@@ -139,7 +143,7 @@ class GitProject(Project, GitCommand):
             if url is None:
                 url = self.remote
             ret = self.clone(
-                _ensure_remote(url), mirror=mirror, bare=bare,
+                _ensure_remote(url), reference=reference, bare=bare,
                 revision=revision, single_branch=single_branch, *args, **kws)
 
         if ret == 0:
@@ -172,13 +176,16 @@ class GitProject(Project, GitCommand):
 
         return ret, heads
 
-    def get_local_heads(self, local=False):
+    def get_local_heads(self, local=False, git_repo=False):
         heads = dict()
         ret, lines = self.branch('-lva')
         if ret == 0:
             for line in lines.split('\n'):
                 line = line.strip()
-                if re.search(r'^\s*remotes/.*/HEAD', line):
+                if re.search(r'^remotes/.*/HEAD', line):
+                    continue
+                elif line.startswith('remotes/m/') and git_repo:
+                    # created by git-repo, ignore
                     continue
                 elif line.startswith('*'):
                     line = line[1:].lstrip()
@@ -239,10 +246,10 @@ class GitProject(Project, GitCommand):
 
         return parameters
 
-    def push_heads(self, branch=None, refs=None, patterns=None,  # pylint: disable=R0915
-                   options=None, push_all=False, fullname=False, force=False,
-                   sha1tag=None, logger=None, *args, **kws):
-
+    def push_heads(  # pylint: disable=R0915
+            self, branch=None, refs=None, patterns=None, options=None,
+            push_all=False, fullname=False, force=False, git_repo=False,
+            mirror=False, sha1tag=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -250,7 +257,7 @@ class GitProject(Project, GitCommand):
             patterns = [patterns]
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
-        ret, local_heads = self.get_local_heads(local=True)
+        ret, local_heads = self.get_local_heads(local=True, git_repo=git_repo)
         ret, remote_heads = self.get_remote_heads()
         ret, remote_tags = self.get_remote_tags()
 
@@ -258,7 +265,7 @@ class GitProject(Project, GitCommand):
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
-        elif not (sha1tag or patterns
+        elif not (not mirror or sha1tag or patterns
                   or GitProject.has_name_changes(local_heads, fullname)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
@@ -270,6 +277,7 @@ class GitProject(Project, GitCommand):
 
             return self.push(self.remote, *cargs, **kws)
 
+        prefs = list()
         for origin in local_heads:
             head = _secure_head_name(origin)
 
@@ -331,21 +339,19 @@ class GitProject(Project, GitCommand):
             if os.path.basename(remote_ref) == sha1:
                 logger.warning(
                     "remote branch %s equals to an existed SHA-1, which "
-                    "isn't normal. Ignoring ...", remote_ref)
-                skip = True
-            elif _sha1_equals(remote_heads.get(remote_ref), sha1):
+                    "isn't normal.%s", remote_ref,
+                    "" if force else " Ignoring ...")
+                if not force:
+                    skip = True
+            elif remote_heads.get(remote_ref) and \
+                    _sha1_equals(remote_heads.get(remote_ref), sha1):
                 logger.info('%s has been up-to-dated', remote_ref)
                 skip = True
 
             ret = 0
             if not skip:
-                cargs = GitProject._push_args(
-                    list(), options,
-                    '%s%s:%s' % (
-                        '+' if force else '', local_ref, remote_ref),
-                    *args)
-
-                ret = self.push(self.remote, *cargs, **kws)
+                prefs.append(
+                    '%s%s:%s' % ('+' if force else '', local_ref, remote_ref))
 
             if ret == 0 and not push_all and (
                     sha1tag and self.is_sha1(origin)):
@@ -355,16 +361,15 @@ class GitProject(Project, GitCommand):
                     equals = _sha1_equals(sha1, origin)
 
                 if not equals or force:
-                    cargs = GitProject._push_args(
-                        list(), options,
-                        '%s%s:%s' % (
-                            '+' if force else '', local_ref, sha1tag),
-                        *args)
+                    prefs.append(
+                        '%s%s:%s' % ('+' if force else '', local_ref, sha1tag))
 
-                    ret = self.push(self.remote, *cargs, **kws)
+        if prefs:
+            cargs = GitProject._push_args(list(), options, *prefs)
+            ret = self.push(self.remote, *cargs, **kws)
 
-            if ret != 0:
-                logger.error('error to execute git push to %s', self.remote)
+        if ret != 0:
+            logger.error('error to execute git push to %s', self.remote)
 
         return ret
 
@@ -463,7 +468,7 @@ class GitProject(Project, GitCommand):
         return ret
 
     def init_or_download(self, revision='master', single_branch=True,
-                         offsite=False):
+                         offsite=False, options=None):
         logger = Logger.get_logger()
 
         if not revision:
@@ -485,12 +490,14 @@ class GitProject(Project, GitCommand):
                     if branch in (revision, 'refs/heads/%s' % revision):
                         ret = self.download(
                             self.remote, revision=revision,
-                            single_branch=single_branch)
+                            single_branch=single_branch,
+                            reference=options and options.reference)
                         break
                 else:
                     ret = self.download(
                         self.remote, revision='master',
-                        single_branch=single_branch)
+                        single_branch=single_branch,
+                        reference=options and options.reference)
 
         if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')

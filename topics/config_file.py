@@ -237,7 +237,7 @@ class XmlConfigFile(_ConfigFile):
         name = self.get_attr(node, 'name')
         value = self.get_attr(node, 'value', 'true')
 
-        if not config:
+        if config is None:
             config = Values()
 
         if name and value:
