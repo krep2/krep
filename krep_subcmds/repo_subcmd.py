@@ -87,6 +87,10 @@ this command.
                 '--convert-manifest-file',
                 dest='convert_manifest_file', action='store_true',
                 help='Do convert the manifest file with the manifest map file')
+            options.add_option(
+                '--ignore-new-project',
+                dest='ignore_new_project', action='store_true',
+                help='Ignore new projects and do import the git-repo project')
 
             options = optparse.get_option_group('--hook-dir') or \
                 optparse.add_option_group('File options')
@@ -361,7 +365,7 @@ this command.
         builder.save()
 
     @staticmethod
-    def dump_projects(options, projects, nprojects):
+    def dump_projects(options, projects, nprojects, ignore_new=False):
         lsrc, luri = 0, 0
         if options.dump_projects:
             print('IMPORTED PROJECTS (%d)' % len(projects))
@@ -401,13 +405,20 @@ this command.
             else:
                 print('No new project found')
         elif not options.repo_create and len(nprojects) > 0:
-            print('Exit with following new projects (%d):'  % len(nprojects))
+            print('%s with following new projects (%d):'  % (
+                  'Ignore' if ignore_new else 'Exit', len(nprojects)))
+
             for project in sorted(nprojects, key=sort_project):
                 line = ' %s' % project.source
                 if project.source != project.uri:
                     line += ' (%s)' % project.uri
 
                 print(line)
+
+            if ignore_new:
+                return False
+
+        return True
 
     def execute(self, options, *args, **kws):
         SubCommandWithThread.execute(self, options, *args, **kws)
@@ -443,8 +454,15 @@ this command.
 
             if options.dump_projects or options.print_new_projects or \
                     not options.repo_create and len(new_projects) > 0:
-                RepoSubcmd.dump_projects(options, projects, new_projects)
-                return
+                if RepoSubcmd.dump_projects(
+                        options, projects, new_projects,
+                        options.ignore_new_project):
+                    return
+
+            # remove the new projects if option is set
+            if options.ignore_new_project:
+                for project in new_projects:
+                    projects.remove(project)
 
         if options.output_xml_file or options.map_file:
             if options.output_xml_file:
