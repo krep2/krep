@@ -269,7 +269,7 @@ be used to define the wash-out and generate the final commit.
                     continue
 
                 if RepoImportSubcmd.do_import_with_config(
-                        project, options, pvalue, logger, rootdir,
+                        project, options, pvalue, logger, rootdir.rstrip('/'),
                         changed or options.force):
                     res += 1
 
