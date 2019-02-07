@@ -54,9 +54,7 @@ implicitly."""
         GerritCmd.__init__(self, server, enable)
 
     def has_project(self, project):
-        projects = self.ls_projects()
-
-        return project in projects
+        return self.has_project_(project)
 
 
 TOPIC_ENTRY = "Gerrit, GerritError"

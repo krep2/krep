@@ -41,6 +41,13 @@ class GerritCmd(Command):
         self.new_args(cli)
         return self.wait(**kws)
 
+    def has_project_(self, project):
+        if not self.enable:
+            return True
+
+        projects = self.ls_projects()
+        return project in projects
+
     @synchronized
     def ls_projects(self, force=False):
         if not self.enable:
