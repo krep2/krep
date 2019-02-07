@@ -255,20 +255,18 @@ class SubCommand(object):
         else:
             path = options.working_dir
 
-        if path.startswith('~/'):
-            return os.path.expanduser(path)
-        else:
-            return path
+        return os.path.expanduser(path)
 
     @staticmethod
     def get_absolute_running_file_name(options, filename):
-        if os.path.isabs(filename):
-            return filename
+        name = os.path.expanduser(filename)
+        if os.path.isabs(name):
+            return name
         elif options.current_dir:
-            return os.path.join(options.current_dir, filename)
+            return os.path.join(options.current_dir, name)
         else:
             return os.path.join(
-                SubCommand.get_absolute_working_dir(options), filename)
+                SubCommand.get_absolute_working_dir(options), name)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""
