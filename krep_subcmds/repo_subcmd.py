@@ -424,7 +424,7 @@ this command.
         else:
             remote = ulp.netloc.strip('/')
 
-        gerrit = Gerrit(remote)
+        gerrit = Gerrit(remote, options)
         projects = self.fetch_projects_in_manifest(options)
 
         if options.print_new_projects or options.dump_projects or \

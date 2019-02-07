@@ -421,7 +421,7 @@ The escaped variants are supported for the imported files including:
             args, "no files or directories are specified to import")
 
         if not options.dryrun and options.remote:
-            gerrit = Gerrit(options.remote)
+            gerrit = Gerrit(options.remote, options)
             gerrit.create_project(
                 options.name,
                 description=options.description or False,

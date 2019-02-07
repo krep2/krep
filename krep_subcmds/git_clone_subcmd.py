@@ -114,7 +114,7 @@ replaced by GIT_URL."""
         # creat the project in the remote
         if ulp.scheme in ('ssh', 'git'):
             if not options.dryrun and options.remote and options.repo_create:
-                gerrit = Gerrit(options.remote)
+                gerrit = Gerrit(options.remote, options)
                 gerrit.create_project(
                     ulp.path.strip('/'),
                     description=options.description,
