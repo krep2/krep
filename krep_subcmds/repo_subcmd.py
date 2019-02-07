@@ -442,9 +442,8 @@ this command.
                 not options.repo_create:
 
             new_projects = list()
-            existed_projects = gerrit.ls_projects()
             for p in projects:
-                if p.uri not in existed_projects:
+                if not gerrit.has_project(p):
                     new_projects.append(p)
 
             if options.dump_projects or options.print_new_projects or \
