@@ -31,7 +31,7 @@ implicitly."""
         options = optparse.get_option_group('--refs') or \
             optparse.add_option_group('Remote options')
         options.add_option(
-            '--disable-gerrit',
+            '--no-gerrit', '--disable-gerrit',
             dest='enable_gerrit', action='store_false', default=True,
             help='Disable gerrit server, default is to enable gerrit')
         options.add_option(
@@ -46,8 +46,8 @@ implicitly."""
                  'new repository. If not set, the default string will be '
                  'used. "--no-description" could suppress the description')
 
-    def __init__(self, server, enable=True):
-        GerritCmd.__init__(self, server, enable)
+    def __init__(self, server, options=None):
+        GerritCmd.__init__(self, server, options and options.enable_gerrit)
 
     def has_project(self, project):
         return self.has_project_(project)
