@@ -218,13 +218,17 @@ def _attr(node, attribute, default=None):
 
 
 class PatternFile(object):  # pylint: disable=R0903
+    KNOWN_PATTERN = (
+        'pattern', 'exclude-pattern', 'rp-pattern', 'replace-pattern')
+    KNOWN_PATTERNS = (
+        'patterns', 'exclude-patterns', 'rp-patterns', 'replace-patterns')
+
     _XmlPattern = namedtuple(
         '_XmlPattern', 'category,name,value,replacement,cont')
 
     @staticmethod
     def parse_pattern(node, patterns=None, exclude=False, replacement=False):
-        if node.nodeName not in (
-                'pattern', 'exclude-pattern', 'rp-pattern', 'replace-pattern'):
+        if node.nodeName not in PatternFile.KNOWN_PATTERN:
             return None
 
         def _ensure_bool(value):
@@ -286,9 +290,7 @@ class PatternFile(object):  # pylint: disable=R0903
     def parse_patterns(node):
         patterns = list()
 
-        if node.nodeName in (
-                'patterns', 'exclude-patterns', 'rp-patterns',
-                'replace-patterns'):
+        if node.nodeName in PatternFile.KNOWN_PATTERNS:
             parent = PatternFile._XmlPattern(
                 name=_attr(node, 'name'),
                 category=_attr(node, 'category'),
@@ -333,18 +335,16 @@ class PatternFile(object):  # pylint: disable=R0903
             logger.error('manifest has no root')
             return
 
-        if root.nodeName != 'patterns':
-            logger.error('root name should be patterns')
+        if root.nodeName not in PatternFile.KNOWN_PATTERNS:
+            logger.error('root name should be known patterns')
             return
 
-        for node in root.childNodes:
-            if node.nodeName in (
-                    'patterns', 'exclude-patterns', 'replace-patterns'):
-                for pi in PatternFile.parse_patterns(node):
-                    if pi.category not in patterns:
-                        patterns[pi.category] = list()
+        items = PatternFile.parse_patterns(root)
+        for pi in items:
+            if pi.category not in patterns:
+                patterns[pi.category] = list()
 
-                    patterns[pi.category].append(pi)
+            patterns[pi.category].append(pi)
 
         return patterns
 
