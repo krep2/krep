@@ -267,6 +267,7 @@ class GitProject(Project, GitCommand):
                     else local_heads.get(branch)}
         elif not (not mirror or sha1tag or patterns
                   or GitProject.has_name_changes(local_heads, fullname)
+                  or self.pattern.has_category(GitProject.CATEGORY_REVISION)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
             cargs = GitProject._push_args(
