@@ -319,6 +319,9 @@ class OptionParser(optparse.OptionParser):
 
         for arg in args or sys.argv[1:]:
             if arg.startswith('--no-') or arg.startswith('--not-'):
+                if arg in self._long_opt:
+                    continue
+
                 opt = '--%s' % arg[arg.find('-', 4) + 1:]
                 if opt in self._long_opt:
                     if not group:
