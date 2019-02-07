@@ -300,12 +300,15 @@ class PatternFile(object):  # pylint: disable=R0903
                 cont=_attr(node, 'continue', 'false'))
 
             for child in node.childNodes:
-                pi = PatternFile.parse_pattern(
-                    child, parent,
-                    exclude=node.nodeName == 'exclude-patterns',
-                    replacement=parent.replacement)
-                if pi:
-                    patterns.append(pi)
+                if child.nodeName in PatternFile.KNOWN_PATTERNS:
+                    patterns.extend(PatternFile.parse_patterns(child))
+                else:
+                    pi = PatternFile.parse_pattern(
+                        child, parent,
+                        exclude=node.nodeName == 'exclude-patterns',
+                        replacement=parent.replacement)
+                    if pi:
+                        patterns.append(pi)
 
         return patterns
 
