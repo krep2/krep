@@ -292,10 +292,13 @@ this command.
             if revision.startswith(default.remote + '/'):
                  revision = revision[len(default.remote) + 1]
 
+            path = project.path.replace(
+                RepoSubcmd.get_absolute_working_dir(options) + '/', '')
+
             builder.project(
-                name=project.uri, path=project.path, revision=revision,
-                groups=origins[project.path].groups,
-                upstream=origins[project.path].upstream,
+                name=project.uri, path=path, revision=revision,
+                groups=origins[path].groups,
+                upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
@@ -346,10 +349,13 @@ this command.
             if name in maps:
                 name = maps[name]
 
+            path = project.path.replace(
+                RepoSubcmd.get_absolute_working_dir(options) + '/', '')
+
             builder.project(
-                name=name, path=project.path, revision=project.revision,
-                groups=origins[project.path].groups,
-                upstream=origins[pkey].upstream,
+                name=name, path=path, revision=project.revision,
+                groups=origins[path].groups,
+                upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
         builder.save()
