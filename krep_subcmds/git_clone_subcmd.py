@@ -52,10 +52,6 @@ replaced by GIT_URL."""
             '--bare',
             dest='bare', action='store_true',
             help='Clone the bare repository')
-        options.add_option(
-            '-m', '--mirror',
-            dest='mirror', action='store', metavar='LOCATION',
-            help='Set the git repository mirror location')
 
     def get_name(self, options):
         # use options.name with a higher priority if it's set
@@ -105,7 +101,7 @@ replaced by GIT_URL."""
         if not options.offsite:
             optgc = options.extra_values(options.extra_option, 'git-clone')
             ret = project.download(
-                options.git, options.mirror, options.bare,
+                url=options.git, bare=options.bare,
                 reference=optgc and optgc.reference)
             if ret != 0:
                 raise DownloadError('%s: failed to fetch project' % project)
