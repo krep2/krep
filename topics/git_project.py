@@ -402,6 +402,7 @@ class GitProject(Project, GitCommand):
 
             return self.push(self.remote, *cargs, **kws)
 
+        trefs = list()
         for origin in local_tags:
             tag = origin
 
@@ -454,16 +455,16 @@ class GitProject(Project, GitCommand):
                     logger.info('%s is up-to-date', remote_tag)
                     continue
 
-            cargs = GitProject._push_args(
-                list(), options,
-                '%srefs/tags/%s:%s' % (
-                    '+' if force else '', origin, remote_tag),
-                *args)
+            trefs.append('%srefs/tags/%s:%s' % (
+                '+' if force else '', origin, remote_tag))
 
+        if trefs:
+            cargs = GitProject._push_args(list(), options, *trefs)
             ret = self.push(self.remote, *cargs, **kws)
-            if ret != 0:
-                logger.error(
-                    '%s: cannot push tag "%s"', self.remote, remote_tag)
+
+        if ret != 0:
+            logger.error(
+                '%s: cannot push tag "%s"', self.remote, remote_tag)
 
         return ret
 
