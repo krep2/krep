@@ -308,16 +308,14 @@ class GitProject(Project, GitCommand):
                 logger.warning('"%s" does not match revision pattern', head)
                 continue
 
-            if self.rev_existed(origin):
-                local_ref = '%s' % origin
-            else:
-                local_ref = 'refs/%s' % origin
-
+            local_ref = origin if '/' in origin else 'refs/heads/%s' % origin
             if not self.rev_existed(local_ref):
-                local_ref = 'refs/heads/%s' % origin
+                local_ref = 'refs/%s' % origin
                 if not self.rev_existed(local_ref):
-                    logger.error('"%s" has no matched revision', origin)
-                    continue
+                    local_ref = 'refs/heads/%s' % origin
+                    if not self.rev_existed(local_ref):
+                        logger.error('"%s" has no matched revision', origin)
+                        continue
 
             if not self.pattern.match(
                     GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
