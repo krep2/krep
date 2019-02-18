@@ -469,7 +469,7 @@ class GitProject(Project, GitCommand):
         return ret
 
     def init_or_download(self, revision='master', single_branch=True,
-                         offsite=False, options=None):
+                         offsite=False, reference=None):
         logger = Logger.get_logger()
 
         if not revision:
@@ -492,13 +492,13 @@ class GitProject(Project, GitCommand):
                         ret = self.download(
                             self.remote, revision=revision,
                             single_branch=single_branch,
-                            reference=options and options.reference)
+                            reference=reference)
                         break
                 else:
                     ret = self.download(
                         self.remote, revision='master',
                         single_branch=single_branch,
-                        reference=options and options.reference)
+                        reference=reference)
 
         if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')
