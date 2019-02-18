@@ -391,6 +391,7 @@ class GitProject(Project, GitCommand):
 
         if not (tags or patterns
                 or GitProject.has_name_changes(local_tags, fullname)
+                or self.pattern.has_category(GitProject.CATEGORY_TAGS)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
             cargs = GitProject._push_args(
