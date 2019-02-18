@@ -498,6 +498,14 @@ matching.
     def get(self):
         return self.categories
 
+    def has_category(self, categories):
+        for category in _secure_split(
+                categories, PatternItem.PATTERN_DELIMITER):
+            if category in self.categories:
+                return True
+
+        return False
+
     def match(self, categories, value, name=None, strict=False):
         ret = False
         existed = False
