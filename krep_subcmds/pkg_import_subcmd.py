@@ -434,12 +434,15 @@ The escaped variants are supported for the imported files including:
         if options.offsite and not os.path.exists(path):
             os.makedirs(path)
 
-        ulp = urlparse(options.remote or '')
-        if not ulp.scheme:
-            remote = 'git://%s/%s' % (
-                options.remote.strip('/'), options.name)
+        if options.remote:
+            ulp = urlparse(options.remote)
+            if not ulp.scheme:
+                remote = 'git://%s/%s' % (
+                    options.remote.strip('/'), options.name)
+            else:
+                remote = '%s/%s' % (options.remote.strip('/'), options.name)
         else:
-            remote = '%s/%s' % (options.remote.strip('/'), options.name)
+            remote = ''
 
         project = GitProject(
             options.name,
