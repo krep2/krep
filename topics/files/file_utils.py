@@ -92,7 +92,14 @@ class FileUtils(object):
             elif os.path.lexists(dest):
                 os.unlink(dest)
 
-            shutil.copy2(src, dest)
+            destdir = os.path.dirname(dest)
+            if not os.path.exists(destdir):
+                os.makedirs(destdir)
+
+            if os.path.isdir(src):
+                shutil.copytree(src, dest)
+            else:
+                shutil.copy2(src, dest)
 
 
 TOPIC_ENTRY = 'ExecutableNotFoundError, FileUtils'
