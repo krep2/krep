@@ -429,8 +429,8 @@ The escaped variants are supported for the imported files including:
 
         branch = options.branch or 'master'
 
-        path, _ = os.path.splitext(os.path.basename(options.name))
-        path = os.path.realpath(path)
+        name, _ = os.path.splitext(os.path.basename(options.name))
+        path = os.path.join(options.working_dir, name)
         if options.offsite and not os.path.exists(path):
             os.makedirs(path)
 
