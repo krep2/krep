@@ -300,11 +300,13 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, origin, name=self.uri):
+                    GitProject.CATEGORY_REVISION, origin,
+                    name=self.source or self.uri):
                 logger.warning('"%s" does not match revision pattern', origin)
                 continue
             elif not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, head, name=self.uri):
+                    GitProject.CATEGORY_REVISION, head,
+                    name=self.source or self.uri):
                 logger.warning('"%s" does not match revision pattern', head)
                 continue
 
@@ -324,13 +326,14 @@ class GitProject(Project, GitCommand):
                 continue
 
             rhead = self.pattern.replace(
-                GitProject.CATEGORY_REVISION, '%s' % head, name=self.uri)
+                GitProject.CATEGORY_REVISION, '%s' % head,
+                name=self.source or self.uri)
             if rhead != head:
                 rhead = '%s%s' % (refs, rhead)
             else:
                 rhead = self.pattern.replace(
                     GitProject.CATEGORY_REVISION, '%s%s' % (refs, head),
-                    name=self.uri)
+                    name=self.source or self.uri)
 
             skip = False
             sha1 = local_heads[origin]
@@ -421,24 +424,27 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    GitProject.CATEGORY_TAGS, origin, name=self.uri):
+                    GitProject.CATEGORY_TAGS, origin,
+                    name=self.source or self.uri):
                 logger.warning(
                     '%s: "%s" does not match tag pattern', origin, origin)
                 continue
             elif not self.pattern.match(
-                    GitProject.CATEGORY_TAGS, tag, name=self.uri):
+                    GitProject.CATEGORY_TAGS, tag,
+                    name=self.source or self.uri):
                 logger.warning(
                     '%s: "%s" does not match tag pattern', origin, tag)
                 continue
 
             rtag = self.pattern.replace(
-                GitProject.CATEGORY_TAGS, '%s' % tag, name=self.uri)
+                GitProject.CATEGORY_TAGS, '%s' % tag,
+                name=self.source or self.uri)
             if rtag != tag:
                 rtag = '%s%s' % (refs, rtag)
             else:
                 rtag = self.pattern.replace(
                     GitProject.CATEGORY_TAGS, '%s%s' % (refs, tag),
-                    name=self.uri)
+                    name=self.source or self.uri)
 
             remote_tag = 'refs/tags/%s' % rtag
             if remote_tag in remote_tags:
