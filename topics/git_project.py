@@ -319,12 +319,6 @@ class GitProject(Project, GitCommand):
                         logger.error('"%s" has no matched revision', origin)
                         continue
 
-            if not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
-                logger.warning(
-                    '"%s" does not match revision pattern', local_ref)
-                continue
-
             rhead = self.pattern.replace(
                 GitProject.CATEGORY_REVISION, '%s' % head,
                 name=self.source or self.uri)
