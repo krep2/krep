@@ -209,7 +209,11 @@ class FileUtils(object):
             if not os.path.exists(destdir):
                 os.makedirs(destdir)
 
-            shutil.copy2(src, dest)
+            if os.path.isdir(src):
+                shutil.copytree(src, dest)
+            else:
+                shutil.copy2(src, dest)
+
             if scmtool:
                 scmtool.add(dest, '--force')
 
