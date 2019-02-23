@@ -18,14 +18,11 @@ class KrepXmlConfigFile(XmlConfigFile):
         if config is None:
             config = Values()
 
-        if node.nodeName in (
-                'patterns', 'exclude-patterns', 'replace-patterns'):
+        if node.nodeName in PatternFile.KNOWN_PATTERNS:
             patterns = PatternFile.parse_patterns_str(node)
             for pattern in patterns:
                 self.set_attr(config, 'pattern', pattern)
-        elif node.nodeName in (
-                'pattern', 'exclude-pattern', 'rp-pattern',
-                'replace-pattern'):
+        elif node.nodeName in PatternFile.KNOWN_PATTERN:
             pattern = PatternFile.parse_pattern_str(node)
             self.set_attr(config, 'pattern', [])
             self.set_attr(config, 'pattern', pattern)
@@ -33,10 +30,9 @@ class KrepXmlConfigFile(XmlConfigFile):
         return config
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
-        if node.nodeName == 'patterns':
+        if node.nodeName in PatternFile.KNOWN_PATTERNS:
             cfg = self._new_value(XmlConfigFile.FILE_PREFIX)
-            for child in node.childNodes:
-                self.parse_patterns(child, cfg)
+            self.parse_patterns(node, cfg)
 
 
 class SubCommand(object):
@@ -256,20 +252,18 @@ class SubCommand(object):
         else:
             path = options.working_dir
 
-        if path.startswith('~/'):
-            return os.path.expanduser(path)
-        else:
-            return path
+        return os.path.expanduser(path)
 
     @staticmethod
     def get_absolute_running_file_name(options, filename):
-        if os.path.isabs(filename):
-            return filename
+        name = os.path.expanduser(filename)
+        if os.path.isabs(name):
+            return name
         elif options.current_dir:
-            return os.path.join(options.current_dir, filename)
+            return os.path.join(options.current_dir, name)
         else:
             return os.path.join(
-                SubCommand.get_absolute_working_dir(options), filename)
+                SubCommand.get_absolute_working_dir(options), name)
 
     def get_name(self, options):  # pylint: disable=W0613
         """Gets the subcommand name."""

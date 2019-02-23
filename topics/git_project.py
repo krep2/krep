@@ -267,6 +267,7 @@ class GitProject(Project, GitCommand):
                     else local_heads.get(branch)}
         elif not (not mirror or sha1tag or patterns
                   or GitProject.has_name_changes(local_heads, fullname)
+                  or self.pattern.has_category(GitProject.CATEGORY_REVISION)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
             cargs = GitProject._push_args(
@@ -299,39 +300,34 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, origin, name=self.uri):
+                    GitProject.CATEGORY_REVISION, origin,
+                    name=self.source or self.uri):
                 logger.warning('"%s" does not match revision pattern', origin)
                 continue
             elif not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, head, name=self.uri):
+                    GitProject.CATEGORY_REVISION, head,
+                    name=self.source or self.uri):
                 logger.warning('"%s" does not match revision pattern', head)
                 continue
 
-            if self.rev_existed(origin):
-                local_ref = '%s' % origin
-            else:
-                local_ref = 'refs/%s' % origin
-
+            local_ref = origin if '/' in origin else 'refs/heads/%s' % origin
             if not self.rev_existed(local_ref):
-                local_ref = 'refs/heads/%s' % origin
+                local_ref = 'refs/%s' % origin
                 if not self.rev_existed(local_ref):
-                    logger.error('"%s" has no matched revision', origin)
-                    continue
-
-            if not self.pattern.match(
-                    GitProject.CATEGORY_REVISION, local_ref, name=self.uri):
-                logger.warning(
-                    '"%s" does not match revision pattern', local_ref)
-                continue
+                    local_ref = 'refs/heads/%s' % origin
+                    if not self.rev_existed(local_ref):
+                        logger.error('"%s" has no matched revision', origin)
+                        continue
 
             rhead = self.pattern.replace(
-                GitProject.CATEGORY_REVISION, '%s' % head, name=self.uri)
+                GitProject.CATEGORY_REVISION, '%s' % head,
+                name=self.source or self.uri)
             if rhead != head:
                 rhead = '%s%s' % (refs, rhead)
             else:
                 rhead = self.pattern.replace(
                     GitProject.CATEGORY_REVISION, '%s%s' % (refs, head),
-                    name=self.uri)
+                    name=self.source or self.uri)
 
             skip = False
             sha1 = local_heads[origin]
@@ -392,6 +388,7 @@ class GitProject(Project, GitCommand):
 
         if not (tags or patterns
                 or GitProject.has_name_changes(local_tags, fullname)
+                or self.pattern.has_category(GitProject.CATEGORY_TAGS)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
             cargs = GitProject._push_args(
@@ -402,6 +399,7 @@ class GitProject(Project, GitCommand):
 
             return self.push(self.remote, *cargs, **kws)
 
+        trefs = list()
         for origin in local_tags:
             tag = origin
 
@@ -420,24 +418,27 @@ class GitProject(Project, GitCommand):
                 continue
 
             if not self.pattern.match(
-                    GitProject.CATEGORY_TAGS, origin, name=self.uri):
+                    GitProject.CATEGORY_TAGS, origin,
+                    name=self.source or self.uri):
                 logger.warning(
                     '%s: "%s" does not match tag pattern', origin, origin)
                 continue
             elif not self.pattern.match(
-                    GitProject.CATEGORY_TAGS, tag, name=self.uri):
+                    GitProject.CATEGORY_TAGS, tag,
+                    name=self.source or self.uri):
                 logger.warning(
                     '%s: "%s" does not match tag pattern', origin, tag)
                 continue
 
             rtag = self.pattern.replace(
-                GitProject.CATEGORY_TAGS, '%s' % tag, name=self.uri)
+                GitProject.CATEGORY_TAGS, '%s' % tag,
+                name=self.source or self.uri)
             if rtag != tag:
                 rtag = '%s%s' % (refs, rtag)
             else:
                 rtag = self.pattern.replace(
                     GitProject.CATEGORY_TAGS, '%s%s' % (refs, tag),
-                    name=self.uri)
+                    name=self.source or self.uri)
 
             remote_tag = 'refs/tags/%s' % rtag
             if remote_tag in remote_tags:
@@ -454,21 +455,21 @@ class GitProject(Project, GitCommand):
                     logger.info('%s is up-to-date', remote_tag)
                     continue
 
-            cargs = GitProject._push_args(
-                list(), options,
-                '%srefs/tags/%s:%s' % (
-                    '+' if force else '', origin, remote_tag),
-                *args)
+            trefs.append('%srefs/tags/%s:%s' % (
+                '+' if force else '', origin, remote_tag))
 
+        if trefs:
+            cargs = GitProject._push_args(list(), options, *trefs)
             ret = self.push(self.remote, *cargs, **kws)
-            if ret != 0:
-                logger.error(
-                    '%s: cannot push tag "%s"', self.remote, remote_tag)
+
+        if ret != 0:
+            logger.error(
+                '%s: cannot push tag "%s"', self.remote, remote_tag)
 
         return ret
 
     def init_or_download(self, revision='master', single_branch=True,
-                         offsite=False, options=None):
+                         offsite=False, reference=None):
         logger = Logger.get_logger()
 
         if not revision:
@@ -491,13 +492,13 @@ class GitProject(Project, GitCommand):
                         ret = self.download(
                             self.remote, revision=revision,
                             single_branch=single_branch,
-                            reference=options and options.reference)
+                            reference=reference)
                         break
                 else:
                     ret = self.download(
                         self.remote, revision='master',
                         single_branch=single_branch,
-                        reference=options and options.reference)
+                        reference=reference)
 
         if ret == 0 and self.revision != revision:
             ret, parent = self.rev_list('--max-parents=0', 'HEAD')
