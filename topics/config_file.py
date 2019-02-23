@@ -245,16 +245,16 @@ class XmlConfigFile(_ConfigFile):
 
         return config
 
-    def parse(self, node, pi=None):  # pylint: disable=R0914
+    def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
         config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
-        for node in root.childNodes:
-            if node.nodeName == 'global-option':
-                self.parse_global(node, config)
-            elif node.nodeName == 'global-options':
-                for child in node.childNodes:
-                    if node.nodeName == 'option':
-                        self.parse_global(node, config)
+        for child in node.childNodes:
+            if child.nodeName == 'global-option':
+                self.parse_global(child, config)
+            elif child.nodeName == 'global-options':
+                for child2 in child.childNodes:
+                    if child2.nodeName == 'option':
+                        self.parse_global(child2, config)
 
     @staticmethod
     def get_attr(node, name, default=None):
