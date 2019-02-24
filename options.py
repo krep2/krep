@@ -19,18 +19,29 @@ def _ensure_attr(attr, reverse=False):
 class _Origins(object):
     def __init__(self, defaults=None):
         self.origins = dict()
+        self.details = dict()
         if defaults:
             for attr in defaults:
                 self.origins[attr] = 'default'
 
     def set(self, key, origin):
-      if origin:
-          self.origins[key] = origin
-      else:
-          self.origins.pop(key, None)
+        if origin:
+            if key in self.origins:
+                if key not in self.details:
+                    self.details[key] = list()
+                    self.details[key].append(self.origins[key])
+                if origin not in self.details[key]:
+                    self.details[key].append(origin)
+
+            self.origins[key] = 'mixed'
+        else:
+            self.origins.pop(key, None)
 
     def get(self, key):
-      return self.origins.get(key, 'unknown')
+        return self.origins.get(key, 'undef')
+
+    def detail(self, key):
+        return self.details.get(key, '')
 
 
 class Values(optparse.Values):
@@ -50,7 +61,12 @@ class Values(optparse.Values):
             self._origins = _Origins()
 
     def origin(self, attr):
-         return self._origins.get(attr)
+        ret = self._origins.get(attr)
+        details = self._origins.detail(attr)
+        if details:
+            ret += details
+
+        return ret
 
     @staticmethod
     def _handle_value(val, boolean=False):
@@ -370,7 +386,7 @@ class OptionParser(optparse.OptionParser):
             setattr(self.sup_values, opt.lstrip('-'), default)
 
     def join(self, opt):
-        opt.join(self.sup_values, override=True, origin='default')
+        opt.join(self.sup_values, override=True, origin='parser')
 
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
