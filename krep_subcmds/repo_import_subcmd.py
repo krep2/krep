@@ -1,6 +1,8 @@
 
 import os
 
+from collections import namedtuple
+
 from options import Values
 from pkg_import_subcmd import PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
@@ -10,6 +12,36 @@ from topics import ConfigFile, FileVersion, GitProject, key_compare, \
     KrepXmlConfigFile, Logger, Pattern, RaiseExceptionIfOptionMissed, \
     SubCommandWithThread
 # pylint: enable=W0611
+
+
+class RepoImportLocation(object):
+    Rule = namedtuple('Rule', 'location,start,end,till')
+
+    def __init__(self):
+        # order will be kept as input
+        self.locations = list()
+
+    def add(self, location, start=None, end=None, till=None):
+        if location:
+            self.locations.append(
+                RepoImportLocation.Rule(
+                    location=location, start=start, end=end, till=till))
+
+    def get(self, version, rootdir=None):
+        for loc, start, end, till in self.locations:
+            if start and FileVersion.cmp(stat, version) == -1:
+                continue
+            if end and FileVersion.cmp(end, version) >= 0:
+                continue
+            if till and FileVersion.cmp(till, version) == 1:
+                continue
+
+            if rootdir:
+                path = os.path.join(rootdir, loc)
+                if os.path.exists(path):
+                    return path
+
+        return None
 
 
 # pylint: disable=E1101
@@ -58,7 +90,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             self.set_attr(cfg, 'subdir', self.get_attr(node, 'subdir'))
 
         self.set_attr(cfg, 'path', self.get_attr(node, 'path'))
-        self.set_attr(cfg, 'location', self.get_attr(node, 'location'))
+
+        locs = RepoImportLocation()
+        self.set_attr(cfg, 'location', locs)
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
         self.set_attr(cfg, 'cleanup', self.get_attr(node, 'cleanup'))
@@ -71,6 +105,12 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
 
                 self._parse_project(
                     child, name=self.get_attr(node, 'name'), subdir=True)
+            elif child.nodeName == 'location':
+                name = self.get_attr(child, 'name')
+                start = self.get_attr(child, 'start')
+                end = self.get_attr(child, 'end')
+                till = self.get_attr(child, 'till')
+                locs.add(name, start=start, end=end, till=till)
             elif child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
                 cpfs = self.get_attr(child, 'copy')
@@ -131,6 +171,11 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                     (self.get_attr(child, 'src'),
                      self.get_attr(child, 'dest')))
 
+        location = self.get_attr(node, 'location')
+        if location:
+            for loc in location.split('|'):
+                locs.add(loc.strip())
+
         if not active:
             self._new_value(
                 '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
@@ -184,6 +229,11 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         project_name = "%s" % str(project)
 
+        if options.tag:
+            label = options.tag
+        else:
+            label = os.path.basename(rootdir)
+
         cleanup, strict = False, False
         path, subdir, location = rootdir, '', None
         symlinks, copyfile, linkfile = True, None, None
@@ -199,16 +249,13 @@ be used to define the wash-out and generate the final commit.
             if subdir:
                 project_name += '/subdir'
 
-            locations = pvalue.location
             symlinks = pvalue.symlinks
             copyfile = pvalue.copyfile
             linkfile = pvalue.linkfile
-
-            if locations:
-                for location in reversed(locations.split('|')):
-                    path = os.path.join(rootdir, location.strip())
-                    if os.path.exists(path):
-                        break
+            if pvalue.location:
+                location = pvalue.location.get(label, rootdir)
+                if location:
+                    path = os.path.join(rootdir, location)
         else:
             logger.warning('"%s" is undefined', project_name)
             return 1
@@ -222,11 +269,6 @@ be used to define the wash-out and generate the final commit.
                 '"%s" is not existed', os.path.join(rootdir, location))
             return 1
 
-        if options.tag:
-            label = options.tag
-        else:
-            label = os.path.basename(rootdir)
-
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         ret, _ = PkgImportSubcmd.do_import(
@@ -234,7 +276,7 @@ be used to define the wash-out and generate the final commit.
             filters=filters, logger=logger,
             imports=False if location else None,
             symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile,
-			force=force, cleanup=cleanup, strict=strict)
+            force=force, cleanup=cleanup, strict=strict)
 
         return ret
 
