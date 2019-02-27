@@ -429,7 +429,7 @@ this command.
         RaiseExceptionIfOptionMissed(
             options.remote, 'remote (--remote) is not set')
 
-        if options.prefix and not options.endswith('/'):
+        if options.prefix and not options.prefix.endswith('/'):
             options.prefix += '/'
 
         repo = self.init_and_sync(options, options.offsite)
