@@ -449,7 +449,8 @@ this command.
 
             new_projects = list()
             for p in projects:
-                if not gerrit.has_project(p.source):
+                if not gerrit.has_project(p.source) and \
+                        not gerrit.has_project(p.uri):
                     new_projects.append(p)
 
             if options.dump_projects or options.print_new_projects or \
