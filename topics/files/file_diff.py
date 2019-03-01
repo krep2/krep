@@ -135,19 +135,20 @@ class FileDiff(object):
                     changes += 1
                     unlink(oldf)
 
-            for dname in dirs:
-                oldd = os.path.join(root, dname)
-                if self.sccsp.match_dir(oldd[slen:]):
-                    continue
-                elif not self.pattern.match_dir(oldd[slen:]):
-                    debug('ignore %s with dir pattern' % oldd)
-                    continue
+            if self.pattern.has_dir_rule():
+                for dname in dirs:
+                    oldd = os.path.join(root, dname)
+                    if self.sccsp.match_dir(oldd[slen:]):
+                        continue
+                    elif not self.pattern.match_dir(oldd[slen:]):
+                        debug('ignore %s with dir pattern' % oldd)
+                        continue
 
-                newd = oldd.replace(self.src, self.dest)
-                if not os.path.lexists(newd):
-                    debug('remove %s' % oldd)
-                    changes += 1
-                    unlink(oldd)
+                    newd = oldd.replace(self.src, self.dest)
+                    if not os.path.lexists(newd):
+                        debug('remove %s' % oldd)
+                        changes += 1
+                        unlink(oldd)
 
         for root, dirs, files in os.walk(self.dest):
             for dname in dirs:

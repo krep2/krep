@@ -113,6 +113,12 @@ class FilePattern(object):
 
         return len(self.others) == 0
 
+    def has_file_rule(self):
+        return len(self.filep) + len(self.fileop) > 0
+
+    def has_dir_rule(self):
+        return len(self.dirp) + len(self.dirop) > 0
+
     def match_file(self, filename):
         try:
             return self._match_file(filename)
