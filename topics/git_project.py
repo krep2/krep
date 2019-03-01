@@ -290,7 +290,7 @@ class GitProject(Project, GitCommand):
                     if re.match(pattern, head):
                         break
                 else:
-                    logger.warning(
+                    logger.info(
                         '"%s" does not match provied patterns', head)
                     continue
 
@@ -302,12 +302,12 @@ class GitProject(Project, GitCommand):
             if not self.pattern.match(
                     GitProject.CATEGORY_REVISION, origin,
                     name=self.source or self.uri):
-                logger.warning('"%s" does not match revision pattern', origin)
+                logger.info('"%s" does not match revision pattern', origin)
                 continue
             elif not self.pattern.match(
                     GitProject.CATEGORY_REVISION, head,
                     name=self.source or self.uri):
-                logger.warning('"%s" does not match revision pattern', head)
+                logger.info('"%s" does not match revision pattern', head)
                 continue
 
             local_ref = origin if '/' in origin else 'refs/heads/%s' % origin
@@ -408,7 +408,7 @@ class GitProject(Project, GitCommand):
                     if re.match(pattern, tag):
                         break
                 else:
-                    logger.warning(
+                    logger.info(
                         '"%s" does not match provied patterns', tag)
                     continue
 
@@ -420,13 +420,13 @@ class GitProject(Project, GitCommand):
             if not self.pattern.match(
                     GitProject.CATEGORY_TAGS, origin,
                     name=self.source or self.uri):
-                logger.warning(
+                logger.info(
                     '%s: "%s" does not match tag pattern', origin, origin)
                 continue
             elif not self.pattern.match(
                     GitProject.CATEGORY_TAGS, tag,
                     name=self.source or self.uri):
-                logger.warning(
+                logger.info(
                     '%s: "%s" does not match tag pattern', origin, tag)
                 continue
 
