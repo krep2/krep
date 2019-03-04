@@ -229,9 +229,14 @@ class XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
 
+        self.pairs = dict()
         root = xml.dom.minidom.parse(filename)
         for node in root.childNodes:
             self.parse(node, pi)
+
+    def foreach_pair(self, group):
+        for pair in self.pairs.get(group, []):
+            yield pair
 
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
@@ -245,6 +250,17 @@ class XmlConfigFile(_ConfigFile):
 
         return config
 
+    def parse_pair(self, node, parent=None):
+        attrs = dict()
+
+        for attr, value in (self.attribute or dict()).items():
+            attrs[attr] = value
+
+        if parent not in self.pairs:
+            self.pairs[parent] = list()
+
+        self.pairs[parent].append(attrs)
+
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
         config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
@@ -255,6 +271,8 @@ class XmlConfigFile(_ConfigFile):
                 for child2 in child.childNodes:
                     if child2.nodeName == 'option':
                         self.parse_global(child2, config)
+            elif child.nodeName == 'pair':
+                self.parse_pair(node, node.nodeName)
 
     @staticmethod
     def get_attr(node, name, default=None):
