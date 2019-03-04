@@ -229,9 +229,18 @@ class XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
 
+        self.var = dict()
+        self.sets = dict()
         root = xml.dom.minidom.parse(filename)
         for node in root.childNodes:
             self.parse(node, pi)
+
+    def foreach(self, group):
+        for yset in self.sets.get(group, []):
+            self.var = yset
+            yield yset
+
+        self.var = dict()
 
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
@@ -245,24 +254,81 @@ class XmlConfigFile(_ConfigFile):
 
         return config
 
+    def parse_set(self, node, name=None):
+        attrs = dict()
+
+        for attr in (node._attrs or dict()).keys():
+            attrs[attr] = self.get_var_attr(node, attr)
+
+        if name not in self.sets:
+            self.sets[name] = list()
+
+        self.sets[name].append(attrs)
+
     def parse_include(self, node):
         name = self.get_attr(node, 'name')
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
 
         xvals = XmlConfigFile(name, self.get_default())
+        # duplicate the 'value-sets'
+        for key, value in xvals.sets.items():
+            if key not in self.sets:
+                self.sets[key] = list()
+
+            self.sets[key].extend(value)
+
         return name, xvals
 
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
         config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
-        for child in node.childNodes:
-            if child.nodeName == 'global-option':
-                self.parse_global(child, config)
-            elif child.nodeName == 'global-options':
-                for child2 in child.childNodes:
-                    if child2.nodeName == 'option':
-                        self.parse_global(child2, config)
+        if node.nodeName == 'global-option':
+            self.parse_global(node, config)
+        elif node.nodeName == 'global-options':
+            for child2 in node.childNodes:
+                if child2.nodeName == 'option':
+                    self.parse_global(child2, config)
+        elif node.nodeName == 'value-sets':
+            name = self.get_attr(node, 'name')
+            for child2 in node.childNodes:
+                if child2.nodeName in ('pair', 'set'):
+                    self.parse_set(child2, name)
+        elif node.nodeName == 'include':
+            name, xvals = self.parse_include(node)
+            # record included file name
+            self._new_value(
+                '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals)
+
+    def get_var_attr(self, node, name, default=None):
+        value = self.get_attr(node, name, default)
+        if value:
+            return self.escape_attr(value)[0]
+        else:
+            return value
+
+    def escape_attr(self, value):
+        i, nonexisted = 0, False
+        varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
+        while True:
+            m = varprog.search(value, i)
+            if not m:
+                break
+
+            i, j = m.span(0)
+            name = m.group(1)
+            if (name.startswith('{') and name.endswith('}')) or \
+                  (name.startswith('(') and name.endswith(')')):
+                name = name[1:-1]
+
+            if name in self.var:
+                value = value[:i] + self.var[name] + value[j:]
+                i += len(self.var[name])
+            else:
+                nonexisted = True
+                i = j
+
+        return value, nonexisted
 
     @staticmethod
     def get_attr(node, name, default=None):
