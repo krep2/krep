@@ -261,18 +261,33 @@ class XmlConfigFile(_ConfigFile):
 
         self.pairs[parent].append(attrs)
 
+    def parse_include(self, node):
+        name = self.get_attr(node, 'name')
+        if name and not os.path.isabs(name):
+            name = os.path.join(os.path.dirname(self.filename), name)
+
+        xvals = XmlConfigFile(name, self.get_default())
+        return name, xvals
+
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
         config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
-        for child in node.childNodes:
-            if child.nodeName == 'global-option':
-                self.parse_global(child, config)
-            elif child.nodeName == 'global-options':
-                for child2 in child.childNodes:
-                    if child2.nodeName == 'option':
-                        self.parse_global(child2, config)
-            elif child.nodeName == 'pair':
-                self.parse_pair(node, node.nodeName)
+        if node.nodeName == 'global-option':
+            self.parse_global(node, config)
+        elif node.nodeName == 'global-options':
+            for child2 in node.childNodes:
+                if child2.nodeName == 'option':
+                    self.parse_global(child2, config)
+        elif node.nodeName == 'value-sets':
+            name = self.get_attr(node, 'name')
+            for child2 in node.childNodes:
+                if child2.nodeName in ('pair', 'set'):
+                    self.parse_set(child2, name)
+        elif node.nodeName == 'include':
+            name, xvals = self.parse_include(node)
+            # record included file name
+            self._new_value(
+                '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals)
 
     @staticmethod
     def get_attr(node, name, default=None):
