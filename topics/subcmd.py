@@ -11,29 +11,8 @@ from pattern import Pattern
 from pattern_file import PatternFile as XmlPatternFile
 
 
-class KrepXmlConfigFile(XmlConfigFile):
-    def __init__(self, filename, pi=None):
-        XmlConfigFile.__init__(self, filename, pi)
-
-    def parse_patterns(self, node, config=None):
-        if config is None:
-            config = Values()
-
-        if node.nodeName in PatternFile.KNOWN_PATTERNS:
-            patterns = PatternFile.parse_patterns_str(node)
-            for pattern in patterns:
-                self.set_attr(config, 'pattern', pattern)
-        elif node.nodeName in PatternFile.KNOWN_PATTERN:
-            pattern = PatternFile.parse_pattern_str(node)
-            self.set_attr(config, 'pattern', [])
-            self.set_attr(config, 'pattern', pattern)
-
-        return config
-
-    def parse(self, node, pi=None):  # pylint: disable=R0914
-        if node.nodeName in PatternFile.KNOWN_PATTERNS:
-            cfg = self._new_value(XmlConfigFile.FILE_PREFIX)
-            self.parse_patterns(node, cfg)
+class KrepXmlConfigFile(XmlPatternFile):
+    pass
 
 
 class SubCommand(object):
