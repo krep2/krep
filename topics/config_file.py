@@ -271,6 +271,13 @@ class XmlConfigFile(_ConfigFile):
             name = os.path.join(os.path.dirname(self.filename), name)
 
         xvals = XmlConfigFile(name, self.get_default())
+        # duplicate the 'value-sets'
+        for key, value in xvals.sets.items():
+            if key not in self.sets:
+                self.sets[key] = list()
+
+            self.sets[key].extend(value)
+
         return name, xvals
 
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
