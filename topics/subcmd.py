@@ -7,7 +7,8 @@ from config_file import XmlConfigFile
 from error import HookError
 from logger import Logger
 from options import Values
-from pattern import Pattern, PatternFile
+from pattern import Pattern
+from pattern_file import PatternFile as XmlPatternFile
 
 
 class KrepXmlConfigFile(XmlConfigFile):
@@ -150,13 +151,12 @@ class SubCommand(object):
             patterns += Pattern(options.pattern)
 
         if options.pattern_file:
-            cfg = KrepXmlConfigFile(
+            patf = XmlPatternFile.load(
                 SubCommand.get_absolute_running_file_name(
                     options, options.pattern_file))
 
-            val = cfg.get_value(KrepXmlConfigFile.FILE_PREFIX)
-            if val:
-                patterns += val.pattern  # pylint: disable=E1103
+            if patf:
+                patterns += patf
 
         return patterns
 
