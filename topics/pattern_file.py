@@ -91,12 +91,22 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
                 if child.nodeName in PatternFile.KNOWN_PATTERNS:
                     patterns.extend(self.parse_patterns_node(child))
                 elif child.nodeName in PatternFile.KNOWN_PATTERN:
-                    pi = self.parse_pattern_node(
-                        child, parent,
-                        exclude=node.nodeName == 'exclude-patterns',
-                        replacement=parent.replacement)
-                    if pi:
-                        patterns.append(pi)
+                    source = self.get_attr(child, 'source')
+                    if source:
+                        for _ in self.foreach(source, child):
+                            pi = self.parse_pattern_node(
+                                child, parent,
+                                exclude=node.nodeName == 'exclude-patterns',
+                                replacement=parent.replacement)
+                            if pi:
+                                patterns.append(pi)
+                    else:
+                        pi = self.parse_pattern_node(
+                            child, parent,
+                            exclude=node.nodeName == 'exclude-patterns',
+                            replacement=parent.replacement)
+                        if pi:
+                            patterns.append(pi)
 
         return patterns
 
@@ -111,8 +121,14 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
                 self.set_attr(config, 'pattern', str(pattern))
         elif node.nodeName in PatternFile.KNOWN_PATTERN:
             self.set_attr(config, 'pattern', [])
-            pattern = self.parse_pattern_node(node)
-            self.set_attr(config, 'pattern', str(pattern or ''))
+            source = self.get_attr(node, 'source')
+            if source:
+                for _ in self.foreach(source, node):
+                    pattern = self.parse_pattern_node(node)
+                    self.set_attr(config, 'pattern', str(pattern or ''))
+            else:
+                pattern = self.parse_pattern_node(node)
+                self.set_attr(config, 'pattern', str(pattern or ''))
 
         return config
 
