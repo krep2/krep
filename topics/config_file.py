@@ -229,14 +229,18 @@ class XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None):
         _ConfigFile.__init__(self, filename)
 
-        self.pairs = dict()
+        self.var = dict()
+        self.sets = dict()
         root = xml.dom.minidom.parse(filename)
         for node in root.childNodes:
             self.parse(node, pi)
 
-    def foreach_pair(self, group):
-        for pair in self.pairs.get(group, []):
-            yield pair
+    def foreach(self, group):
+        for yset in self.sets.get(group, []):
+            self.var = yset
+            yield yset
+
+        self.var = dict()
 
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
@@ -250,16 +254,16 @@ class XmlConfigFile(_ConfigFile):
 
         return config
 
-    def parse_pair(self, node, parent=None):
+    def parse_set(self, node, name=None):
         attrs = dict()
 
-        for attr, value in (self.attribute or dict()).items():
-            attrs[attr] = value
+        for attr, _ in (node._attrs or dict()).items():
+            attrs[attr] = self.get_var_attr(node, attr)
 
-        if parent not in self.pairs:
-            self.pairs[parent] = list()
+        if name not in self.sets:
+            self.sets[name] = list()
 
-        self.pairs[parent].append(attrs)
+        self.sets[name].append(attrs)
 
     def parse_include(self, node):
         name = self.get_attr(node, 'name')
@@ -288,6 +292,35 @@ class XmlConfigFile(_ConfigFile):
             # record included file name
             self._new_value(
                 '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals)
+
+    def get_var_attr(self, node, name, default=None):
+        value = self.get_attr(node, name, default)
+        if value:
+            return self.escape_attr(value)
+        else:
+            return value
+
+    def escape_attr(self, value):
+        i = 0
+        varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
+        while True:
+            m = varprog.search(value, i)
+            if not m:
+                break
+
+            i, j = m.span(0)
+            name = m.group(1)
+            if (name.startswith('{') and name.endswith('}')) or \
+                  (name.startswith('(') and name.endswith(')')):
+                name = name[1:-1]
+
+            if name in self.var:
+                value = value[:i] + self.var[name] + value[j:]
+                i += len(self.var[name])
+            else:
+                i = j
+
+        return value
 
     @staticmethod
     def get_attr(node, name, default=None):
