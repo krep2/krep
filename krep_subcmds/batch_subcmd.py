@@ -32,8 +32,8 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                     self.get_attr(child, 'value'))
 
     def parse_project(self, node, pi=None, config=None):
-        name = self.get_attr(node, 'name')
-        group = self.get_attr(node, 'group')
+        name = self.get_var_attr(node, 'name')
+        group = self.get_var_attr(node, 'group')
 
         if not config:
             config = Values()
@@ -44,10 +44,10 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         for child in node.childNodes:
             if child.nodeName == 'args':
                 self.set_attr(
-                    config, child.nodeName, self.get_attr(child, 'value'))
+                    config, child.nodeName, self.get_var_attr(child, 'value'))
             elif child.nodeName == 'option':
-                name = self.get_attr(child, 'name')
-                value = self.get_attr(child, 'value')
+                name = self.get_var_attr(child, 'name')
+                value = self.get_var_attr(child, 'value')
                 self.set_attr(config, name, value)
             elif child.nodeName == 'hook':
                 self.parse_hook(child, config)
@@ -78,23 +78,25 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
 
         default = self._get_value(BatchXmlConfigFile.DEFAULT_CONFIG)
         for child in node.childNodes:
-            if child.nodeName in ('global_option', 'global-option'):
-                self.parse_global(child, default)
-            elif child.nodeName == 'project':
-                self._add_value(
-                    '%s.%s' % (
-                        BatchXmlConfigFile.PROJECT_PREFIX,
-                        self.get_attr(child, 'name')),
-                    self.parse_project(child, pi=pi))
+            if child.nodeName == 'project':
+                source = self.get_attr(child, 'source')
+                if source:
+                    for _ in self.foreach(source, child):
+                        self._add_value(
+                            '%s.%s' % (
+                                BatchXmlConfigFile.PROJECT_PREFIX,
+                                self.get_attr(child, 'name')),
+                            self.parse_project(child, pi=pi))
+                else:
+                    self._add_value(
+                        '%s.%s' % (
+                            BatchXmlConfigFile.PROJECT_PREFIX,
+                            self.get_attr(child, 'name')),
+                        self.parse_project(child, pi=pi))
             elif child.nodeName == 'hook':
                 self.parse_hook(child, default)
-            elif child.nodeName == 'include':
-                name, xvals = self.parse_include(child)
-                # record included file name
-                self._new_value(
-                    '%s.%s' % (BatchXmlConfigFile.FILE_PREFIX, name), xvals)
             else:
-                self.parse_patterns(child, default)
+                KrepXmlConfigFile.parse(self, child, default)
 
 # pylint: enable=E1101
 
