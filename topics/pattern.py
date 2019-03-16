@@ -213,145 +213,6 @@ class PatternItem(object):
         return value
 
 
-def _attr(node, attribute, default=None):
-    return node.getAttribute(attribute) or default
-
-
-class PatternFile(object):  # pylint: disable=R0903
-    KNOWN_PATTERN = (
-        'pattern', 'exclude-pattern', 'rp-pattern', 'replace-pattern')
-    KNOWN_PATTERNS = (
-        'patterns', 'exclude-patterns', 'rp-patterns', 'replace-patterns')
-
-    _XmlPattern = namedtuple(
-        '_XmlPattern', 'category,name,value,replacement,cont')
-
-    @staticmethod
-    def parse_pattern(node, patterns=None, exclude=False, replacement=False):
-        if node.nodeName not in PatternFile.KNOWN_PATTERN:
-            return None
-
-        def _ensure_bool(value):
-            if value is None:
-                return None
-            else:
-                value = value.lower()
-                if value in ('true', 'yes'):
-                    return True
-                elif value in ('false', 'no'):
-                    return False
-
-            return None
-
-        is_exc = exclude or node.nodeName == 'exclude-pattern'
-        is_rep = replacement or \
-            node.nodeName in ('rp-pattern', 'replace-pattern')
-        p = PatternFile._XmlPattern(
-            name=_attr(node, 'name') if not is_exc else \
-                (None if not _attr(node, 'value') else _attr(node, 'name')),
-            category=_attr(node, 'category', patterns and patterns.category),
-            value=_attr(node, 'name') or _attr(node, 'value') \
-                if is_rep else _attr(node, 'value') or _attr(node, 'name'),
-            replacement=_attr(node, 'replace') or _attr(node, 'value') \
-                if is_rep else None,
-            cont=_ensure_bool(
-                _attr(node, 'continue', patterns and patterns.cont)))
-
-        if p.replacement is not None:
-            if PatternItem.is_replace_str(p.replacement):
-                pi = PatternItem(
-                    category=p.category, patterns=p.replacement, name=p.name,
-                    cont=p.cont)
-            else:
-                pi = PatternItem(category=p.category, name=p.name)
-                pi.add(
-                    subst=PatternReplaceItem(
-                        p.value, p.replacement, p.cont == True))
-        elif not PatternItem.is_replace_str(p.value):
-            pi = PatternItem(category=p.category, name=p.name)
-            pi.add(
-                p.value, exclude=(
-                    exclude or node.nodeName == 'exclude-pattern'))
-        else:
-            pi = PatternItem(
-                category=p.category, patterns=p.value,
-                name=p.name,
-                exclude=exclude or node.nodeName == 'exclude-pattern',
-                cont=p.cont)
-
-        return pi
-
-    @staticmethod
-    def parse_pattern_str(node, patterns=None):
-        p = PatternFile.parse_pattern(node, patterns)
-        return str(p) if p else ''
-
-    @staticmethod
-    def parse_patterns(node):
-        patterns = list()
-
-        if node.nodeName in PatternFile.KNOWN_PATTERNS:
-            parent = PatternFile._XmlPattern(
-                name=_attr(node, 'name'),
-                category=_attr(node, 'category'),
-                value=None,
-                replacement=node.nodeName in (
-                    'rp-patterns', 'replace-patterns'),
-                cont=_attr(node, 'continue', 'false'))
-
-            for child in node.childNodes:
-                if child.nodeName in PatternFile.KNOWN_PATTERNS:
-                    patterns.extend(PatternFile.parse_patterns(child))
-                else:
-                    pi = PatternFile.parse_pattern(
-                        child, parent,
-                        exclude=node.nodeName == 'exclude-patterns',
-                        replacement=parent.replacement)
-                    if pi:
-                        patterns.append(pi)
-
-        return patterns
-
-    @staticmethod
-    def parse_patterns_str(node):
-        lists = list()
-        patterns = PatternFile.parse_patterns(node)
-
-        for pi in patterns:
-            lists.append(str(pi))
-
-        return lists
-
-    @staticmethod
-    def load(filename):
-        patterns = dict()
-
-        logger = Logger.get_logger('PATTERN')
-
-        try:
-            root = xml.dom.minidom.parse(filename)
-        except (OSError, xml.parsers.expat.ExpatError):
-            logger.error('error to parse pattern file %s', filename)
-            return
-
-        if not root or not root.childNodes:
-            logger.error('manifest has no root')
-            return
-
-        if root.nodeName not in PatternFile.KNOWN_PATTERNS:
-            logger.error('root name should be known patterns')
-            return
-
-        items = PatternFile.parse_patterns(root)
-        for pi in items:
-            if pi.category not in patterns:
-                patterns[pi.category] = list()
-
-            patterns[pi.category].append(pi)
-
-        return patterns
-
-
 class Pattern(object):
     """\
 Contains pattern categories with the format CATEGORY:PATTERN,PATTERN.
@@ -369,7 +230,6 @@ matching.
         self.orders = dict()
         self.categories = dict()
         self.add(pattern)
-        self.load(pattern_file)
 
     def __nozero__(self):
         return len(self.categories) > 0
@@ -491,10 +351,6 @@ matching.
         elif patterns is not None:
             logger.error('unknown option "%s"', str(patterns))
 
-    def load(self, pattern_file):
-        if pattern_file:
-            self.add(PatternFile.load(pattern_file))
-
     def get(self):
         return self.categories
 
@@ -567,4 +423,4 @@ matching.
         return False
 
 
-TOPIC_ENTRY = 'Pattern, PatternFile'
+TOPIC_ENTRY = 'Pattern'
