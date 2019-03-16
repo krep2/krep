@@ -245,6 +245,14 @@ class XmlConfigFile(_ConfigFile):
 
         return config
 
+    def parse_include(self, node):
+        name = self.get_attr(node, 'name')
+        if name and not os.path.isabs(name):
+            name = os.path.join(os.path.dirname(self.filename), name)
+
+        xvals = XmlConfigFile(name, self.get_default())
+        return name, xvals
+
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
         config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
