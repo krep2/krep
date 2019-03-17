@@ -242,6 +242,22 @@ class XmlConfigFile(_ConfigFile):
 
         self.var = dict()
 
+    def secure_vars(self, node, var=None):
+        ret = True
+
+        if var is not None and var != self.var:
+            return False
+
+        for attr in (node._attrs or dict()).keys():
+            value = self.get_attr(node, attr)
+            if value:
+                _, nonexisted = self.escape_attr()
+                if nonexisted:
+                    ret = False
+                    break
+
+        return ret
+
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
         value = self.get_attr(node, 'value', 'true')
@@ -257,7 +273,7 @@ class XmlConfigFile(_ConfigFile):
     def parse_set(self, node, name=None):
         attrs = dict()
 
-        for attr, _ in (node._attrs or dict()).items():
+        for attr, _ in (node._attrs or dict()).keys():
             attrs[attr] = self.get_var_attr(node, attr)
 
         if name not in self.sets:
@@ -303,12 +319,12 @@ class XmlConfigFile(_ConfigFile):
     def get_var_attr(self, node, name, default=None):
         value = self.get_attr(node, name, default)
         if value:
-            return self.escape_attr(value)
+            return self.escape_attr(value)[0]
         else:
             return value
 
     def escape_attr(self, value):
-        i = 0
+        i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
         while True:
             m = varprog.search(value, i)
@@ -325,9 +341,10 @@ class XmlConfigFile(_ConfigFile):
                 value = value[:i] + self.var[name] + value[j:]
                 i += len(self.var[name])
             else:
+                nonexisted = True
                 i = j
 
-        return value
+        return value, nonexisted
 
     @staticmethod
     def get_attr(node, name, default=None):

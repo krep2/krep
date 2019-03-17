@@ -91,11 +91,13 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
                 if child.nodeName in PatternFile.KNOWN_PATTERNS:
                     patterns.extend(self.parse_patterns_node(child))
                 elif child.nodeName in PatternFile.KNOWN_PATTERN:
-                    print 'XX', child
                     source = self.get_attr(child, 'source')
-                    print '->', source
+                    skip = self.get_attr(node, 'skip-while-inexistence')
                     if source:
                         for _ in self.foreach(source):
+                            if skip and not self.secure_vars(node):
+                                continue
+
                             pi = self.parse_pattern_node(
                                 child, parent,
                                 exclude=node.nodeName == 'exclude-patterns',
@@ -124,8 +126,12 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         elif node.nodeName in PatternFile.KNOWN_PATTERN:
             self.set_attr(config, 'pattern', [])
             source = self.get_attr(node, 'source')
+            skip = self.get_attr(node, 'skip-while-inexistence')
             if source:
                 for _ in self.foreach(source):
+                    if skip and not self.secure_vars(node):
+                        continue
+
                     pattern = self.parse_pattern_node(node)
                     self.set_attr(config, 'pattern', str(pattern or ''))
             else:
