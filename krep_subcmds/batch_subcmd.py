@@ -81,7 +81,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             if child.nodeName == 'project':
                 source = self.get_attr(child, 'source')
                 if source:
-                    for _ in self.foreach(source):
+                    for _ in self.foreach(source, child):
                         self._add_value(
                             '%s.%s' % (
                                 BatchXmlConfigFile.PROJECT_PREFIX,

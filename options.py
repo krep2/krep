@@ -74,10 +74,13 @@ class Values(optparse.Values):
             return val
 
         sval = str(val).lower()
-        if boolean and sval in ('true', 't', 'yes', 'y', '1'):
-            val = True
-        elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
-            val = False
+        if boolean:
+            if sval in ('true', 't', 'yes', 'y', '1'):
+                val = True
+            elif boolean and sval in ('false', 'f', 'no', 'n', '0'):
+                val = False
+            else:
+                val = None
         elif re.match(r'^0x[a-f0-9]+$', sval):
             val = int(sval, 16)
         elif re.match(r'^0[0-7]+$', sval):

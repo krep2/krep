@@ -235,8 +235,12 @@ class XmlConfigFile(_ConfigFile):
         for node in root.childNodes:
             self.parse(node, pi)
 
-    def foreach(self, group):
+    def foreach(self, group, node):
+        skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
         for yset in self.sets.get(group, []):
+            if skip and not self.secure_vars(node, yset):
+                continue
+
             self.var = yset
             yield yset
 
@@ -245,13 +249,13 @@ class XmlConfigFile(_ConfigFile):
     def secure_vars(self, node, var=None):
         ret = True
 
-        if var is not None and var != self.var:
+        if var is None and self.var is None:
             return False
 
         for attr in (node._attrs or dict()).keys():
             value = self.get_attr(node, attr)
             if value:
-                _, nonexisted = self.escape_attr()
+                _, nonexisted = self.escape_attr(value, var=var)
                 if nonexisted:
                     ret = False
                     break
@@ -273,7 +277,7 @@ class XmlConfigFile(_ConfigFile):
     def parse_set(self, node, name=None):
         attrs = dict()
 
-        for attr, _ in (node._attrs or dict()).keys():
+        for attr in (node._attrs or dict()).keys():
             attrs[attr] = self.get_var_attr(node, attr)
 
         if name not in self.sets:
@@ -323,9 +327,12 @@ class XmlConfigFile(_ConfigFile):
         else:
             return value
 
-    def escape_attr(self, value):
+    def escape_attr(self, value, var=None):
         i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
+        if var is None:
+            var = self.var
+
         while True:
             m = varprog.search(value, i)
             if not m:
@@ -337,9 +344,9 @@ class XmlConfigFile(_ConfigFile):
                   (name.startswith('(') and name.endswith(')')):
                 name = name[1:-1]
 
-            if name in self.var:
-                value = value[:i] + self.var[name] + value[j:]
-                i += len(self.var[name])
+            if name in var:
+                value = value[:i] + var[name] + value[j:]
+                i += len(var[name])
             else:
                 nonexisted = True
                 i = j
