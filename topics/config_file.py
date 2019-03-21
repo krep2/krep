@@ -235,7 +235,7 @@ class XmlConfigFile(_ConfigFile):
         for node in root.childNodes:
             self.parse(node, pi)
 
-    def foreach(self, group, node):
+    def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
         for yset in self.sets.get(group, []):
             if skip and not self.secure_vars(node, yset):
@@ -355,7 +355,7 @@ class XmlConfigFile(_ConfigFile):
 
     @staticmethod
     def get_attr(node, name, default=None):
-        if node.hasAttribute(name):
+        if node and node.hasAttribute(name):
             return node.getAttribute(name)
         else:
             return default
