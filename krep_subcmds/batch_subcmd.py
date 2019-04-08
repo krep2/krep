@@ -15,6 +15,8 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         KrepXmlConfigFile.__init__(self, filename, pi)
 
     def parse_include(self, node):
+        KrepXmlConfigFile.parse_include(self, node)
+
         name = self.get_attr(node, 'name')
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
@@ -78,10 +80,8 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         return config
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
-        if node.nodeName == 'patterns':
-            KrepXmlConfigFile.parse(self, node, pi)
-
         if node.nodeName != 'projects':
+            KrepXmlConfigFile.parse(self, node, pi)
             return
 
         default = self._get_value(BatchXmlConfigFile.DEFAULT_CONFIG)
@@ -103,11 +103,6 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                         self.parse_project(child, pi=pi))
             elif child.nodeName == 'hook':
                 self.parse_hook(child, default)
-            elif child.nodeName == 'include':
-                name, xvals = self.parse_include(child)
-                # record included file name
-                self._new_value(
-                    '%s.%s' % (BatchXmlConfigFile.FILE_PREFIX, name), xvals)
             else:
                 KrepXmlConfigFile.parse(self, child, default)
 
