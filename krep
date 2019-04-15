@@ -143,6 +143,10 @@ def run(name, opts, args, optparse=None,   # pylint: disable=R0913,R0914,R0915
         if optparse is None:
             _, _, _, optparse = _option_parse([name])
             ops, _ = optparse.parse_args([])
+            # re-estimate opts again
+            lopts = Values()
+            lopts.join(opts, option=optparse)
+
             lopts.join(ops, option=optparse, override=False, origin='cmdline')
             optparse.join(lopts)
 
