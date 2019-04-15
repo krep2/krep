@@ -31,8 +31,8 @@ implicitly."""
         options = optparse.get_option_group('--refs') or \
             optparse.add_option_group('Remote options')
         options.add_option(
-            '--no-gerrit', '--disable-gerrit',
-            dest='enable_gerrit', action='store_false', default=True,
+            '--gerrit', '--enable-gerrit',
+            dest='gerrit', action='store_true', default=True,
             help='Disable gerrit server, default is to enable gerrit')
         options.add_option(
             '--remote', '--server', '--gerrit-server',
@@ -51,7 +51,7 @@ implicitly."""
                  'used. "--no-description" could suppress the description')
 
     def __init__(self, server, options=None):
-        GerritCmd.__init__(self, server, options and options.enable_gerrit)
+        GerritCmd.__init__(self, server, options and options.gerrit)
 
     def has_project(self, project):
         return self.has_project_(project)
