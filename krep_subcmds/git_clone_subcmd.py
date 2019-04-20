@@ -4,6 +4,7 @@ try:
 except ImportError:
     from urlparse import urlparse
 
+from options import Values
 from topics import FileUtils, GitProject, SubCommand, DownloadError, \
     Gerrit, Pattern, ProcessingError, RaiseExceptionIfOptionMissed
 
@@ -128,12 +129,17 @@ replaced by GIT_URL."""
         # push the branches
         if self.override_value(  # pylint: disable=E1101
                 options.all, options.heads):
+            optp = Values.build(
+                extra=optgp,
+                push_all=options.all or options.revision is None,
+                fullname=options.keep_name)
+
             res = project.push_heads(
                 options.revision,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
-                options=optgp,
+                options=optp,
                 push_all=options.all or options.revision is None,
                 fullname=options.keep_name,
                 force=options.force,
@@ -146,13 +152,16 @@ replaced by GIT_URL."""
         # push the tags
         if self.override_value(  # pylint: disable=E1101
                 options.all, options.tags):
+            optp = Values.build(
+                extra=optgp,
+                fullname=options.keep_name)
+
             res = project.push_tags(
                 None if options.all else options.tag,
                 self.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
                 options.tag_pattern,
-                options=optgp,
-                fullname=options.keep_name,
+                options=optp,
                 force=options.force,
                 dryrun=options.dryrun)
 

@@ -13,6 +13,7 @@ try:
 except ImportError:
     from urlparse import urlparse
 
+from options import Values
 from topics import FileDiff, FileUtils, FileVersion, FileWasher, GitProject, \
     Gerrit, key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
 
@@ -493,10 +494,11 @@ The escaped variants are supported for the imported files including:
             # push the tags
             if tags and self.override_value(
                     options.tags, options.all):
+                optp = Values.build(fullname=True)
                 ret = project.push_tags(
                     tags, self.override_value(
                         options.refs, options.tag_refs),
-                    fullname=True, force=options.force, dryrun=options.dryrun)
+                    options=optp, force=options.force, dryrun=options.dryrun)
             # pylint: enable=E1101
 
         return ret == 0
