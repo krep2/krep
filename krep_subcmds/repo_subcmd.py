@@ -6,6 +6,7 @@ try:
 except ImportError:
     from urlparse import urlparse
 
+from options import Values
 from topics import DownloadError, FileUtils, Gerrit, GitProject, Manifest,  \
     ManifestBuilder, Pattern, RaiseExceptionIfOptionMissed, RepoProject, \
     SubCommandWithThread
@@ -233,19 +234,22 @@ this command.
         # push the heads
         if RepoSubcmd.override_value(  # pylint: disable=E1101
                 options.heads, options.all):
+            optp = Values.build(
+                extra=optgp,
+                push_all=options.all or (
+                    options.head_pattern and options.heads),
+                fullname=options.keep_name,
+                sha1tag=options.sha1_tag,
+                git_repo=True,
+                mirror=options.mirror)
+
             res = project.push_heads(
                 project.revision,
                 RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.head_refs),
                 options.head_pattern,
-                options=optgp,
-                push_all=options.all or (
-                    options.head_pattern and options.heads),
-                fullname=options.keep_name,
+                options=optp,
                 force=options.force,
-                sha1tag=options.sha1_tag,
-                git_repo=True,
-                mirror=options.mirror,
                 dryrun=options.dryrun,
                 logger=logger)
             if res != 0:
@@ -254,12 +258,15 @@ this command.
         # push the tags
         if RepoSubcmd.override_value(  # pylint: disable=E1101
                 options.tags, options.all):
+            optp = Values.build(
+                extra=optgp,
+                fullname=options.keep_name)
+
             res = project.push_tags(
                 None, RepoSubcmd.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs),
                 options.tag_pattern,
-                options=optgp,
-                fullname=options.keep_name,
+                options=optp,
                 force=options.force,
                 dryrun=options.dryrun,
                 logger=logger)

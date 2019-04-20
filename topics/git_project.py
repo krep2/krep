@@ -248,8 +248,7 @@ class GitProject(Project, GitCommand):
 
     def push_heads(  # pylint: disable=R0915
             self, branch=None, refs=None, patterns=None, options=None,
-            push_all=False, fullname=False, force=False, git_repo=False,
-            mirror=False, sha1tag=None, logger=None, *args, **kws):
+            force=False, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -257,21 +256,22 @@ class GitProject(Project, GitCommand):
             patterns = [patterns]
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
-        ret, local_heads = self.get_local_heads(local=True, git_repo=git_repo)
+        ret, local_heads = self.get_local_heads(
+            local=True, git_repo=options.git_repo)
         ret, remote_heads = self.get_remote_heads()
         ret, remote_tags = self.get_remote_tags()
 
-        if not push_all:
+        if not options.push_all:
             local_heads = {
                 branch or '': branch if self.is_sha1(branch) \
                     else local_heads.get(branch)}
-        elif not (not mirror or sha1tag or patterns
-                  or GitProject.has_name_changes(local_heads, fullname)
+        elif not (not options.mirror or options.sha1tag or patterns
+                  or GitProject.has_name_changes(local_heads, options.fullname)
                   or self.pattern.has_category(GitProject.CATEGORY_REVISION)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
             cargs = GitProject._push_args(
-                list(), options,
+                list(), options.extra,
                 '%srefs/heads/*:refs/heads/%s*' % (
                     '+' if force else '', refs),
                 *args)
@@ -294,7 +294,7 @@ class GitProject(Project, GitCommand):
                         '"%s" does not match provied patterns', head)
                     continue
 
-            if not fullname:
+            if not options.fullname:
                 head = os.path.basename(head)
             if not head:
                 continue
@@ -349,19 +349,20 @@ class GitProject(Project, GitCommand):
                 prefs.append(
                     '%s%s:%s' % ('+' if force else '', local_ref, remote_ref))
 
-            if ret == 0 and not push_all and (
-                    sha1tag and self.is_sha1(origin)):
+            if ret == 0 and not options.push_all and (
+                    options.sha1tag and self.is_sha1(origin)):
                 equals = False
-                if sha1tag in remote_tags:
-                    sha1 = remote_tags[sha1tag]
+                if options.sha1tag in remote_tags:
+                    sha1 = remote_tags[options.sha1tag]
                     equals = _sha1_equals(sha1, origin)
 
                 if not equals or force:
                     prefs.append(
-                        '%s%s:%s' % ('+' if force else '', local_ref, sha1tag))
+                        '%s%s:%s' % (
+                            '+' if force else '', local_ref, options.sha1tag))
 
         if prefs:
-            cargs = GitProject._push_args(list(), options, *prefs)
+            cargs = GitProject._push_args(list(), options.extra, *prefs)
             ret = self.push(self.remote, *cargs, **kws)
 
         if ret != 0:
@@ -370,8 +371,7 @@ class GitProject(Project, GitCommand):
         return ret
 
     def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
-                  force=False, fullname=False, options=None, logger=None,
-                  *args, **kws):
+                  force=False, options=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
@@ -387,12 +387,12 @@ class GitProject(Project, GitCommand):
             local_tags.append(tags)
 
         if not (tags or patterns
-                or GitProject.has_name_changes(local_tags, fullname)
+                or GitProject.has_name_changes(local_tags, options.fullname)
                 or self.pattern.has_category(GitProject.CATEGORY_TAGS)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags)):
             cargs = GitProject._push_args(
-                list(), options,
+                list(), options.extra,
                 '%srefs/tags/*:refs/tags/%s*' % (
                     '+' if force else '', refs),
                 *args)
@@ -412,7 +412,7 @@ class GitProject(Project, GitCommand):
                         '"%s" does not match provied patterns', tag)
                     continue
 
-            if not fullname:
+            if not options.fullname:
                 tag = os.path.basename(tag)
             if not tag:
                 continue
@@ -459,7 +459,7 @@ class GitProject(Project, GitCommand):
                 '+' if force else '', origin, remote_tag))
 
         if trefs:
-            cargs = GitProject._push_args(list(), options, *trefs)
+            cargs = GitProject._push_args(list(), options.extra, *trefs)
             ret = self.push(self.remote, *cargs, **kws)
 
         if ret != 0:
