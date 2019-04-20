@@ -258,6 +258,20 @@ class Values(optparse.Values):
 
         return Values(rets)
 
+    @staticmethod
+    def build(**kws):
+        ret = Values()
+
+        if 'values' in kws:
+            values = kws['values']
+            if isinstance(values, dict):
+                ret.join(values)
+
+            del kws['values']
+
+        ret.join(Values(kws))
+        return ret
+
 
 class IndentedHelpFormatterWithLf(optparse.IndentedHelpFormatter):
     def format_option(self, option):
