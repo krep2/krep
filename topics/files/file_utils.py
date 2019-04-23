@@ -74,6 +74,9 @@ class FileVersion(object):
         vsb = _split(vb)
 
         for k in range(min(len(vsa), len(vsb))):
+            if vsa[k] == vsb[k]:
+                continue
+
             maa = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsa[k])
             mab = re.match(r'(?P<digit>\d+)(?P<patch>.*)', vsb[k])
             if maa and mab:
@@ -83,16 +86,9 @@ class FileVersion(object):
 
                 paa, pab = maa.group('patch'), mab.group('patch')
                 if paa != pab:
-                    if not paa:
-                        return 1
-                    elif not pab:
-                        return -1
-                    else:
-                        return _cmp(paa, pab)
+                    return _cmp(paa, pab)
 
-            res = _cmp(vsa[k], vsb[k])
-            if res != 0:
-                return res
+            return _cmp(vsa[k], vsb[k])
 
         return _cmp(len(vsa), len(vsb))
 
