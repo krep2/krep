@@ -301,11 +301,17 @@ class Values(optparse.Values):
         return Values(rets)
 
     @staticmethod
-    def build(values=None, *kws):
-        ret = Values(*kws)
-        if isinstance(values, dict):
-            ret.join(Values(values))
+    def build(**kws):
+        ret = Values()
 
+        if 'values' in kws:
+            values = kws['values']
+            if isinstance(values, dict):
+                ret.join(values)
+
+            del kws['values']
+
+        ret.join(Values(kws))
         return ret
 
 
