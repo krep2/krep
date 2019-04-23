@@ -206,11 +206,12 @@ class GitProject(Project, GitCommand):
         return ret, heads
 
     def get_local_tags(self):
-        tags = list()
-        ret, lines = self.tag('--list')
+        tags = dict()
+        ret, lines = self.show_ref('--tags')
         if ret == 0:
             for line in lines.split('\n'):
-                tags.append(line.strip())
+                match = re.split(r'\s+', line)
+                tags[match[1].replace('refs/tags/', '')] = match[0]
 
         return ret, tags
 
@@ -378,19 +379,23 @@ class GitProject(Project, GitCommand):
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
 
-        local_tags = list()
+        local_tags = dict()
         if not tags:
             ret, local_tags = self.get_local_tags()
+            if len(local_tags) == 0:
+                ret = 0
         elif isinstance(tags, (list, tuple)):
-            local_tags.extend(tags)
+            for tag in tags:
+                local_tags[tag] = None
         else:
-            local_tags.append(tags)
+            local_tags[tags] = None
 
         if not (tags or patterns
-                or GitProject.has_name_changes(local_tags, options.fullname)
+                or GitProject.has_name_changes(
+                    local_tags.keys(), options.fullname)
                 or self.pattern.has_category(GitProject.CATEGORY_TAGS)
                 or self.pattern.can_replace(
-                    GitProject.CATEGORY_TAGS, local_tags)):
+                    GitProject.CATEGORY_TAGS, local_tags.keys())):
             cargs = GitProject._push_args(
                 list(), options.extra,
                 '%srefs/tags/*:refs/tags/%s*' % (
@@ -400,7 +405,7 @@ class GitProject(Project, GitCommand):
             return self.push(self.remote, *cargs, **kws)
 
         trefs = list()
-        for origin in local_tags:
+        for origin, lsha1 in local_tags.items():
             tag = origin
 
             if patterns:
@@ -445,10 +450,12 @@ class GitProject(Project, GitCommand):
                 equals = True
                 if force:
                     sha1 = remote_tags[remote_tag]
-                    if not origin.startswith('refs'):
-                        ret, lsha1 = self.rev_parse('refs/tags/%s' % origin)
-                    else:
-                        ret, lsha1 = self.rev_parse(origin)
+                    if lsha1 is None:
+                        if not origin.startswith('refs'):
+                            ret, lsha1 = self.rev_parse('refs/tags/%s' % origin)
+                        else:
+                            ret, lsha1 = self.rev_parse(origin)
+
                     equals = _sha1_equals(sha1, lsha1)
 
                 if equals:
@@ -462,9 +469,9 @@ class GitProject(Project, GitCommand):
             cargs = GitProject._push_args(list(), options.extra, *trefs)
             ret = self.push(self.remote, *cargs, **kws)
 
-        if ret != 0:
+        if ret != 0 and trefs:
             logger.error(
-                '%s: cannot push tag "%s"', self.remote, remote_tag)
+                '%s: cannot push tag "%s"', self.remote, ','.join(trefs))
 
         return ret
 
