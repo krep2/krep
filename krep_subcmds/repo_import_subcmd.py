@@ -265,9 +265,12 @@ be used to define the wash-out and generate the final commit.
             logger.warning(
                 'No provided filters for "%s" during importing', project_name)
 
-        if location and not os.path.exists(os.path.join(rootdir, location)):
+        if location is None or \
+                not os.path.exists(os.path.join(rootdir, location)):
             logger.warning(
-                '"%s" is not existed', os.path.join(rootdir, location))
+                '"%s" is not existed', os.path.join(
+                    rootdir, location or 'purposed location'))
+
             return 1
 
         # don't pass project_name, which will be showed in commit
