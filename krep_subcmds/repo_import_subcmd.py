@@ -267,9 +267,11 @@ be used to define the wash-out and generate the final commit.
 
         if location is None or \
                 not os.path.exists(os.path.join(rootdir, location)):
-            logger.warning(
-                '"%s" is not existed', os.path.join(
-                    rootdir, location or 'purposed location'))
+            if location:
+                logger.warning(
+                    '"%s" is not existed', os.path.join(rootdir, location))
+            else:
+                logger.warning('path is not existed')
 
             return 1
 
