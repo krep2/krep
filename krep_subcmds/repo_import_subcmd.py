@@ -16,20 +16,21 @@ from topics import ConfigFile, FileVersion, GitProject, key_compare, \
 
 
 class RepoImportLocation(object):
-    Rule = namedtuple('Rule', 'location,start,end,till')
+    Rule = namedtuple('Rule', 'location,start,end,till,project')
 
     def __init__(self):
         # order will be kept as input
         self.locations = list()
 
-    def add(self, location, start=None, end=None, till=None):
+    def add(self, location, start=None, end=None, till=None, project=None):
         if location:
             self.locations.append(
                 RepoImportLocation.Rule(
-                    location=location, start=start, end=end, till=till))
+                    location=location, start=start, end=end,
+                    till=till, project=project))
 
     def get(self, version, rootdir=None):
-        for loc, start, end, till in self.locations:
+        for loc, start, end, till, project in self.locations:
             if start and FileVersion.cmp(stat, version) == -1:
                 continue
             if end and FileVersion.cmp(end, version) >= 0:
@@ -82,8 +83,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             start = self.get_attr(node, 'start')
             end = self.get_attr(node, 'end')
             till = self.get_attr(node, 'till')
+            project = self.get_attr(node, 'project')
             locations.add(
-                location, start=start, end=end, till=till)
+                location, start=start, end=end, till=till, project=project)
 
     def _parse_project(self, node, name=None, subdir=False):
         self._new_value(
