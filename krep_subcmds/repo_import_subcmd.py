@@ -72,6 +72,19 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         for cname in names:
             self._new_value(cname, conf.get_values(cname))
 
+    def _parse_location(self, node, locations, name=None):
+        if node.nodeName == 'locations':
+            name = self.get_attr(node, 'name')
+            for child in node.childNodes:
+                self._parse_location(child, locations, name)
+        elif node.nodeName == 'location':
+            location = self.get_attr(node, 'name', name)
+            start = self.get_attr(node, 'start')
+            end = self.get_attr(node, 'end')
+            till = self.get_attr(node, 'till')
+            locations.add(
+                location, start=start, end=end, till=till)
+
     def _parse_project(self, node, name=None, subdir=False):
         self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
@@ -106,12 +119,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
 
                 self._parse_project(
                     child, name=self.get_attr(node, 'name'), subdir=True)
-            elif child.nodeName == 'location':
-                name = self.get_attr(child, 'name')
-                start = self.get_attr(child, 'start')
-                end = self.get_attr(child, 'end')
-                till = self.get_attr(child, 'till')
-                locs.add(name, start=start, end=end, till=till)
+            elif child.nodeName in ('location', 'locations'):
+                self._parse_location(child, locs)
             elif child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
                 cpfs = self.get_attr(child, 'copy')
