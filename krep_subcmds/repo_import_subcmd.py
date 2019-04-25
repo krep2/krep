@@ -91,16 +91,12 @@ class RepoImportLocation(object):
 
     def get(self, version, rootdir=None):
         for loc, start, end, till, project in self.locations:
-<<<<<<< HEAD
-            if start and FileVersion.cmp(stat, version) == -1:
-                continue
-            if end and FileVersion.cmp(end, version) >= 0:
-                continue
-            if till and FileVersion.cmp(till, version) == 1:
-=======
+            if project:
+                if not version.startswith(project):
+                    continue
+
             matcher = VersionMatcher(project)
             if not matcher.match(version, start=start, end=end, till=till):
->>>>>>> 6a60dca... repo-import: add matcher class to validate location with labels
                 continue
 
             if rootdir:
