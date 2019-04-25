@@ -295,6 +295,24 @@ be used to define the wash-out and generate the final commit.
             dest='keep_order', action='store_true',
             help='Keep the order of input files or directories without sort')
 
+        options = optparse.add_option_group('Version options')
+        options.add_option(
+            '--project',
+            dest='project', action='store',
+            help='Set the project to match import directories')
+        options.add_option(
+            '--start', '--vstart',
+            dest='start', action='store',
+            help='Limit the start version from the import directories')
+        options.add_option(
+            '--end', '--vend',
+            dest='end', action='store',
+            help='Limit the end version from the import directories')
+        options.add_option(
+            '--till', '--vtill',
+            dest='till', action='store',
+            help='Limit the start version from the import directories')
+
     def get_name(self, options):
         return options.name or '[-]'
 
@@ -383,8 +401,16 @@ be used to define the wash-out and generate the final commit.
             return 0
 
         changed = False
+        matcher = VersionMatcher(options.project)
         for rootdir in rootdirs:
             res = 0
+
+            if options.project and not matcher.match(
+                    os.path.basename(rootdir), start=options.start,
+                    end=options.end, till=options.till):
+                logger.warning('Ignore %s not to match version rules' % rootdir)
+                continue
+
             for pvalue in pvalues:
                 if pvalue.path and project.path != \
                         os.path.join(options.working_dir, pvalue.path):
