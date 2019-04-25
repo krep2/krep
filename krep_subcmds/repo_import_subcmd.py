@@ -91,6 +91,10 @@ class RepoImportLocation(object):
 
     def get(self, version, rootdir=None):
         for loc, start, end, till, project in self.locations:
+            if project:
+                if not version.startswith(project):
+                    continue
+
             matcher = VersionMatcher(project)
             if not matcher.match(version, start=start, end=end, till=till):
                 continue
