@@ -15,6 +15,48 @@ from topics import ConfigFile, FileVersion, GitProject, key_compare, \
 # pylint: enable=W0611
 
 
+class VersionMatcher(object):
+    def __init__(self, project):
+        self.project = project
+
+    def _secure(self, version):
+        prefixes = ['v', '-']
+        if self.project:
+            prefixes.insert(0, self.project.lower())
+
+        if version:
+            changed, lvalue = True, version.lower()
+            while changed:
+                changed = False
+                for prefix in prefixes:
+                    if lvalue.startswith(prefix):
+                        length = len(prefix)
+                        version = version[length:]
+                        lvalue = lvalue[length:]
+                        changed = True
+
+        return version
+
+    def match(self, version, start=None, end=None, till=None):
+        if self.project:
+            if not version.startswith(self.project):
+                return False
+
+        start = self._secure(start)
+        end = self._secure(end)
+        till = self._secure(till)
+        version = self._secure(version)
+
+        if start and FileVersion.cmp(version, start) == -1:
+            return False
+        if end and FileVersion.cmp(version, end) == 1:
+            return False
+        if till and FileVersion.cmp(version, till) >= 0:
+            return False
+
+        return True
+
+
 class RepoImportLocation(object):
     Rule = namedtuple('Rule', 'location,start,end,till,project')
 
@@ -49,17 +91,24 @@ class RepoImportLocation(object):
 
     def get(self, version, rootdir=None):
         for loc, start, end, till, project in self.locations:
+<<<<<<< HEAD
             if start and FileVersion.cmp(stat, version) == -1:
                 continue
             if end and FileVersion.cmp(end, version) >= 0:
                 continue
             if till and FileVersion.cmp(till, version) == 1:
+=======
+            matcher = VersionMatcher(project)
+            if not matcher.match(version, start=start, end=end, till=till):
+>>>>>>> 6a60dca... repo-import: add matcher class to validate location with labels
                 continue
 
             if rootdir:
                 path = os.path.join(rootdir, loc)
                 if os.path.exists(path):
                     return path
+            else:
+                return path
 
         return None
 
