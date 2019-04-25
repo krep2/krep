@@ -22,6 +22,24 @@ class RepoImportLocation(object):
         # order will be kept as input
         self.locations = list()
 
+    def __repr__(self):
+        def append(items, name, value):
+            if name and value:
+                items.append("%s=%s," % (name, value))
+
+        ret = list()
+        for location in self.locations:
+            item = list()
+            append(item, "project", location.project)
+            append(item, "start", location.start)
+            append(item, "end", location.end)
+            append(item, "till", location.till)
+
+            if item:
+                ret.append(', '.join(item))
+
+        return str(ret)
+
     def add(self, location, start=None, end=None, till=None, project=None):
         if location:
             self.locations.append(
