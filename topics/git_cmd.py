@@ -109,5 +109,8 @@ class GitCommand(Command):
     def show(self, *args, **kws):
         return self.raw_command_with_output('show', *args, **kws)
 
+    def show_ref(self, *args, **kws):
+        return self.raw_command_with_output('show-ref', *args, **kws)
+
     def tag(self, *args, **kws):
         return self.raw_command_with_output('tag', *args, **kws)

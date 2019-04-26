@@ -68,15 +68,17 @@ class Values(optparse.Values):
         return opt
 
     @staticmethod
+    def _is_boolean_opt(option):
+      return option and option.action in ('store_true', 'store_false')
+
+    @staticmethod
     def _secure_value(option, attr, value):
         opt = option and Values._getopt(option, attr)
-        st_b = opt and opt.action in ('store_true', 'store_false')
-
         if opt:
             if opt.action == 'append':
                 if not (value is None or isinstance(value, (list, tuple))):
                     return [value]
-            elif opt.action in ('store_true', 'store_false'):
+            elif Values._is_boolean_opt(opt):
                 return Values.boolean(value)
 
         return Values._handle_value(value)
@@ -84,9 +86,18 @@ class Values(optparse.Values):
     def join(self, values, option=None, override=True, origin=None):
         if values is not None:
             for attr in values.__dict__:
+                nattr, value = None, getattr(values, attr)
+                if option and (
+                        attr.startswith('no_') or attr.startswith('not_')):
+                    nattr = attr[attr.index('_') + 1:]
+                    nopt= Values._getopt(option, nattr)
+                    if Values._is_boolean_opt(nopt) and str(value).lower() == 'true':
+                        attr = nattr
+                        value = False
+
                 opt = option and Values._getopt(option, attr)
                 if opt and opt.action == 'append' \
-                        and getattr(values, attr) is not None:
+                        and value is not None:
                     vals = self.__dict__.get(attr)
                     if vals is None:
                         vals = list()
@@ -95,30 +106,26 @@ class Values(optparse.Values):
                     elif not isinstance(vals, list):
                         vals = list([vals])
 
-                    valn = getattr(values, attr)
-                    if isinstance(valn, (tuple, list)):
-                        vals.extend(valn)
+                    if isinstance(value, (tuple, list)):
+                        vals.extend(value)
                     else:
-                        vals.append(valn)
+                        vals.append(value)
 
                     self.ensure_value(attr, vals)
                 elif override:
-                    if getattr(values, attr) is None:
+                    if nattr is None and getattr(values, attr) is None:
                         if attr in self.__dict__:
                             del self.__dict__[attr]
                         continue
 
                     setattr(
-                        self, attr,
-                        Values._secure_value(
-                            option, attr, getattr(values, attr)))
+                        self, attr, Values._secure_value(option, attr, value))
                 else:
-                    if getattr(values, attr) is None:
+                    if value is None:
                         continue
 
                     self.ensure_value(
-                        attr, Values._secure_value(
-                            option, attr, getattr(values, attr)))
+                        attr, Values._secure_value(option, attr, value))
 
     def __nonzero__(self):
         return self.__bool__()
@@ -250,6 +257,20 @@ class Values(optparse.Values):
                 rets[_ensure_attr(value)] = 'true'
 
         return Values(rets)
+
+    @staticmethod
+    def build(**kws):
+        ret = Values()
+
+        if 'values' in kws:
+            values = kws['values']
+            if isinstance(values, dict):
+                ret.join(values)
+
+            del kws['values']
+
+        ret.join(Values(kws))
+        return ret
 
 
 class IndentedHelpFormatterWithLf(optparse.IndentedHelpFormatter):
