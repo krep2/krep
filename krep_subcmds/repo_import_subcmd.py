@@ -407,6 +407,15 @@ be used to define the wash-out and generate the final commit.
                 location = pvalue.location.get(label, rootdir)
                 if location:
                     path = os.path.join(rootdir, location)
+
+            if pvalue.meta:
+                meta = pvalue.meta.match(label)
+                if meta:
+                    if meta.author:
+                        optc.author = meta.author,
+                        optc.date = meta.date
+                        optc.committer = meta.committer
+                        optc.committer_date = meta.cdate
         else:
             logger.warning('"%s" is undefined', project_name)
             return 1
