@@ -379,6 +379,7 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         project_name = "%s" % str(project)
 
+        optc = options.extra_values(options.extra_option, 'git-commit')
         if options.tag:
             label = options.tag
         else:
@@ -424,14 +425,25 @@ be used to define the wash-out and generate the final commit.
 
             return 1
 
+        opti = Values.build(
+            copyfiles=copyfile,
+            cleanup=cleanup,
+            filter_sccs=True,
+            filters=filters,
+            force=force,
+            imports=False if location else None,
+            linkfiles=linkfile,
+            refs=options.refs,
+            strict=strict,
+            subdir=subdir,
+            symlinks=symlinks,
+            tag_refs=options.tag_refs,
+            extra=optc)
+
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         ret, _ = PkgImportSubcmd.do_import(
-            project, options, '', path, label, subdir=subdir,
-            filters=filters, logger=logger,
-            imports=False if location else None,
-            symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile,
-            force=force, cleanup=cleanup, strict=strict)
+            project, opti, '', path, label, logger=logger)
 
         return ret
 

@@ -250,10 +250,8 @@ The escaped variants are supported for the imported files including:
         return len(rets) == len(args), name, rets
 
     @staticmethod
-    def do_import(project, options, name, path, revision, subdir=None,
-                  filters=None, logger=None, imports=False, symlinks=True,
-                  copyfiles=None, linkfiles=None, force=False, cleanup=False,
-                  strict=False, *args, **kws):
+    def do_import(project, options, name, path, revision,
+                  logger=None, *args, **kws):
         tmpl = dict({
             'n': name,             'name': name,
             'N': name.upper(),     'NAME': name.upper(),
@@ -261,52 +259,52 @@ The escaped variants are supported for the imported files including:
             'V': revision.upper(), 'VERSION': revision.upper()}
         )
 
-        if options.message_template:
-            message = options.message_template
+        if options.tmpl_message:
+            message = options.tmpl_message
         else:
             message = 'Import %s' % (
                 '%s%s%s' % (
                     name,
-                    (name and revision) and ' %s' % (
-                        options.version_prefix or ''),
+                    (name and revision) and ' %s' % (options.prefix or ''),
                     revision))
 
         message = _handle_message_with_escape(
-            path, options.enable_escape, message,
-            dofile=options.use_commit_file)
+            path, options.tmpl_escape, message, dofile=options.tmpl_file)
 
         workplace = path
-        tmpdir = options.temp_directory or tempfile.mkdtemp()
+        tmpdir = options.directory or tempfile.mkdtemp()
         if os.path.isfile(path):
             FileUtils.extract_file(path, tmpdir)
             workplace = tmpdir
 
         count = 0
-        if options.auto_detect:
+        if options.detect_root:
             dname = os.listdir(workplace)
             while 0 < len(dname) < 2:
                 workplace = os.path.join(workplace, dname[0])
                 dname = os.listdir(workplace)
                 logger.info('Go into %s' % workplace)
 
-        psource = os.path.join(project.path, subdir or '')
+        psource = os.path.join(project.path, options.subdir or '')
         timestamp = FileUtils.last_modified(workplace, recursive=False)
 
-        scmtool = project if strict else None
-        if imports is not None and os.path.exists(workplace):
-            if cleanup or imports:
+        scmtool = project if options.strict else None
+        if options.imports is not None and os.path.exists(workplace):
+            if options.cleanup or options.imports:
                 FileUtils.rmtree(
                     psource, ignore_list=(r'^\.git.*',), scmtool=scmtool)
 
-            if imports:
+            if options.imports:
                 timestamp = FileUtils.last_modified(workplace)
                 FileUtils.copy_files(
-                    workplace, psource, symlinks=symlinks, scmtool=scmtool)
+                    workplace, psource,
+                    symlinks=options.symlinks, scmtool=scmtool)
             else:
                 diff = FileDiff(
-                    psource, workplace, filters,
-                    enable_sccs_pattern=options.filter_out_sccs)
-                count = diff.sync(logger, symlinks=symlinks, scmtool=scmtool)
+                    psource, workplace, options.filters,
+                    enable_sccs_pattern=options.filter_sccs)
+                count = diff.sync(
+                    logger, symlinks=options.symlinks, scmtool=scmtool)
 
                 timestamp = diff.timestamp
 
@@ -315,7 +313,7 @@ The escaped variants are supported for the imported files including:
             washer = FileWasher()
             washer.wash(workplace)
 
-        for src, dest in copyfiles or list():
+        for src, dest in options.copyfiles or list():
             names = glob.glob(os.path.join(workplace, src))
             filename = '' if not names else names[0]
             if os.path.exists(filename):
@@ -326,10 +324,10 @@ The escaped variants are supported for the imported files including:
                 logger.debug('copy %s', src)
                 FileUtils.copy_file(
                     filename, os.path.join(psource, dest),
-                    symlinks=symlinks, scmtool=scmtool)
+                    symlinks=options.symlinks, scmtool=scmtool)
                 count += 1
 
-        for src, dest in linkfiles or list():
+        for src, dest in options.linkfiles or list():
             names = glob.glob(os.path.join(workplace, src))
             filename = '' if not names else names[0]
             if os.path.exists(filename):
@@ -344,12 +342,12 @@ The escaped variants are supported for the imported files including:
 
         ret, tags = 0, list()
         if count > 0:
-            if not strict:
+            if not options.strict:
                 project.add('--all', '-f', project.path)
 
             args = list()
 
-            optgc = options.extra_values(options.extra_option, 'git-commit')
+            optgc = options.extra
             if optgc and optgc.author:
                 args.append('--author="%s"' % optgc.author)
             if optgc and optgc.date:
@@ -362,9 +360,9 @@ The escaped variants are supported for the imported files including:
 
             ret = project.commit(*args)
 
-        if count > 0 or force:
-            if options.version_template:
-                tags.append(options.version_template % tmpl)
+        if count > 0 or options.force:
+            if options.tmpl_version:
+                tags.append(options.tmpl_version % tmpl)
             elif options.local and revision:
                 trefs = SubCommand.override_value(  # pylint: disable=E1101
                     options.refs, options.tag_refs) or ''
@@ -372,11 +370,9 @@ The escaped variants are supported for the imported files including:
                     trefs += '/'
 
                 tags.append(
-                    '%s%s%s' % (
-                        trefs, options.version_prefix or '', revision))
+                    '%s%s%s' % (trefs, options.prefix or '', revision))
             elif revision:
-                tags.append(
-                    '%s%s' % (options.version_prefix or '', revision))
+                tags.append('%s%s' % (options.prefix or '', revision))
 
             if tags:
                 if options.force:
@@ -466,6 +462,23 @@ The escaped variants are supported for the imported files including:
             for fout in options.filter_out or list():
                 filters.extend(fout.split(','))
 
+        opti = Values.build(
+            detect_root=options.auto_detect,
+            directory=options.temp_directory,
+            filter_sccs=options.filter_out_sccs,
+            filters=filters,
+            force=options.force,
+            local=options.local,
+            prefix=options.version_prefix,
+            refs=options.refs,
+            tag_refs=options.tag_refs,
+            tmpl_escape=options.enable_escape,
+            tmpl_file=options.use_commit_file,
+            tmpl_message=options.message_template,
+            tmpl_version=options.version_template,
+            washed=options.washed,
+            extra=options.extra_values(options.extra_option, 'git-commit'))
+
         tags = list()
         for pkg, pkgname, revision in pkgs:
             workplace = pkg
@@ -475,8 +488,7 @@ The escaped variants are supported for the imported files including:
                     workplace = inited
 
             _, ptags = PkgImportSubcmd.do_import(
-                project, options, pkgname, workplace,
-                revision, filters=filters, logger=logger)
+                project, opti, pkgname, workplace, revision, logger=logger)
 
             if ptags:
                 tags.extend(ptags)
