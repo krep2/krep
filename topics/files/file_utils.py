@@ -80,14 +80,18 @@ class FileUtils(object):
     def copy_file(src, dest):
         if os.path.islink(src):
             linkto = os.readlink(src)
-            if os.path.isdir(dest):
+            if os.path.islink(dest):
+                os.unlink(dest)
+            elif os.path.isdir(dest):
                 shutil.rmtree(dest)
             elif os.path.lexists(dest):
                 os.unlink(dest)
 
             os.symlink(linkto, dest)
         else:
-            if os.path.isdir(dest):
+            if os.path.islink(dest):
+                os.unlink(dest)
+            elif os.path.isdir(dest):
                 shutil.rmtree(dest)
             elif os.path.lexists(dest):
                 os.unlink(dest)
