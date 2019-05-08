@@ -189,14 +189,18 @@ class FileUtils(object):
     def copy_file(src, dest, symlinks=False, scmtool=None):
         if symlinks and os.path.islink(src):
             linkto = os.readlink(src)
-            if os.path.isdir(dest):
+            if os.path.islink(dest):
+                FileUtils._unlink(dest)
+            elif os.path.isdir(dest):
                 FileUtils._rmtree(dest, scmtool=scmtool)
             elif os.path.lexists(dest):
                 FileUtils._unlink(dest, scmtool=scmtool)
 
             FileUtils._symlink(linkto, dest, scmtool=scmtool)
         else:
-            if os.path.isdir(dest):
+            if os.path.islink(dest):
+                FileUtils._unlink(dest)
+            elif os.path.isdir(dest):
                 FileUtils._rmtree(dest, scmtool=scmtool)
             elif os.path.lexists(dest):
                 FileUtils._unlink(dest, scmtool=scmtool)
