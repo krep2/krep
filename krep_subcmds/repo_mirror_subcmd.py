@@ -44,13 +44,13 @@ acutally in platform/manifest.git within a mirror.)
             if not os.path.exists(path):
                 logger.warning('%s not existed, ignored', path)
                 continue
-            elif not pattern.match('p,project', node.name):
+            elif not pattern.match('project', node.name):
                 logger.warning('%s ignored by the pattern', node.name)
                 continue
 
             name = '%s%s' % (
                 options.prefix or '',
-                pattern.replace('p,project', node.name, name=node.name))
+                pattern.replace('project', node.name, name=node.name))
             projects.append(
                 GitProject(
                     name,
