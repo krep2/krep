@@ -226,9 +226,12 @@ mark shows an opposite pattern which means to return the opposite result if
 matching.
 """
 
-    def __init__(self, pattern=None, pattern_file=None):
+    def __init__(self, pattern=None, pattern_file=None, aliases=None):
         self.orders = dict()
         self.categories = dict()
+        self.aliases = dict()
+
+        self.add_alias(aliases)
         self.add(pattern)
 
     def __nozero__(self):
@@ -274,6 +277,36 @@ matching.
             dest='pattern', action='append',
             help='Set the patterns for the command')
 
+    def add_alias(self, aliases):
+        for alias in aliases or list():
+            vals = _secure_split(alias, PatternItem.PATTERN_DELIMITER)
+            for val in vals[:]:
+                category = self._detect_category(val)
+                if category != val:
+                    vals.remove(val)
+
+            if len(vals):
+                name, categories = vals[0], vals[1:]
+                if name not in self.aliases:
+                    self.aliases[name] = list()
+
+                self.aliases[name] = list(set(self.aliases[name] + categories))
+
+        categories = self.categories.keys()
+        for category in categories:
+            newc = self._detect_category(category)
+            if newc != category:
+                pattern = self.remove(cacetegory)
+                if pattern:
+                    self.add({newc: pattern})
+
+    def _detect_category(self, category):
+        for name, aliases in self.aliases.items():
+            if name == category or category in aliases:
+                return name
+
+        return category
+
     def _ensure_item(self, category, name, strict=False):
         category = PatternItem.ensure_category(category)
         if category in self.categories:
@@ -309,7 +342,8 @@ matching.
                         name = None
                         value = sli[0]
 
-                    category = PatternItem.ensure_category(category)
+                    category = self._detect_category(
+                        PatternItem.ensure_category(category))
                     if category not in self.categories:
                         self.orders[category] = list()
                         self.categories[category] = dict()
@@ -325,6 +359,8 @@ matching.
                     logger.error('unknown pattern string "%s"', pattern)
         elif isinstance(patterns, dict):
             for category, pattern in patterns.items():  # pylint: disable=E1103
+                category = self._detect_category(
+                    PatternItem.ensure_category(category))
                 if category not in self.categories:
                     self.orders[category] = list()
                     self.categories[category] = dict()
@@ -342,6 +378,8 @@ matching.
             for key, categories in patterns.categories.items():  # pylint: disable=E1103
                 if key in self.categories:
                     for category, item in categories.items():
+                        category = self._detect_category(
+                            PatternItem.ensure_category(category))
                         if category in self.categories[key]:
                             self.categories[key][category].add(pattern=item)
                         else:
@@ -350,6 +388,16 @@ matching.
                     self.categories[key] = categories
         elif patterns is not None:
             logger.error('unknown option "%s"', str(patterns))
+
+    def remove(self, category):
+        if category in self.categories:
+            pattern = self.categories[category]
+            del self.orders[category]
+            del self.categories[category]
+
+            return pattern
+        else:
+            return None
 
     def get(self):
         return self.categories

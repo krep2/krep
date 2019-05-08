@@ -16,7 +16,7 @@ from topics import ConfigFile, FileVersion, GitProject, key_compare, \
 
 
 class VersionMatcher(object):
-    def __init__(self, project):
+    def __init__(self, project=None):
         self.project = project
 
     def _secure(self, version):
@@ -37,7 +37,7 @@ class VersionMatcher(object):
 
         return version
 
-    def match(self, version, start=None, end=None, till=None):
+    def match(self, version, start=None, end=None, till=None, at=None):
         if self.project:
             if not version.startswith(self.project):
                 return False
@@ -46,6 +46,7 @@ class VersionMatcher(object):
         end = self._secure(end)
         till = self._secure(till)
         version = self._secure(version)
+        at = self._secure(at)
 
         if start and FileVersion.cmp(version, start) == -1:
             return False
@@ -53,6 +54,8 @@ class VersionMatcher(object):
             return False
         if till and FileVersion.cmp(version, till) >= 0:
             return False
+        if at:
+            return FileVersion.cmp(version, at) == 0
 
         return True
 
@@ -109,6 +112,43 @@ class RepoImportLocation(object):
         return None
 
 
+class RepoImportMeta(object):
+    Rule = namedtuple('Rule', 'author,date,committer,cdate')
+
+    def __init__(self):
+        self.meta = dict()
+
+    def __repr__(self):
+        def append(items, name, value):
+            if name and value:
+                items.append("%s=%s," % (name, value))
+
+        ret = list()
+        for version, meta in self.meta.items():
+            item = list()
+            append(item, "author", meta.author)
+            append(item, "date", meta.date)
+            append(item, "committer", meta.committer)
+            append(item, "committer_date", meta.cdate)
+
+            if item:
+                ret.append('%s: %s' % (version, ', '.join(item)))
+
+        return str(ret)
+
+    def add(self, version, author=None, date=None, committer=None, cdate=None):
+        self.meta[version]= RepoImportMeta.Rule(
+            author=author, date=date, committer=committer, cdate=cdate)
+
+    def match(self, version):
+        matcher = VersionMatcher()
+        for candidate, meta in self.meta:
+            if matcher.match(version, candidate):
+                return meta
+
+        return None
+
+
 # pylint: disable=E1101
 class RepoImportXmlConfigFile(KrepXmlConfigFile):
     LOCATION_PREFIX = "locations"
@@ -150,6 +190,18 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             locations.add(
                 location, start=start, end=end, till=till, project=project)
 
+    def _parse_meta(self, node, meta):
+        if node.nodeName == 'meta':
+            meta.add(
+                version=self.get_attr('version'),
+                author=self.get_attr('author'),
+                date=self.get_attr('date'),
+                committer=self.get_attr('committer'),
+                cdate=self.get_attr('committer-date'))
+        elif node.nodeName == 'meta-info':
+            for child in node.childNodes:
+                self._parse_meta(child, meta)
+
     def _parse_project(self, node, name=None, subdir=False):
         self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
@@ -172,6 +224,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
 
         locs = RepoImportLocation()
         self.set_attr(cfg, 'location', locs)
+        meta = RepoImportMeta()
+        self.set_attr(cfg, 'meta', meta)
+
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
         self.set_attr(cfg, 'cleanup', self.get_attr(node, 'cleanup'))
@@ -186,6 +241,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                     child, name=self.get_attr(node, 'name'), subdir=True)
             elif child.nodeName in ('location', 'locations'):
                 self._parse_location(child, locs)
+            elif child.nodeName == 'meta-info':
+                self._parse_meta(child, meta)
             elif child.nodeName == 'include-dir':
                 item = self.get_attr(child, 'name')
                 cpfs = self.get_attr(child, 'copy')
@@ -322,6 +379,7 @@ be used to define the wash-out and generate the final commit.
         filters = list()
         project_name = "%s" % str(project)
 
+        optc = options.extra_values(options.extra_option, 'git-commit')
         if options.tag:
             label = options.tag
         else:
@@ -349,6 +407,15 @@ be used to define the wash-out and generate the final commit.
                 location = pvalue.location.get(label, rootdir)
                 if location:
                     path = os.path.join(rootdir, location)
+
+            if pvalue.meta:
+                meta = pvalue.meta.match(label)
+                if meta:
+                    if meta.author:
+                        optc.author = meta.author,
+                        optc.date = meta.date
+                        optc.committer = meta.committer
+                        optc.committer_date = meta.cdate
         else:
             logger.warning('"%s" is undefined', project_name)
             return 1
@@ -367,14 +434,25 @@ be used to define the wash-out and generate the final commit.
 
             return 1
 
+        opti = Values.build(
+            copyfiles=copyfile,
+            cleanup=cleanup,
+            filter_sccs=True,
+            filters=filters,
+            force=force,
+            imports=False if location else None,
+            linkfiles=linkfile,
+            refs=options.refs,
+            strict=strict,
+            subdir=subdir,
+            symlinks=symlinks,
+            tag_refs=options.tag_refs,
+            extra=optc)
+
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
         ret, _ = PkgImportSubcmd.do_import(
-            project, options, '', path, label, subdir=subdir,
-            filters=filters, logger=logger,
-            imports=False if location else None,
-            symlinks=symlinks, copyfiles=copyfile, linkfiles=linkfile,
-            force=force, cleanup=cleanup, strict=strict)
+            project, opti, '', path, label, logger=logger)
 
         return ret
 

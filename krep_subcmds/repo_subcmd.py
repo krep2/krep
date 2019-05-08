@@ -147,13 +147,13 @@ this command.
                     not options.convert_manifest_file:
                 logger.warning('%s not existed, ignored', node.path)
                 continue
-            elif not pattern.match('p,project', node.name):
+            elif not pattern.match('project', node.name):
                 logger.warning('%s ignored by the pattern', node.name)
                 continue
 
             name = '%s%s' % (
                 options.prefix or '',
-                pattern.replace('p,project', node.name, name=node.name))
+                pattern.replace('project', node.name, name=node.name))
 
             project = GitProject(
                 name,
