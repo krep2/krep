@@ -5,9 +5,9 @@ import threading
 from command import Command
 from config_file import XmlConfigFile
 from error import HookError
+from git_pattern import GitPattern
 from logger import Logger
 from options import Values
-from pattern import Pattern
 from pattern_file import PatternFile as XmlPatternFile
 
 
@@ -194,10 +194,10 @@ class SubCommand(object):
 
     @staticmethod
     def get_patterns(options):
-        patterns = Pattern()
+        patterns = GitPattern()
 
         if options.pattern:
-            patterns += Pattern(options.pattern)
+            patterns += GitPattern(options.pattern)
 
         if options.pattern_file:
             patf = XmlPatternFile.load(
