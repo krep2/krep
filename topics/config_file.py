@@ -230,6 +230,7 @@ class XmlConfigFile(_ConfigFile):
         _ConfigFile.__init__(self, filename)
 
         self.var = dict()
+        self.vars = dict()
         self.sets = dict()
         root = xml.dom.minidom.parse(filename)
         for node in root.childNodes:
@@ -261,6 +262,13 @@ class XmlConfigFile(_ConfigFile):
                     break
 
         return ret
+
+    def parse_variable(self, node):
+        name = self.get_attr(node, 'name')
+        value = self.get_attr(node, 'value')
+
+        if name and value:
+            self.vars[name] = value
 
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
@@ -309,6 +317,8 @@ class XmlConfigFile(_ConfigFile):
             for child2 in node.childNodes:
                 if child2.nodeName == 'option':
                     self.parse_global(child2, config)
+        elif node.nodeName in ('var', 'variable'):
+            self.parse_variable(node)
         elif node.nodeName == 'value-sets':
             name = self.get_attr(node, 'name')
             for child2 in node.childNodes:
