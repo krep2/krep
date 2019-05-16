@@ -383,6 +383,17 @@ class XmlConfigFile(_ConfigFile):
 
         return value, nonexisted
 
+    def evaluate_if(self, exp):
+        escape, _ = self.escape_attr(exp)
+        return eval(escape)
+
+    def evaluate_if_node(self, node):
+        expif = self.get_attr(node, 'if')
+        if expif:
+            return self.evaluate_if(expif)
+        else:
+            return True
+
     @staticmethod
     def get_attr(node, name, default=None):
         if node and node.hasAttribute(name):
