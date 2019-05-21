@@ -193,6 +193,13 @@ class SubCommand(object):
     @staticmethod
     def do_hook(name, option, args=None, dryrun=False):
         # try option.hook-name first to support xml configurations
+        hookcmd = option.pop('hook-%s-cmd' % name)
+        if hookcmd:
+            try:
+                return eval(hookcmd)
+            except Exception:
+                return 1
+
         hook = option.pop('hook-%s' % name)
         if hook:
             hargs = option.normalize('hook-%s-args' % name, attr=True)
