@@ -120,7 +120,11 @@ class _XmlProject(object):  # pylint: disable=R0902
             revision = default.revision
 
         if revision != self.revision:
-            _setattr(e, 'revision', self.revision)
+            rev = self.revision
+            if remote and self.revision.startswith('%s/' % remote):
+                rev = self.revision[len(remote) + 1:]
+            if rev != revision:
+              _setattr(e, 'revision', rev)
         if remote and self.remote and self.remote != remote:
             _setattr(e, 'remote', remote)
         _setattr(e, 'upstream', self.upstream)
