@@ -165,7 +165,8 @@ this command.
                 copyfiles=node.copyfiles,
                 linkfiles=node.linkfiles)
 
-            if project.is_sha1(node.revision):
+            if project.is_sha1(node.revision) or \
+                    node.revision.startswith('refs/'):
                 project.revision = '%s' % node.revision
             else:
                 project.revision = '%s/%s' % (node.remote, node.revision)
