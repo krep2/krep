@@ -370,6 +370,7 @@ class OptionParser(optparse.OptionParser):
             epilog=epilog)
 
         self.sup_values = Values()
+        self.defer_options = dict()
 
     @staticmethod
     def split_argument(arg):
@@ -379,11 +380,21 @@ class OptionParser(optparse.OptionParser):
 
         return [arg]
 
-    def _handle_opposite(self, args):
+    def _handle_options(self, args):
         """Extends to handle the oppsite options."""
         group = None
 
         for arg in args or sys.argv[1:]:
+            for opt, action in self.defer_options.items():
+                if re.match(opt, args):
+                    if not group:
+                        group = self.add_option_group('Pseduo options')
+
+                    group.add_option(
+                        arg, dest=re.subst('[\.\*]', '_'),
+                        action=action,
+                        help=optparse.SUPPRESS_HELP)
+
             if arg.startswith('--no-') or arg.startswith('--not-'):
                 if arg in self._long_opt:
                     continue
@@ -402,6 +413,9 @@ class OptionParser(optparse.OptionParser):
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
+    def defer_opt(self, opt, action):
+        self.defer_options[opt] = action
+
     def suppress_opt(self, opt, default=None):
         option = self.get_option_group(opt)
         if option:
@@ -415,7 +429,7 @@ class OptionParser(optparse.OptionParser):
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
         try:
-            self._handle_opposite(args)
+            self._handle_options(args)
         except AttributeError:
             pass
 
