@@ -290,7 +290,6 @@ this command.
             options.mirror)
 
         default = manifest.get_default()
-        default.remote = options.remote
         builder.append(default)
 
         for remote in manifest.get_remotes():
@@ -331,13 +330,11 @@ this command.
         for project in manifest.get_projects():
             origins[project.path] = project
 
-        default = manifest.get_default()
-        default.remote = options.remote
-
         builder = ManifestBuilder(
             options.output_xml_file,
             RepoSubcmd.get_absolute_working_dir(options))  # pylint: disable=E1101
 
+        default = manifest.get_default()
         builder.append(default)
 
         for remote in manifest.get_remotes():
