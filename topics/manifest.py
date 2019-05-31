@@ -98,7 +98,6 @@ class _XmlProject(object):  # pylint: disable=R0902
         _setattr(e, 'name', self.name)
         if (rootdir is not None or not mirror) and self.path:
             _setattr(e, 'path', self.path.replace(rootdir or '', ''))
-        _setattr(e, 'remote', self.remote)
 
         remote = None
         if self.remote and remotes:
