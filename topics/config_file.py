@@ -245,6 +245,16 @@ class XmlConfigFile(_ConfigFile):
             for node in root.childNodes:
                 self.parse(node, pi)
 
+    def set_var(self, var, value=None):
+        if value is None:
+            del self.vars[var]
+        else:
+            self.vars[var] = value
+
+    def unset_var(self, var):
+        self.set_var(var, None)
+
+
     def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
         for yset in self.sets.get(group, []):
