@@ -30,7 +30,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             name = os.path.join(os.path.dirname(self.filename), name)
 
         xvals = BatchXmlConfigFile(name, self.get_default())
-        return name, xvals
+        return xvals
 
     def parse_hook(self, node, config=None):
         if not self.evaluate_if_node(node):
@@ -76,7 +76,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             elif child.nodeName == 'hook':
                 self.parse_hook(child, config)
             elif child.nodeName == 'include':
-                _, xvals = self.parse_include(child)
+                xvals = self.parse_include(child)
                 # only pattern supported and need to export explicitly
                 vals = xvals.get_values(BatchXmlConfigFile.FILE_PREFIX)
                 for val in vals:
