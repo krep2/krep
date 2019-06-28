@@ -179,11 +179,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return
 
-        fname = self.get_attr(node, 'name')
-        if not os.path.isabs(fname):
-            fname = os.path.join(os.path.dirname(self.filename), fname)
-
-        conf = RepoImportXmlConfigFile(fname)
+        conf = KrepXmlConfigFile.parse_include(
+            self, node, RepoImportXmlConfigFile)
         names = conf.get_names(RepoImportXmlConfigFile.LOCATION_PREFIX)
         for cname in names:
             self._new_value(cname, conf.get_values(cname))
