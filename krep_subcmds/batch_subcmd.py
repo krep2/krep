@@ -23,13 +23,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return Values()
 
-        KrepXmlConfigFile.parse_include(self, node)
+        _, xvals = KrepXmlConfigFile.parse_include(
+            self, node, BatchXmlConfigFile)
 
-        name = self.get_attr(node, 'name')
-        if name and not os.path.isabs(name):
-            name = os.path.join(os.path.dirname(self.filename), name)
-
-        xvals = BatchXmlConfigFile(name, self.get_default())
         return xvals
 
     def parse_hook(self, node, config=None):
