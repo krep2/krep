@@ -11,6 +11,11 @@ from topics import KrepXmlConfigFile, PatternFile, \
 class BatchXmlConfigFile(KrepXmlConfigFile):
     PROJECT_PREFIX = "project"
 
+    SUPPORTED_ELEMENTS = (
+        'projects', 'project',
+        'args', 'option', 'hook'
+    )
+
     def __init__(self, filename, pi=None):
         KrepXmlConfigFile.__init__(self, filename, pi)
 
@@ -24,6 +29,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         return name, xvals
 
     def parse_hook(self, node, config=None):
+        if not self.evaluate_if_node(node):
+            return
+
         name = self.get_attr(node, 'name')
         filen = self.get_attr(node, 'file')
         if filen and not os.path.isabs(filen):
@@ -47,10 +55,16 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         if not config:
             config = Values()
 
+        if not self.evaluate_if_node(node):
+            return config
+
         if group:
             self.set_attr(config, 'group', group)
 
         for child in node.childNodes:
+            if not self.evaluate_if_node(child):
+                continue
+
             if child.nodeName == 'args':
                 self.set_attr(
                     config, child.nodeName, self.get_var_attr(child, 'value'))
@@ -81,6 +95,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
     def parse(self, node, pi=None):  # pylint: disable=R0914
         if node.nodeName != 'projects':
             KrepXmlConfigFile.parse(self, node, pi)
+            return
+
+        if not self.evaluate_if_node(node):
             return
 
         default = self._get_value(BatchXmlConfigFile.DEFAULT_CONFIG)
