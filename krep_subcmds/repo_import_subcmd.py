@@ -342,7 +342,7 @@ class RepoImportSubcmd(RepoSubcmd, PkgImportSubcmd):
     ALIASES = ()
 
     help_summary = '''\
-Import package file or directories to the remote with git-repo projects'''
+Import directories to remote with git-repo projects'''
 
     help_usage = """\
 %prog [options] ...
