@@ -15,13 +15,12 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         KrepXmlConfigFile.__init__(self, filename, pi)
 
     def parse_include(self, node):
-        KrepXmlConfigFile.parse_include(self, node)
+        if not self.evaluate_if_node(node):
+            return Values()
 
-        name = self.get_attr(node, 'name')
-        if name and not os.path.isabs(name):
-            name = os.path.join(os.path.dirname(self.filename), name)
+        name, xvals = KrepXmlConfigFile.parse_include(
+            self, node, BatchXmlConfigFile)
 
-        xvals = BatchXmlConfigFile(name, self.get_default())
         return name, xvals
 
     def parse_hook(self, node, config=None):
