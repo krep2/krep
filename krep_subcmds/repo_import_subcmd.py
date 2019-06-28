@@ -153,11 +153,20 @@ class RepoImportMeta(object):
 class RepoImportXmlConfigFile(KrepXmlConfigFile):
     LOCATION_PREFIX = "locations"
 
+    SUPPORTED_ELEMENTS = (
+        'locations', 'location', 'project', 'meta', 'meta-info',
+        'subdir', 'include-dir', 'exclude-dir',
+        'include-file', 'exclude-file', 'copy-file', 'link-file'
+    )
+
     def __init__(self, filename, pi=None):
         KrepXmlConfigFile.__init__(self, filename, pi)
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
         if node.nodeName != 'locations':
+            return
+
+        if not self.evaluate_if_node(node):
             return
 
         for child in node.childNodes:
@@ -167,6 +176,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 self._parse_include(child)
 
     def _parse_include(self, node):
+        if not self.evaluate_if_node(node):
+            return
+
         fname = self.get_attr(node, 'name')
         if not os.path.isabs(fname):
             fname = os.path.join(os.path.dirname(self.filename), fname)
@@ -177,6 +189,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             self._new_value(cname, conf.get_values(cname))
 
     def _parse_location(self, node, locations, name=None):
+        if not self.evaluate_if_node(node):
+            return
+
         if node.nodeName == 'locations':
             name = self.get_attr(node, 'name')
             for child in node.childNodes:
@@ -191,6 +206,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 location, start=start, end=end, till=till, project=project)
 
     def _parse_meta(self, node, meta):
+        if not self.evaluate_if_node(node):
+            return
+
         if node.nodeName == 'meta':
             meta.add(
                 version=self.get_attr('version'),
@@ -203,6 +221,9 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 self._parse_meta(child, meta)
 
     def _parse_project(self, node, name=None, subdir=False):
+        if not self.evaluate_if_node(node):
+            return
+
         self._new_value(
             '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX,
                        name or self.get_attr(node, 'name')),
