@@ -312,12 +312,15 @@ class XmlConfigFile(_ConfigFile):
 
         self.sets[name].append(attrs)
 
-    def parse_include(self, node):
+    def parse_include(self, node, clazz=None):
         name = self.get_attr(node, 'name')
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
 
-        xvals = XmlConfigFile(name, self.get_default(), self)
+        if issubclass(clazz, XmlConfigFile):
+            xvals = clazz(name, self.get_default(), self)
+        else:
+            xvals = XmlConfigFile(name, self.get_default(), self)
 
         # duplicate the 'value-sets'
         for key, value in xvals.sets.items():
