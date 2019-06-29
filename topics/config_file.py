@@ -229,6 +229,20 @@ class XmlConfigFile(_ConfigFile):
         'global-option', 'global-options',
         'var', 'variable', 'value-sets',
     )
+    INCLUDED_FILE_NAME = "krep.included.name"
+
+    class _WithVariable(object):
+        def __init__(self, config, kws):
+            self.obj = config
+            self.kws = kws
+
+        def __enter__(self):
+            for var, key in self.kws.items():
+                self.obj.set_var(var, key)
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            for var, _ in self.kws.items():
+                self.obj.unset_var(var)
 
     """It delegates to handle element "global-options" only.
        Other depends on inherited implementation."""
@@ -247,6 +261,12 @@ class XmlConfigFile(_ConfigFile):
             del self.vars[var]
         else:
             self.vars[var] = value
+
+    def unset_var(self, var):
+        self.set_var(var, None)
+
+    def with_var(self, vals):
+        return XmlConfigFile._WithVariable(self, vals)
 
     def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
@@ -310,10 +330,12 @@ class XmlConfigFile(_ConfigFile):
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
 
-        if issubclass(clazz, XmlConfigFile):
-            xvals = clazz(name, self.get_default())
-        else:
-            xvals = XmlConfigFile(name, self.get_default())
+        with self.with_var(
+                {XmlConfigFile.INCLUDED_FILE_NAME: name}):
+            if issubclass(clazz, XmlConfigFile):
+                xvals = clazz(name, self.get_default())
+            else:
+                xvals = XmlConfigFile(name, self.get_default())
 
         # duplicate the 'value-sets'
         for key, value in xvals.sets.items():
