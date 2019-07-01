@@ -224,6 +224,12 @@ class _JsonConfigFile(_ConfigFile):
 
 
 class XmlConfigFile(_ConfigFile):
+    SUPPORTED_ELEMENTS = (
+        'include',
+        'global-option', 'global-options',
+        'var', 'variable', 'value-sets',
+    )
+
     """It delegates to handle element "global-options" only.
        Other depends on inherited implementation."""
     def __init__(self, filename, pi=None):
@@ -369,16 +375,24 @@ class XmlConfigFile(_ConfigFile):
 
         return value, nonexisted
 
+    def _supported_node(self, node):
+        if hasattr(node, 'nodeName'):
+            return node.nodeName in self.SUPPORTED_ELEMENTS or \
+                node.nodeName in XmlConfigFile.SUPPORTED_ELEMENTS
+        else:
+            return False
+
     def evaluate_if(self, exp):
         escape = self.escape(exp, self.vars)
         return eval(escape)
 
     def evaluate_if_node(self, node):
-        expif = self.get_attr(node, 'if')
-        if expif:
-            return self.evaluate_if(expif)
-        else:
-            return True
+        if self._supported_node(node):
+            expif = self.get_attr(node, 'if')
+            if expif:
+                return self.evaluate_if(expif)
+
+        return True
 
     @staticmethod
     def get_attr(node, name, default=None):
