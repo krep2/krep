@@ -229,7 +229,10 @@ class XmlConfigFile(_ConfigFile):
         'global-option', 'global-options',
         'var', 'variable', 'value-sets',
     )
+
     INCLUDED_FILE_NAME = "krep.included.name"
+    INCLUDED_FILE_NAMES = "krep.included.names"
+    INCLUDED_FILE_DEPTH = "krep.included.depth"
 
     class _WithVariable(object):
         def __init__(self, config, kws):
@@ -257,10 +260,22 @@ class XmlConfigFile(_ConfigFile):
             self.parse(node, pi)
 
     def set_var(self, var, value=None):
-        if value is None:
-            del self.vars[var]
+        if var in (XmlConfigFile.INCLUDED_FILE_NAMES,
+                   XmlConfigFile.INCLUDED_FILE_DEPTH):
+            return
+        elif var == XmlConfigFile.INCLUDED_FILE_NAME:
+            if var not in self.vars:
+                self.vars[var] = list()
+
+            if value is None:
+                self.vars[var].pop()
+            else:
+                self.vars[var].append(value)
         else:
-            self.vars[var] = value
+            if value is None:
+                del self.vars[var]
+            else:
+                self.vars[var] = value
 
     def unset_var(self, var):
         self.set_var(var, None)
@@ -376,6 +391,26 @@ class XmlConfigFile(_ConfigFile):
             return value
 
     def escape_attr(self, value, var=None):
+        def _escape_var(varname):
+            if varname in (XmlConfigFile.INCLUDED_FILE_NAME,
+                       XmlConfigFile.INCLUDED_FILE_NAMES,
+                       XmlConfigFile.INCLUDED_FILE_DEPTH):
+                vx = XmlConfigFile.INCLUDED_FILE_NAME
+                if vx not in var:
+                    var[vx] = list()
+
+                if varname == XmlConfigFile.INCLUDED_FILE_NAME:
+                    if len(var[vx]) > 0:
+                        return var[vx][-1]
+                    else:
+                        return ''
+                elif varname == XmlConfigFile.INCLUDED_FILE_NAMES:
+                    return var[vx]
+                elif varname == XmlConfigFile.INCLUDED_FILE_DEPTH:
+                    return str(len(var[vx]))
+            else:
+                return var.get(varname)
+
         i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
         if var is None:
@@ -392,9 +427,10 @@ class XmlConfigFile(_ConfigFile):
                   (name.startswith('(') and name.endswith(')')):
                 name = name[1:-1]
 
-            if name in var:
-                value = value[:i] + var[name] + value[j:]
-                i += len(var[name])
+            val = _escape_var(name)
+            if val is not None:
+                value = value[:i] + val + value[j:]
+                i += len(val)
             else:
                 nonexisted = True
                 i = j
