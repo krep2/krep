@@ -379,7 +379,7 @@ class XmlConfigFile(_ConfigFile):
         i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
         if var is None:
-            var = self.var
+            var = self.vars
 
         while True:
             m = varprog.search(value, i)
@@ -409,7 +409,7 @@ class XmlConfigFile(_ConfigFile):
             return False
 
     def evaluate_if(self, exp):
-        escape = self.escape(exp, self.vars)
+        escape, _ = self.escape_attr(exp)
         return eval(escape)
 
     def evaluate_if_node(self, node):
