@@ -226,7 +226,7 @@ class _JsonConfigFile(_ConfigFile):
 class XmlConfigFile(_ConfigFile):
     SUPPORTED_ELEMENTS = (
         'include',
-        'global-option', 'global-options',
+        'global-option', 'global-options', 'option',
         'var', 'variable', 'value-sets',
     )
 
@@ -320,6 +320,9 @@ class XmlConfigFile(_ConfigFile):
         return ret
 
     def parse_variable(self, node):
+        if not self.evaluate_if_node(node):
+            return
+
         name = self.get_attr(node, 'name')
         value = self.get_attr(node, 'value')
 
@@ -333,13 +336,17 @@ class XmlConfigFile(_ConfigFile):
         if config is None:
             config = Values()
 
-        if name and value:
-            self.set_attr(config, name, value)
+        if self.evaluate_if_node(node):
+            if name and value:
+                self.set_attr(config, name, value)
 
         return config
 
     def parse_set(self, node, name=None):
         attrs = dict()
+
+        if not self.evaluate_if_node(node):
+            return
 
         for attr in (node._attrs or dict()).keys():
             attrs[attr] = self.get_var_attr(node, attr)
@@ -350,6 +357,9 @@ class XmlConfigFile(_ConfigFile):
         self.sets[name].append(attrs)
 
     def parse_include(self, node, clazz=None):
+        if not self.evaluate_if_node(node):
+            return None, XmlConfigFile('')
+
         name = self.get_attr(node, 'name')
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
