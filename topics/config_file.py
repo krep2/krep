@@ -249,15 +249,24 @@ class XmlConfigFile(_ConfigFile):
 
     """It delegates to handle element "global-options" only.
        Other depends on inherited implementation."""
-    def __init__(self, filename, pi=None):
+    def __init__(self, filename, pi=None, config=None):
         _ConfigFile.__init__(self, filename)
 
         self.var = dict()
         self.vars = dict()
         self.sets = dict()
-        root = xml.dom.minidom.parse(filename)
-        for node in root.childNodes:
-            self.parse(node, pi)
+
+        if config:
+            for var, value in config.vars.items():
+                self.vars[var] = value
+
+            for key, value in config.sets.items():
+                self.sets[key] = value
+
+        if os.path.exists(filename):
+            root = xml.dom.minidom.parse(filename)
+            for node in root.childNodes:
+                self.parse(node, pi)
 
     def set_var(self, var, value=None):
         if var in (XmlConfigFile.INCLUDED_FILE_NAMES,
@@ -348,9 +357,9 @@ class XmlConfigFile(_ConfigFile):
         with self.with_var(
                 {XmlConfigFile.INCLUDED_FILE_NAME: name}):
             if issubclass(clazz, XmlConfigFile):
-                xvals = clazz(name, self.get_default())
+                xvals = clazz(name, self.get_default(), self)
             else:
-                xvals = XmlConfigFile(name, self.get_default())
+                xvals = XmlConfigFile(name, self.get_default(), self)
 
         # duplicate the 'value-sets'
         for key, value in xvals.sets.items():
