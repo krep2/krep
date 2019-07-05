@@ -62,6 +62,9 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             self.set_attr(config, 'group', group)
 
         for child in node.childNodes:
+            if not self.evaluate_if_node(child):
+                continue
+
             if child.nodeName == 'args':
                 self.set_attr(
                     config, child.nodeName, self.get_var_attr(child, 'value'))
