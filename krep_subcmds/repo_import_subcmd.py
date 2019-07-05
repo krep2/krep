@@ -159,9 +159,6 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         'include-file', 'exclude-file', 'copy-file', 'link-file'
     )
 
-    def __init__(self, filename, pi=None):
-        KrepXmlConfigFile.__init__(self, filename, pi)
-
     def parse(self, node, pi=None):  # pylint: disable=R0914
         if node.nodeName != 'locations':
             return
