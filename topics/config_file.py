@@ -224,16 +224,74 @@ class _JsonConfigFile(_ConfigFile):
 
 
 class XmlConfigFile(_ConfigFile):
+
+    INCLUDED_FILE_NAME = "krep.included.name"
+    INCLUDED_FILE_NAMES = "krep.included.names"
+    INCLUDED_FILE_DEPTH = "krep.included.depth"
+
+    SUPPORTED_ELEMENTS = (
+        'include',
+        'global-option', 'global-options', 'option',
+        'var', 'variable', 'value-sets',
+    )
+
+    class _WithVariable(object):
+        def __init__(self, config, kws):
+            self.obj = config
+            self.kws = kws
+
+        def __enter__(self):
+            for var, key in self.kws.items():
+                self.obj.set_var(var, key)
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            for var, _ in self.kws.items():
+                self.obj.unset_var(var)
+
     """It delegates to handle element "global-options" only.
        Other depends on inherited implementation."""
-    def __init__(self, filename, pi=None):
+    def __init__(self, filename, pi=None, config=None):
         _ConfigFile.__init__(self, filename)
 
         self.var = dict()
+        self.vars = dict()
         self.sets = dict()
-        root = xml.dom.minidom.parse(filename)
-        for node in root.childNodes:
-            self.parse(node, pi)
+
+        if config:
+            for var, value in config.vars.items():
+                self.vars[var] = value
+
+            for key, value in config.sets.items():
+                self.sets[key] = value
+
+        if os.path.exists(filename):
+            root = xml.dom.minidom.parse(filename)
+            for node in root.childNodes:
+                self.parse(node, pi)
+
+    def set_var(self, var, value=None):
+        if var in (XmlConfigFile.INCLUDED_FILE_NAMES,
+                   XmlConfigFile.INCLUDED_FILE_DEPTH):
+            return
+        elif var == XmlConfigFile.INCLUDED_FILE_NAME:
+            if var not in self.vars:
+                self.vars[var] = list()
+
+            if value is None:
+                self.vars[var].pop()
+            else:
+                self.vars[var].append(value)
+        else:
+            if value is None:
+                del self.vars[var]
+            else:
+                self.vars[var] = value
+
+    def unset_var(self, var):
+        self.set_var(var, None)
+
+    def with_var(self, vals):
+        return XmlConfigFile._WithVariable(self, vals)
 
     def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
@@ -262,6 +320,16 @@ class XmlConfigFile(_ConfigFile):
 
         return ret
 
+    def parse_variable(self, node):
+        if not self.evaluate_if_node(node):
+            return
+
+        name = self.get_attr(node, 'name')
+        value = self.get_attr(node, 'value')
+
+        if name and value:
+            self.vars[name] = value
+
     def parse_global(self, node, config=None):
         name = self.get_attr(node, 'name')
         value = self.get_attr(node, 'value', 'true')
@@ -269,13 +337,17 @@ class XmlConfigFile(_ConfigFile):
         if config is None:
             config = Values()
 
-        if name and value:
-            self.set_attr(config, name, value)
+        if self.evaluate_if_node(node):
+            if name and value:
+                self.set_attr(config, name, value)
 
         return config
 
     def parse_set(self, node, name=None):
         attrs = dict()
+
+        if not self.evaluate_if_node(node):
+            return
 
         for attr in (node._attrs or dict()).keys():
             attrs[attr] = self.get_var_attr(node, attr)
@@ -285,12 +357,21 @@ class XmlConfigFile(_ConfigFile):
 
         self.sets[name].append(attrs)
 
-    def parse_include(self, node):
+    def parse_include(self, node, clazz=None):
+        if not self.evaluate_if_node(node):
+            return None, XmlConfigFile('')
+
         name = self.get_attr(node, 'name')
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
 
-        xvals = XmlConfigFile(name, self.get_default())
+        with self.with_var(
+                {XmlConfigFile.INCLUDED_FILE_NAME: name}):
+            if issubclass(clazz, XmlConfigFile):
+                xvals = clazz(name, self.get_default(), self)
+            else:
+                xvals = XmlConfigFile(name, self.get_default(), self)
+
         # duplicate the 'value-sets'
         for key, value in xvals.sets.items():
             if key not in self.sets:
@@ -309,6 +390,8 @@ class XmlConfigFile(_ConfigFile):
             for child2 in node.childNodes:
                 if child2.nodeName == 'option':
                     self.parse_global(child2, config)
+        elif node.nodeName in ('var', 'variable'):
+            self.parse_variable(node)
         elif node.nodeName == 'value-sets':
             name = self.get_attr(node, 'name')
             for child2 in node.childNodes:
@@ -328,10 +411,30 @@ class XmlConfigFile(_ConfigFile):
             return value
 
     def escape_attr(self, value, var=None):
+        def _escape_var(varname):
+            if varname in (XmlConfigFile.INCLUDED_FILE_NAME,
+                       XmlConfigFile.INCLUDED_FILE_NAMES,
+                       XmlConfigFile.INCLUDED_FILE_DEPTH):
+                vx = XmlConfigFile.INCLUDED_FILE_NAME
+                if vx not in var:
+                    var[vx] = list()
+
+                if varname == XmlConfigFile.INCLUDED_FILE_NAME:
+                    if len(var[vx]) > 0:
+                        return var[vx][-1]
+                    else:
+                        return ''
+                elif varname == XmlConfigFile.INCLUDED_FILE_NAMES:
+                    return var[vx]
+                elif varname == XmlConfigFile.INCLUDED_FILE_DEPTH:
+                    return str(len(var[vx]))
+            else:
+                return var.get(varname)
+
         i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
         if var is None:
-            var = self.var
+            var = self.vars
 
         while True:
             m = varprog.search(value, i)
@@ -344,14 +447,34 @@ class XmlConfigFile(_ConfigFile):
                   (name.startswith('(') and name.endswith(')')):
                 name = name[1:-1]
 
-            if name in var:
-                value = value[:i] + var[name] + value[j:]
-                i += len(var[name])
+            val = _escape_var(name)
+            if val is not None:
+                value = value[:i] + val + value[j:]
+                i += len(val)
             else:
                 nonexisted = True
                 i = j
 
         return value, nonexisted
+
+    def _supported_node(self, node):
+        if hasattr(node, 'nodeName'):
+            return node.nodeName in self.SUPPORTED_ELEMENTS or \
+                node.nodeName in XmlConfigFile.SUPPORTED_ELEMENTS
+        else:
+            return False
+
+    def evaluate_if(self, exp):
+        escape, _ = self.escape_attr(exp)
+        return eval(escape)
+
+    def evaluate_if_node(self, node):
+        if self._supported_node(node):
+            expif = self.get_attr(node, 'if')
+            if expif:
+                return self.evaluate_if(expif)
+
+        return True
 
     @staticmethod
     def get_attr(node, name, default=None):

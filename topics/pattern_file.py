@@ -12,12 +12,16 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
     KNOWN_PATTERNS = (
         'patterns', 'exclude-patterns', 'rp-patterns', 'replace-patterns')
 
+    SUPPORTED_ELEMENTS = KNOWN_PATTERN + KNOWN_PATTERNS
+
     _XmlPattern = namedtuple(
         '_XmlPattern', 'category,name,value,replacement,cont')
 
     def parse_pattern_node(
             self, node, patterns=None, exclude=False, replacement=False):
         if node.nodeName not in PatternFile.KNOWN_PATTERN:
+            return None
+        elif not self.evaluate_if_node(node):
             return None
 
         def _ensure_bool(value):
@@ -78,7 +82,8 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
     def parse_patterns_node(self, node):
         patterns = list()
 
-        if node.nodeName in PatternFile.KNOWN_PATTERNS:
+        if node.nodeName in PatternFile.KNOWN_PATTERNS and \
+                self.evaluate_if_node(node):
             parent = PatternFile._XmlPattern(
                 name=self.get_var_attr(node, 'name'),
                 category=self.get_var_attr(node, 'category'),
@@ -114,6 +119,9 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         if config is None:
             config = Values()
 
+        if not self.evaluate_if_node(node):
+            return config
+
         if node.nodeName in PatternFile.KNOWN_PATTERNS:
             self.set_attr(config, 'pattern', [])
             patterns = self.parse_patterns_node(node)
@@ -133,6 +141,9 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         return config
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
+        if not self.evaluate_if_node(node):
+            return
+
         if node.nodeName in PatternFile.KNOWN_PATTERNS or \
                 node.nodeName in PatternFile.KNOWN_PATTERN:
             cfg = self._new_value(XmlConfigFile.FILE_PREFIX)
