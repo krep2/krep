@@ -226,15 +226,24 @@ class _JsonConfigFile(_ConfigFile):
 class XmlConfigFile(_ConfigFile):
     """It delegates to handle element "global-options" only.
        Other depends on inherited implementation."""
-    def __init__(self, filename, pi=None):
+    def __init__(self, filename, pi=None, config=None):
         _ConfigFile.__init__(self, filename)
 
         self.var = dict()
         self.vars = dict()
         self.sets = dict()
-        root = xml.dom.minidom.parse(filename)
-        for node in root.childNodes:
-            self.parse(node, pi)
+
+        if config:
+            for var, value in config.vars.items():
+                self.vars[var] = value
+
+            for key, value in config.sets.items():
+                self.sets[key] = value
+
+        if os.path.exists(filename):
+            root = xml.dom.minidom.parse(filename)
+            for node in root.childNodes:
+                self.parse(node, pi)
 
     def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
@@ -298,7 +307,8 @@ class XmlConfigFile(_ConfigFile):
         if name and not os.path.isabs(name):
             name = os.path.join(os.path.dirname(self.filename), name)
 
-        xvals = XmlConfigFile(name, self.get_default())
+        xvals = XmlConfigFile(name, self.get_default(), self)
+
         # duplicate the 'value-sets'
         for key, value in xvals.sets.items():
             if key not in self.sets:
