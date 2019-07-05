@@ -224,15 +224,16 @@ class _JsonConfigFile(_ConfigFile):
 
 
 class XmlConfigFile(_ConfigFile):
+
+    INCLUDED_FILE_NAME = "krep.included.name"
+    INCLUDED_FILE_NAMES = "krep.included.names"
+    INCLUDED_FILE_DEPTH = "krep.included.depth"
+
     SUPPORTED_ELEMENTS = (
         'include',
         'global-option', 'global-options', 'option',
         'var', 'variable', 'value-sets',
     )
-
-    INCLUDED_FILE_NAME = "krep.included.name"
-    INCLUDED_FILE_NAMES = "krep.included.names"
-    INCLUDED_FILE_DEPTH = "krep.included.depth"
 
     class _WithVariable(object):
         def __init__(self, config, kws):

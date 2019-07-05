@@ -16,9 +16,6 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         'args', 'option', 'hook'
     )
 
-    def __init__(self, filename, pi=None, config=None):
-        KrepXmlConfigFile.__init__(self, filename, pi=pi, config=config)
-
     def parse_include(self, node):
         if not self.evaluate_if_node(node):
             return Values()
