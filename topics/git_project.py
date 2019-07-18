@@ -72,6 +72,13 @@ class GitProject(Project, GitCommand):
 
         # gitdir will be secured before executing the command per time
         GitCommand.__init__(self, gitdir, worktree, *args, **kws)
+
+        if uri is None:
+            ret, url = self.ls_remote('--get-url')
+            if ret == 0:
+                ulp = urlparse(url)
+                uri = ulp.path.lstrip('/')
+
         Project.__init__(
             self, uri, worktree, revision, _ensure_remote(remote),
             pattern, *args, **kws)
