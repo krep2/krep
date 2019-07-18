@@ -9,7 +9,7 @@ class Project(object):  # pylint: disable=R0902
         self.path = self._safepath(path)
         self.revision = revision
         self.remote = remote
-        self.source = kws.get('source') or remote
+        self.source = kws.get('source') or uri
         self.pattern = pattern or Pattern()
         self.args = args
         self.kws = kws
@@ -21,6 +21,11 @@ class Project(object):  # pylint: disable=R0902
             ret = path
 
         return ret
+
+    def update(self, name, remote=None):
+        self.uri = name
+        if remote:
+            self.remote = remote
 
     def __getattr__(self, attr):
         return self.kws.get(attr)

@@ -64,4 +64,6 @@ acutally in platform/manifest.git within a mirror.)
                     copyfiles=node.copyfiles,
                     linkfiles=node.linkfiles))
 
+        RepoSubcmd.include_project_manifest(options, projects, pattern)
+
         return projects
