@@ -83,6 +83,12 @@ this command.
                 dest='print_new_projects', action='store_true',
                 help='Print the new projects which isn\'t managed by Gerrit')
 
+            options = optparse.add_option_group('Other options')
+            options.add_option(
+                '--include-init-manifest',
+                dest='include_init_manifest', action='store_true',
+                help='Include .repo/manifests if mirror didn\'t contain it')
+
             options = optparse.add_option_group('Extra action options')
             options.add_option(
                 '--convert-manifest-file',
@@ -135,6 +141,26 @@ this command.
             mirror=mirror or (options is not None and options.mirror))
 
     @staticmethod
+    def include_project_manifest(options, projects, pattern):
+        if options.include_init_manifest:
+            projects.append(
+                GitProject(
+                    None,
+                    gitdir=os.path.join(
+                        RepoSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
+                        '.repo/manifests.git'),
+                    worktree=os.path.join(
+                        RepoSubcmd.get_absolute_working_dir(options),  # pylint: disable=E1101
+                        '.repo/manifests'),
+                    pattern=pattern))
+
+            # substitute project name after initialization
+            projects[-1].update_(
+                pattern.replace(
+                    'project', projects[-1].uri, name=projects[-1].uri),
+                options.remote)
+
+    @staticmethod
     def fetch_projects_in_manifest(options, filename=None):
         manifest = RepoSubcmd.get_manifest(options, filename)
 
@@ -172,6 +198,8 @@ this command.
                 project.revision = '%s/%s' % (node.remote, node.revision)
 
             projects.append(project)
+
+        RepoSubcmd.include_project_manifest(options, projects, pattern)
 
         return projects
 
