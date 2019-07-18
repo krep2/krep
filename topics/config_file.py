@@ -253,7 +253,7 @@ class XmlConfigFile(_ConfigFile):
     def __init__(self, filename, pi=None, config=None):
         _ConfigFile.__init__(self, filename)
 
-        self.var = dict()
+        self.fvar = dict()
         self.vars = dict()
         self.sets = dict()
 
@@ -299,10 +299,10 @@ class XmlConfigFile(_ConfigFile):
             if skip and not self.secure_vars(node, yset):
                 continue
 
-            self.var = yset
+            self.fvar = yset
             yield yset
 
-        self.var = dict()
+        self.fvar = dict()
 
     def secure_vars(self, node, var=None):
         ret = True
