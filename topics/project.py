@@ -22,6 +22,11 @@ class Project(object):  # pylint: disable=R0902
 
         return ret
 
+    def update(self, name, remote=None):
+        self.uri = name
+        if remote:
+            self.remote = remote
+
     def __getattr__(self, attr):
         return self.kws.get(attr)
 
