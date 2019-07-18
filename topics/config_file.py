@@ -434,7 +434,9 @@ class XmlConfigFile(_ConfigFile):
         i, nonexisted = 0, False
         varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
         if var is None:
-            var = self.vars
+            var = {}
+            var.update(self.vars)
+            var.update(self.fvar)
 
         while True:
             m = varprog.search(value, i)
