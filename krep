@@ -65,7 +65,7 @@ Execute the specified sub-commands, which can be listed with the command
             '--inject-option',
             dest='inject_option', action='append',
             help='extra options passed to running sub-command with the '
-                 'format group:[--]option[=value]')
+                 'format group:[--][no-]option[=value]')
 
     return global_options
 
