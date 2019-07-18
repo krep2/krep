@@ -76,6 +76,13 @@ class GitProject(Project, GitCommand):
             self, uri, worktree, revision, _ensure_remote(remote),
             pattern, *args, **kws)
 
+    def update_(self, name, remote=None):
+        if remote:
+            Project.update(
+                self, name, _ensure_remote('%s/%s' % (remote, name)))
+        else:
+            Project.update(self, name)
+
     def init(self, bare=False, *args, **kws):
         cli = list()
         if bare:
