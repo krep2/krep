@@ -336,6 +336,7 @@ this command.
 
             builder.project(
                 name=project.uri, path=path, revision=revision,
+                remote=origins[path].remote,
                 groups=origins[path].groups,
                 upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
@@ -391,6 +392,7 @@ this command.
 
             builder.project(
                 name=name, path=path, revision=project.revision,
+                remote=origins[path].remote,
                 groups=origins[path].groups,
                 upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
