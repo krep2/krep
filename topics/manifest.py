@@ -201,12 +201,19 @@ be saved in XML file again with limited attributes.
 
         return default
 
-    def _parse_project(self, node):
+    def _parse_project(self, node, default, remotes):
+
+        remote = _attr(node, 'remote', default.remote)
+        if remote != default.remote:
+            revision = remotes[remote].revision
+        else:
+            revision = default.revision
+
         project = _XmlProject(
             name=_attr(node, 'name', _attr2(node, 'in-project')),
             path=_attr2(node, 'path'),
-            revision=_attr2(node, 'revision'),
-            remote=_attr2(node, 'remote'),
+            revision=_attr(node, 'revision', revision),
+            remote=remote,
             groups=_attr2(node, 'groups'),
             rebase=_attr2(node, 'rebase'),
             upstream=_attr2(node, 'upstream'))
@@ -280,7 +287,8 @@ be saved in XML file again with limited attributes.
 
         for node in nodes:
             if node.nodeName in ('project', 'repo-hooks'):
-                self._projects.append(self._parse_project(node))
+                self._projects.append(
+                    self._parse_project(node, self._default, self._remote))
                 project = self._projects[-1]
                 if project.remote and project.remote not in self._remote:
                     raise ManifestException(
@@ -299,23 +307,6 @@ be saved in XML file again with limited attributes.
         self._parse_manifest(nodes)
 
     def _build_projects(self, project_list):
-        def _get_revision(project):
-            revision = project.revision
-
-            if not revision and project.remote:
-                remote = self.get_remote(project.remote)
-                if remote:
-                    revision = remote.revision
-
-            if not revision:
-                revision = self._default.revision
-                if not revision:
-                    remote = self.get_remote(self._default.remote)
-                    if remote:
-                        revision = remote.revision
-
-            return revision
-
         projects = list()
         for project in project_list or list():
             if project.groups and project.groups.find('notdefault') > -1:
@@ -324,9 +315,9 @@ be saved in XML file again with limited attributes.
             projects.append(
                 _XmlProject(
                     name=project.name,
-                    remote=project.remote or self._default.remote,
+                    remote=project.remote,
                     path=project.path or project.name,
-                    revision=_get_revision(project),
+                    revision=project.revision,
                     groups=project.groups,
                     upstream=project.upstream))
             projects[-1].add_copy_files(project.copyfiles)
