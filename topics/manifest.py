@@ -99,33 +99,16 @@ class _XmlProject(object):  # pylint: disable=R0902
         if (rootdir is not None or not mirror) and self.path:
             _setattr(e, 'path', self.path.replace(rootdir or '', ''))
 
-        remote = None
-        if self.remote and remotes:
-            for item in remotes:
-                if self.remote == item.name:
-                    remote = item.name
-                    revision = item.revision
-                    break
+        revision = self.revision
+        if revision.startswith('%s/' % self.remote):
+            revision = revision[len(self.remote) + 1:]
+        if revision != default.revision and \
+                revision != remotes[self.remote].revision:
+            _setattr(e, 'revision', revision)
 
-        if not remote and self.revision:
-            for item in remotes:
-                if item.revision == self.revision:
-                    remote = item.name
-                    revision = self.revision
-                    break
+        if self.remote != default.remote:
+            _setattr(e, 'remote', self.remote)
 
-        if not remote:
-            remote = default.remote
-            revision = default.revision
-
-        if revision != self.revision:
-            rev = self.revision
-            if remote and self.revision.startswith('%s/' % remote):
-                rev = self.revision[len(remote) + 1:]
-            if rev != revision:
-              _setattr(e, 'revision', rev)
-        if remote and self.remote and self.remote != remote:
-            _setattr(e, 'remote', remote)
         _setattr(e, 'upstream', self.upstream)
         _setattr(e, 'groups', self.groups)
         for item in self.copyfiles:
@@ -399,10 +382,10 @@ store the live manifest nodes into files.
         root = doc.createElement('manifest')
         doc.appendChild(root)
 
-        remotes = list()
+        remotes = dict()
         for node in self.list:
             if isinstance(node, _XmlRemote):
-                remotes.append(node)
+                remotes[node.name] = node
                 root.appendChild(node.xml(doc))
 
         root.appendChild(doc.createTextNode(''))
