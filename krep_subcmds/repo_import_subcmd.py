@@ -246,7 +246,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         locs = RepoImportLocation()
         self.set_attr(cfg, 'location', locs)
         meta = RepoImportMeta()
-        self.set_attr(cfg, 'meta', meta)
+        self.set_attr(cfg, 'meta', meta or self.meta)
 
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
