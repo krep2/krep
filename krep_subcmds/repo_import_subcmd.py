@@ -433,9 +433,12 @@ be used to define the wash-out and generate the final commit.
                 meta = pvalue.meta.match(label)
                 if meta:
                     if meta.author:
-                        optc.author = meta.author,
+                        optc.author = meta.author
+                    if meta.date:
                         optc.date = meta.date
+                    if meta.committer:
                         optc.committer = meta.committer
+                    if meta.cdate:
                         optc.committer_date = meta.cdate
         else:
             logger.warning('"%s" is undefined', project_name)
