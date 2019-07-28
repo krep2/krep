@@ -37,7 +37,7 @@ class VersionMatcher(object):
 
         return version
 
-    def match(self, version, start=None, end=None, till=None, at=None):
+    def match(self, version, at=None, start=None, end=None, till=None):
         if self.project:
             if not version.startswith(self.project):
                 return False
@@ -118,6 +118,9 @@ class RepoImportMeta(object):
     def __init__(self):
         self.meta = dict()
 
+    def __len__(self):
+        return len(self.meta)
+
     def __repr__(self):
         def append(items, name, value):
             if name and value:
@@ -142,8 +145,8 @@ class RepoImportMeta(object):
 
     def match(self, version):
         matcher = VersionMatcher()
-        for candidate, meta in self.meta:
-            if matcher.match(version, candidate):
+        for candidate, meta in self.meta.items():
+            if matcher.match(version, at=candidate):
                 return meta
 
         return None
@@ -166,11 +169,14 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return
 
+        self.meta = RepoImportMeta()
         for child in node.childNodes:
             if child.nodeName == 'project':
                 self._parse_project(child)
             elif child.nodeName == 'include':
                 self._parse_include(child)
+            elif child.nodeName == 'meta-info':
+                self._parse_meta(child, self.meta)
 
     def _parse_include(self, node):
         if not self.evaluate_if_node(node):
@@ -205,11 +211,11 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
 
         if node.nodeName == 'meta':
             meta.add(
-                version=self.get_attr('version'),
-                author=self.get_attr('author'),
-                date=self.get_attr('date'),
-                committer=self.get_attr('committer'),
-                cdate=self.get_attr('committer-date'))
+                version=self.get_attr(node, 'version'),
+                author=self.get_attr(node, 'author'),
+                date=self.get_attr(node, 'date'),
+                committer=self.get_attr(node, 'committer'),
+                cdate=self.get_attr(node, 'committer-date'))
         elif node.nodeName == 'meta-info':
             for child in node.childNodes:
                 self._parse_meta(child, meta)
@@ -240,7 +246,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         locs = RepoImportLocation()
         self.set_attr(cfg, 'location', locs)
         meta = RepoImportMeta()
-        self.set_attr(cfg, 'meta', meta)
+        self.set_attr(cfg, 'meta', meta or self.meta)
 
         self.set_attr(
             cfg, 'symlinks', Values.boolean(self.get_attr(node, 'symlinks')))
@@ -427,9 +433,12 @@ be used to define the wash-out and generate the final commit.
                 meta = pvalue.meta.match(label)
                 if meta:
                     if meta.author:
-                        optc.author = meta.author,
+                        optc.author = meta.author
+                    if meta.date:
                         optc.date = meta.date
+                    if meta.committer:
                         optc.committer = meta.committer
+                    if meta.cdate:
                         optc.committer_date = meta.cdate
         else:
             logger.warning('"%s" is undefined', project_name)
