@@ -169,11 +169,14 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return
 
+        self.meta = RepoImportMeta()
         for child in node.childNodes:
             if child.nodeName == 'project':
                 self._parse_project(child)
             elif child.nodeName == 'include':
                 self._parse_include(child)
+            elif child.nodeName == 'meta-info':
+                self._parse_meta(child, self.meta)
 
     def _parse_include(self, node):
         if not self.evaluate_if_node(node):
