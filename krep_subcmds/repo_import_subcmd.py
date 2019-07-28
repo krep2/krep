@@ -142,8 +142,8 @@ class RepoImportMeta(object):
 
     def match(self, version):
         matcher = VersionMatcher()
-        for candidate, meta in self.meta:
-            if matcher.match(version, candidate):
+        for candidate, meta in self.meta.items():
+            if matcher.match(version, at=candidate):
                 return meta
 
         return None
