@@ -205,11 +205,11 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
 
         if node.nodeName == 'meta':
             meta.add(
-                version=self.get_attr('version'),
-                author=self.get_attr('author'),
-                date=self.get_attr('date'),
-                committer=self.get_attr('committer'),
-                cdate=self.get_attr('committer-date'))
+                version=self.get_attr(node, 'version'),
+                author=self.get_attr(node, 'author'),
+                date=self.get_attr(node, 'date'),
+                committer=self.get_attr(node, 'committer'),
+                cdate=self.get_attr(node, 'committer-date'))
         elif node.nodeName == 'meta-info':
             for child in node.childNodes:
                 self._parse_meta(child, meta)
