@@ -118,6 +118,9 @@ class RepoImportMeta(object):
     def __init__(self):
         self.meta = dict()
 
+    def __len__(self):
+        return len(self.meta)
+
     def __repr__(self):
         def append(items, name, value):
             if name and value:
