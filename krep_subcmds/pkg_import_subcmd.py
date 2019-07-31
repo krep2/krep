@@ -18,18 +18,18 @@ from topics import FileDiff, FileUtils, FileVersion, FileWasher, GitProject, \
     Gerrit, key_compare, Logger, SubCommand, RaiseExceptionIfOptionMissed
 
 
-def _hash_digest(filename, mode):
-    with open(filename, 'r') as fp:
-        if mode == 'md5':
-            return hashlib.md5(fp.read()).hexdigest()
-        elif mode == 'sha1':
-            return hashlib.sha1(fp.read()).hexdigest()
-
-    return None
-
-
 def _handle_message_with_escape(pkg, escaped=True, default=None,
                                 maps=None, dofile=True):
+
+    def hash_digest(filename, mode):
+        with open(filename, 'r') as fp:
+            if mode == 'md5':
+                return hashlib.md5(fp.read()).hexdigest()
+            elif mode == 'sha1':
+                return hashlib.sha1(fp.read()).hexdigest()
+
+        return None
+
     message = default
 
     main, _ = os.path.splitext(pkg)
@@ -49,8 +49,8 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
         vals = {
             '%file': os.path.basename(pkg),
             '%size': '%s' % os.lstat(pkg)[stat.ST_SIZE],
-            '%sha1': _hash_digest(pkg, 'sha1'),
-            '%md5': _hash_digest(pkg, 'md5')
+            '%sha1': hash_digest(pkg, 'sha1'),
+            '%md5': hash_digest(pkg, 'md5')
         }
 
         if maps:
