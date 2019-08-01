@@ -32,8 +32,8 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
 
     message = default
 
-    main, _ = os.path.splitext(pkg)
     if dofile:
+        main, _ = os.path.splitext(pkg)
         for ext in ('.txt', '.msg'):
             msgf = '%s%s' % (main, ext)
             if os.path.exists(msgf):
@@ -55,10 +55,10 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
 
         if maps:
             for key, value in maps.items():
-                message = message.replace('%%%s' % key, value)
+                message = message.replace('%%%s' % key, value or '')
 
         for key, value in vals.items():
-            message = message.replace(key, value)
+            message = message.replace(key, value or '')
 
     return message
 
