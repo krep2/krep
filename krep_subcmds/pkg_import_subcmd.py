@@ -62,6 +62,173 @@ def _handle_message_with_escape(pkg, escaped=True, default=None,
 
     return message
 
+class PkgImporter(object):
+    def __init__(self, project, options, name, revision=None,
+                 logger=None, *args, **kws):
+        self.project = project
+        self.options = options
+        self.name = name
+        self.revision = revision
+        self.logger = logger
+        self.args = args
+        self.kws = kws
+
+    def __enter__(self):
+        self.ret = 0
+        self.count = 0
+        self.tags = list()
+        self.timestamp = 0
+        self.tmpdir = self.options.directory or tempfile.mkdtemp()
+
+        return self
+
+    def do_import(self, path, subdir=None, options=None, *args, **kws):
+        workplace = path
+
+        self.options.join(options)
+        options= self.options
+
+        if os.path.isfile(path):
+            FileUtils.extract_file(path, self.tmpdir)
+            workplace = self.tmpdir
+
+        if options.detect_root:
+            dname = os.listdir(workplace)
+            while 0 < len(dname) < 2:
+                workplace = os.path.join(workplace, dname[0])
+                dname = os.listdir(workplace)
+                logger.info('Go into %s' % workplace)
+
+        psource = os.path.join(
+            self.project.path, subdir or options.subdir or '')
+        self.timestamp = FileUtils.last_modified(workplace, recursive=False)
+
+        scmtool = self.project if options.strict else None
+        if options.imports is not None and os.path.exists(workplace):
+            if options.cleanup or options.imports:
+                FileUtils.rmtree(
+                    psource, ignore_list=(r'^\.git.*',), scmtool=scmtool)
+
+            if options.imports:
+                self.timestamp = FileUtils.last_modified(workplace)
+                FileUtils.copy_files(
+                    workplace, psource,
+                    symlinks=options.symlinks, scmtool=scmtool)
+            else:
+                diff = FileDiff(
+                    psource, workplace, options.filters,
+                    enable_sccs_pattern=options.filter_sccs)
+                self.count += diff.sync(
+                    self.logger, symlinks=options.symlinks, scmtool=scmtool)
+
+                self.timestamp = diff.timestamp
+
+        if options.washed:
+            # wash the directory
+            washer = FileWasher()
+            washer.wash(workplace)
+
+        for src, dest in options.copyfiles or list():
+            names = glob.glob(os.path.join(workplace, src))
+            filename = '' if not names else names[0]
+            if os.path.exists(filename):
+                mtime = FileUtils.last_modified(filename)
+                if mtime > self.timestamp:
+                    self.timestamp = mtime
+
+                logger.debug('copy %s', src)
+                FileUtils.copy_file(
+                    filename, os.path.join(psource, dest),
+                    symlinks=options.symlinks, scmtool=scmtool)
+                self.count += 1
+
+        for src, dest in options.linkfiles or list():
+            names = glob.glob(os.path.join(workplace, src))
+            filename = '' if not names else names[0]
+            if os.path.exists(filename):
+                mtime = FileUtils.last_modified(filename)
+                if mtime > self.timestamp:
+                    self.timestamp = mtime
+
+                logger.debug('link %s', src)
+                FileUtils.link_file(
+                    src, os.path.join(psource, dest), scmtool=scmtool)
+                self.count += 1
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        tmpl = dict({
+            'n': self.name,             'name': self.name,
+            'N': self.name.upper(),     'NAME': self.name.upper(),
+            'v': self.revision,         'version': self.revision,
+            'V': self.revision.upper(), 'VERSION': self.revision.upper()}
+        )
+
+        if self.options.tmpl_message:
+            message = self.options.tmpl_message
+        else:
+            message = 'Import %s' % (
+                '%s%s%s' % (
+                    self.name,
+                    (self.name and self.revision) and ' %s' % (
+                        self.options.prefix or ''),
+                    self.revision))
+
+        message = _handle_message_with_escape(
+            '', self.options.tmpl_escape,
+            message, dofile=self.options.tmpl_file)
+
+        ret = 0
+        if self.count > 0:
+            if not self.options.strict:
+                self.project.add('--all', '-f', self.project.path)
+
+            args = list()
+            optgc = self.options.extra_values(
+                self.options.extra_option, 'git-commit')
+            # extra is updated in do_import
+            optgc.join(self.options.extra)
+
+            if optgc and optgc.author:
+                args.append('--author="%s"' % optgc.author)
+            if optgc and optgc.date:
+                args.append('--date="%s"' % optgc.date.strip('\'"'))
+            else:
+                args.append('--date="%s"' % time.ctime(self.timestamp))
+
+            args.append('-m')
+            args.append(message)
+
+            ret = self.project.commit(*args)
+
+        if self.count > 0 or self.options.force:
+            if self.options.tmpl_version:
+                self.tags.append(self.options.tmpl_version % tmpl)
+            elif self.options.local and self.revision:
+                trefs = SubCommand.override_value(  # pylint: disable=E1101
+                    self.options.refs, self.options.tag_refs) or ''
+                if trefs:
+                    trefs += '/'
+
+                self.tags.append(
+                    '%s%s%s' % (
+                        trefs, self.options.prefix or '', self.revision))
+            elif self.revision:
+                self.tags.append('%s%s' % (
+                    self.options.prefix or '', self.revision))
+
+            if self.tags:
+                if self.options.force:
+                    ret, _ = self.project.tag(self.tags[-1], '--force')
+                else:
+                    ret, _ = self.project.tag(self.tags[-1])
+
+        self.ret = ret
+        if os.path.lexists(self.tmpdir):
+            try:
+                shutil.rmtree(self.tmpdir)
+            except OSError as e:
+                logger.exception(e)
+
 
 class PkgImportSubcmd(SubCommand):
     COMMAND = 'pkg-import'
@@ -251,142 +418,12 @@ The escaped variants are supported for the imported files including:
 
     @staticmethod
     def do_import(project, options, name, path, revision,
-                  logger=None, *args, **kws):
-        tmpl = dict({
-            'n': name,             'name': name,
-            'N': name.upper(),     'NAME': name.upper(),
-            'v': revision,         'version': revision,
-            'V': revision.upper(), 'VERSION': revision.upper()}
-        )
+                  logger, *args, **kws):
+        with PkgImporter(project, options, name, revision, logger,
+                    *args, **kws) as imp:
+            imp.do_import(path)
 
-        if options.tmpl_message:
-            message = options.tmpl_message
-        else:
-            message = 'Import %s' % (
-                '%s%s%s' % (
-                    name,
-                    (name and revision) and ' %s' % (options.prefix or ''),
-                    revision))
-
-        message = _handle_message_with_escape(
-            path, options.tmpl_escape, message, dofile=options.tmpl_file)
-
-        workplace = path
-        tmpdir = options.directory or tempfile.mkdtemp()
-        if os.path.isfile(path):
-            FileUtils.extract_file(path, tmpdir)
-            workplace = tmpdir
-
-        count = 0
-        if options.detect_root:
-            dname = os.listdir(workplace)
-            while 0 < len(dname) < 2:
-                workplace = os.path.join(workplace, dname[0])
-                dname = os.listdir(workplace)
-                logger.info('Go into %s' % workplace)
-
-        psource = os.path.join(project.path, options.subdir or '')
-        timestamp = FileUtils.last_modified(workplace, recursive=False)
-
-        scmtool = project if options.strict else None
-        if options.imports is not None and os.path.exists(workplace):
-            if options.cleanup or options.imports:
-                FileUtils.rmtree(
-                    psource, ignore_list=(r'^\.git.*',), scmtool=scmtool)
-
-            if options.imports:
-                timestamp = FileUtils.last_modified(workplace)
-                FileUtils.copy_files(
-                    workplace, psource,
-                    symlinks=options.symlinks, scmtool=scmtool)
-            else:
-                diff = FileDiff(
-                    psource, workplace, options.filters,
-                    enable_sccs_pattern=options.filter_sccs)
-                count = diff.sync(
-                    logger, symlinks=options.symlinks, scmtool=scmtool)
-
-                timestamp = diff.timestamp
-
-        if options.washed:
-            # wash the directory
-            washer = FileWasher()
-            washer.wash(workplace)
-
-        for src, dest in options.copyfiles or list():
-            names = glob.glob(os.path.join(workplace, src))
-            filename = '' if not names else names[0]
-            if os.path.exists(filename):
-                mtime = FileUtils.last_modified(filename)
-                if mtime > timestamp:
-                    timestamp = mtime
-
-                logger.debug('copy %s', src)
-                FileUtils.copy_file(
-                    filename, os.path.join(psource, dest),
-                    symlinks=options.symlinks, scmtool=scmtool)
-                count += 1
-
-        for src, dest in options.linkfiles or list():
-            names = glob.glob(os.path.join(workplace, src))
-            filename = '' if not names else names[0]
-            if os.path.exists(filename):
-                mtime = FileUtils.last_modified(filename)
-                if mtime > timestamp:
-                    timestamp = mtime
-
-                logger.debug('link %s', src)
-                FileUtils.link_file(
-                    src, os.path.join(psource, dest), scmtool=scmtool)
-                count += 1
-
-        ret, tags = 0, list()
-        if count > 0:
-            if not options.strict:
-                project.add('--all', '-f', project.path)
-
-            args = list()
-
-            optgc = options.extra
-            if optgc and optgc.author:
-                args.append('--author="%s"' % optgc.author)
-            if optgc and optgc.date:
-                args.append('--date="%s"' % optgc.date.strip('\'"'))
-            else:
-                args.append('--date="%s"' % time.ctime(timestamp))
-
-            args.append('-m')
-            args.append(message)
-
-            ret = project.commit(*args)
-
-        if count > 0 or options.force:
-            if options.tmpl_version:
-                tags.append(options.tmpl_version % tmpl)
-            elif options.local and revision:
-                trefs = SubCommand.override_value(  # pylint: disable=E1101
-                    options.refs, options.tag_refs) or ''
-                if trefs:
-                    trefs += '/'
-
-                tags.append(
-                    '%s%s%s' % (trefs, options.prefix or '', revision))
-            elif revision:
-                tags.append('%s%s' % (options.prefix or '', revision))
-
-            if tags:
-                if options.force:
-                    ret, _ = project.tag(tags[-1], '--force')
-                else:
-                    ret, _ = project.tag(tags[-1])
-
-        if os.path.lexists(tmpdir):
-            try:
-                shutil.rmtree(tmpdir)
-            except OSError as e:
-                logger.exception(e)
-
-        return count > 0 and ret == 0, tags
+        return True
 
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
         SubCommand.execute(self, options, option_import=True, *args, **kws)
