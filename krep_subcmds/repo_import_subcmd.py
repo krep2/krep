@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 
 from options import Values
-from pkg_import_subcmd import PkgImportSubcmd
+from pkg_import_subcmd import PkgImporter, PkgImportSubcmd
 from repo_subcmd import RepoSubcmd
 
 from options import Values
@@ -395,90 +395,87 @@ be used to define the wash-out and generate the final commit.
         return options.name or '[-]'
 
     @staticmethod
-    def do_import_with_config(project, options, pvalue, logger, rootdir,
+    def do_import_with_config(project, options, pvalues, logger, rootdir,
                               force=False):
-        filters = list()
-        project_name = "%s" % str(project)
 
-        optc = options.extra_values(options.extra_option, 'git-commit')
+        project_name = "%s" % str(project)
         if options.tag:
             label = options.tag
         else:
             label = os.path.basename(rootdir)
 
-        cleanup, strict = False, False
-        path, subdir, location = rootdir, '', None
-        symlinks, copyfile, linkfile = True, None, None
-
-        if pvalue:
-            strict = pvalue.strict
-            cleanup = pvalue.cleanup
-            filters.extend(pvalue.include or list())
-            filters.extend([
-                '!%s' % p for p in pvalue.exclude or list()])
-
-            subdir = getattr(pvalue, 'subdir')
-            if subdir:
-                project_name += '/subdir'
-
-            symlinks = pvalue.symlinks
-            copyfile = pvalue.copyfile
-            linkfile = pvalue.linkfile
-            if pvalue.location:
-                location = pvalue.location.get(label, rootdir)
-                if location:
-                    path = os.path.join(rootdir, location)
-
-            if pvalue.meta:
-                meta = pvalue.meta.match(label)
-                if meta:
-                    if meta.author:
-                        optc.author = meta.author
-                    if meta.date:
-                        optc.date = meta.date
-                    if meta.committer:
-                        optc.committer = meta.committer
-                    if meta.cdate:
-                        optc.committer_date = meta.cdate
-        else:
-            logger.warning('"%s" is undefined', project_name)
-            return 1
-
-        if len(filters) == 0:
-            logger.warning(
-                'No provided filters for "%s" during importing', project_name)
-
-        if location is None or \
-                not os.path.exists(os.path.join(rootdir, location)):
-            if location:
-                logger.warning(
-                    '"%s" is not existed', os.path.join(rootdir, location))
-            else:
-                logger.warning('path is not existed')
-
-            return 1
-
-        opti = Values.build(
-            copyfiles=copyfile,
-            cleanup=cleanup,
-            filter_sccs=True,
-            filters=filters,
-            force=force,
-            imports=False if location else None,
-            linkfiles=linkfile,
-            refs=options.refs,
-            strict=strict,
-            subdir=subdir,
-            symlinks=symlinks,
-            tag_refs=options.tag_refs,
-            extra=optc)
-
         # don't pass project_name, which will be showed in commit
         # message and confuse the user to see different projects
-        ret, _ = PkgImportSubcmd.do_import(
-            project, opti, '', path, label, logger=logger)
+        with PkgImporter(project, options, '', label, logger) as imp:
+            for pvalue in pvalues:
+                if not pvalue:
+                    logger.warning(
+                        '"%s%s" is undefined' % (
+                            project_name,
+                            '/%s' % pvalue.subdir if pvalue.subdir else ''))
+                    continue
+                elif pvalue.path and project.path != \
+                        os.path.join(options.working_dir, pvalue.path):
+                    continue
 
-        return ret
+                path, location = rootdir, None
+                if pvalue.location:
+                    location = pvalue.location.get(label, rootdir)
+                    if location:
+                        path = os.path.join(rootdir, location)
+
+                if location is None or \
+                        not os.path.exists(os.path.join(rootdir, location)):
+                    if location:
+                        logger.warning(
+                            '"%s" is not existed',
+                            os.path.join(rootdir, location))
+                    else:
+                        logger.warning('path is not existed')
+
+                    continue
+
+                filters = list()
+                filters.extend(pvalue.include or list())
+                filters.extend([
+                    '!%s' % p for p in pvalue.exclude or list()])
+
+                if len(filters) == 0:
+                    logger.warning(
+                        'No provided filters for "%s" during importing',
+                        project_name)
+
+                optc = options.extra_values(options.extra_option, 'git-commit')
+                if pvalue.meta:
+                    meta = pvalue.meta.match(label)
+                    if meta:
+                        if meta.author:
+                            optc.author = meta.author
+                        if meta.date:
+                            optc.date = meta.date
+                        if meta.committer:
+                            optc.committer = meta.committer
+                        if meta.cdate:
+                            optc.committer_date = meta.cdate
+
+                opti = Values.build(
+                    copyfiles=pvalue.copyfile,
+                    cleanup=pvalue.cleanup,
+                    filter_sccs=True,
+                    filters=filters,
+                    force=force,
+                    imports=False if location else None,
+                    linkfiles=pvalue.linkfile,
+                    refs=options.refs,
+                    strict=pvalue.strict,
+                    subdir=pvalue.subdir,
+                    symlinks=pvalue.symlinks,
+                    tag_refs=options.tag_refs,
+                    extra=optc)
+
+                imp.do_import(path, options=opti)
+
+        return True
 
     @staticmethod
     def push(project, options, config, logger, rootdirs):  # pylint: disable=W0221
@@ -513,15 +510,10 @@ be used to define the wash-out and generate the final commit.
                 logger.warning('Ignore %s not to match version rules' % rootdir)
                 continue
 
-            for pvalue in pvalues:
-                if pvalue.path and project.path != \
-                        os.path.join(options.working_dir, pvalue.path):
-                    continue
-
-                if RepoImportSubcmd.do_import_with_config(
-                        project, options, pvalue, logger, rootdir.rstrip('/'),
-                        changed or options.force):
-                    res += 1
+            if RepoImportSubcmd.do_import_with_config(
+                    project, options, pvalues, logger, rootdir.rstrip('/'),
+                    changed or options.force):
+                res += 1
 
             # all subdirs return without results, ignore finally
             if res != len(pvalues):
