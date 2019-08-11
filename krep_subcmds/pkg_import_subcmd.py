@@ -419,11 +419,13 @@ The escaped variants are supported for the imported files including:
     @staticmethod
     def do_import(project, options, name, path, revision,
                   logger, *args, **kws):
-        with PkgImporter(project, options, name, revision, logger,
+        tags = list()
+        with PkgImporter(project, options, name, revision, logger=logger,
                     *args, **kws) as imp:
             imp.do_import(path)
+            tags.extend(imp.tags)
 
-        return True
+        return True, tags
 
     def execute(self, options, *args, **kws):  # pylint: disable=R0915
         SubCommand.execute(self, options, option_import=True, *args, **kws)
