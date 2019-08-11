@@ -111,7 +111,7 @@ class PkgImporter(object):
 
             if options.imports:
                 self.timestamp = FileUtils.last_modified(workplace)
-                FileUtils.copy_files(
+                self.count += FileUtils.copy_files(
                     workplace, psource,
                     symlinks=options.symlinks, scmtool=scmtool)
             else:
