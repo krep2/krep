@@ -152,7 +152,8 @@ class GitProject(Project, GitCommand):
             cli.append('--tags')
             cli.append('+refs/heads/*:refs/heads/*')
             cli.extend(args)
-            ret = self.fetch(*cli, **kws)
+            if bare:
+                ret = self.fetch(*cli, **kws)
         else:
             if url is None:
                 url = self.remote
