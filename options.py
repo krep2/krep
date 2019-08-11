@@ -384,6 +384,15 @@ class OptionParser(optparse.OptionParser):
         """Extends to handle the oppsite options."""
         group = None
 
+        is_help = False
+        for arg in args:
+            if arg in ('-h', '--help'):
+                is_help = True
+                break
+
+        if is_help:
+            return ['-h']
+
         for arg in args or sys.argv[1:]:
             for opt, action in self.defer_options.items():
                 if re.match(opt, args):
@@ -413,6 +422,8 @@ class OptionParser(optparse.OptionParser):
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
+        return args
+
     def defer_opt(self, opt, action):
         self.defer_options[opt] = action
 
@@ -429,7 +440,7 @@ class OptionParser(optparse.OptionParser):
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
         try:
-            self._handle_options(args)
+            args = self._handle_options(args)
         except AttributeError:
             pass
 
