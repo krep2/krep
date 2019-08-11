@@ -69,7 +69,7 @@ class PkgImporter(object):
         self.options = options
         self.name = name
         self.revision = revision
-        self.logger = logger
+        self.logger = logger or Logger.get_logger()
         self.args = args
         self.kws = kws
 
@@ -97,7 +97,7 @@ class PkgImporter(object):
             while 0 < len(dname) < 2:
                 workplace = os.path.join(workplace, dname[0])
                 dname = os.listdir(workplace)
-                logger.info('Go into %s' % workplace)
+                self.logger.info('Go into %s' % workplace)
 
         psource = os.path.join(
             self.project.path, subdir or options.subdir or '')
@@ -136,7 +136,7 @@ class PkgImporter(object):
                 if mtime > self.timestamp:
                     self.timestamp = mtime
 
-                logger.debug('copy %s', src)
+                self.logger.debug('copy %s', src)
                 FileUtils.copy_file(
                     filename, os.path.join(psource, dest),
                     symlinks=options.symlinks, scmtool=scmtool)
@@ -150,7 +150,7 @@ class PkgImporter(object):
                 if mtime > self.timestamp:
                     self.timestamp = mtime
 
-                logger.debug('link %s', src)
+                self.logger.debug('link %s', src)
                 FileUtils.link_file(
                     src, os.path.join(psource, dest), scmtool=scmtool)
                 self.count += 1
@@ -227,7 +227,7 @@ class PkgImporter(object):
             try:
                 shutil.rmtree(self.tmpdir)
             except OSError as e:
-                logger.exception(e)
+                self.logger.exception(e)
 
 
 class PkgImportSubcmd(SubCommand):
