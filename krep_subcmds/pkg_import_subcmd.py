@@ -508,6 +508,7 @@ The escaped variants are supported for the imported files including:
             filters=filters,
             force=options.force,
             local=options.local,
+            imports=True,
             prefix=options.version_prefix,
             refs=options.refs,
             tag_refs=options.tag_refs,
