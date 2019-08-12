@@ -516,7 +516,7 @@ be used to define the wash-out and generate the final commit.
                 res += 1
 
             # all subdirs return without results, ignore finally
-            if res != len(pvalues):
+            if res > 0:
                 changed = True
 
         RepoImportSubcmd.do_hook(  # pylint: disable=E1101
