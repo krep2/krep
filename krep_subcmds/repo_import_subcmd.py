@@ -182,7 +182,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return
 
-        conf = KrepXmlConfigFile.parse_include(
+        _, conf = KrepXmlConfigFile.parse_include(
             self, node, RepoImportXmlConfigFile)
         names = conf.get_names(RepoImportXmlConfigFile.LOCATION_PREFIX)
         for cname in names:
