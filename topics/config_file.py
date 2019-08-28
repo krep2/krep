@@ -293,6 +293,9 @@ class XmlConfigFile(_ConfigFile):
     def with_var(self, vals):
         return XmlConfigFile._WithVariable(self, vals)
 
+    def value_sets(self):
+        return self.sets.copy()
+
     def foreach(self, group, node=None):
         skip = Values.boolean(self.get_attr(node, 'skip-if-inexistence'))
         for yset in self.sets.get(group, []):
