@@ -435,7 +435,7 @@ class XmlConfigFile(_ConfigFile):
                 return var.get(varname)
 
         i, nonexisted = 0, False
-        varprog = re.compile(ur'\$(\w+|\{[^}]*\}|\([^)]*\))')
+        varprog = re.compile(r'\$(\w+|\{[^}]*\}|\([^)]*\))')
         if var is None:
             var = {}
             var.update(self.vars)
