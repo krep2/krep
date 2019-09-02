@@ -97,7 +97,8 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         if not self.evaluate_if_node(node):
             return
 
-        default = self._get_value(BatchXmlConfigFile.DEFAULT_CONFIG)
+        default = self._get_value(
+            BatchXmlConfigFile.DEFAULT_CONFIG, origin='xml')
         for child in node.childNodes:
             if child.nodeName == 'project':
                 source = self.get_attr(child, 'source')
