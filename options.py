@@ -425,7 +425,7 @@ class OptionParser(optparse.OptionParser):
                         group = self.add_option_group('Pseduo options')
 
                     group.add_option(
-                        arg, dest=re.subst('[\.\*]', '_'),
+                        arg, dest=re.subst(r'[\.\*]', '_'),
                         action=action,
                         help=optparse.SUPPRESS_HELP)
 
