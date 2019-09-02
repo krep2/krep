@@ -471,11 +471,12 @@ class OptionParser(optparse.OptionParser):
 
         opts, argv = optparse.OptionParser.parse_args(self, args)
         if inject:
-            opti, _ = optparse.OptionParser.parse_args(self, [])
-            optd = Values(opti.__dict__).diff(opts, self, args)
-            return optd, _
+            opti, argv = optparse.OptionParser.parse_args(self, [])
+            optd = Values(opti.__dict__, origin='optparse').diff(
+                          opts, self, args)
+            return optd, argv
 
-        optv = Values(opts.__dict__)
-        optv.join(self.sup_values)
+        optv = Values(opts.__dict__, origin='cmdline')
+        optv.join(self.sup_values, origin='suppressed')
 
         return optv, argv
