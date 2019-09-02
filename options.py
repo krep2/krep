@@ -147,6 +147,9 @@ class Values(optparse.Values):
     def join(self, values, option=None, override=True, origin=None):
         if values is not None:
             for attr in values.__dict__:
+                if attr and attr.startswith('_'):
+                    continue
+
                 nattr, value = None, getattr(values, attr)
                 if option and (
                         attr.startswith('no_') or attr.startswith('not_')):
