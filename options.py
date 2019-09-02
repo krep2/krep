@@ -160,8 +160,7 @@ class Values(optparse.Values):
                         value = False
 
                 opt = option and Values._getopt(option, attr)
-                if opt and opt.action == 'append' \
-                        and value is not None:
+                if opt and opt.action == 'append' and value is not None:
                     vals = self.__dict__.get(attr)
                     if vals is None:
                         vals = list()
@@ -175,6 +174,7 @@ class Values(optparse.Values):
                     else:
                         vals.append(value)
 
+                    self._origins.set(attr, self.origin(attr, origin))
                     self.ensure_value(attr, vals)
                 elif override:
                     if nattr is None and getattr(values, attr) is None:
@@ -182,14 +182,14 @@ class Values(optparse.Values):
                             del self.__dict__[attr]
                         continue
 
-                    self._origins.set(attr, origin)
+                    self._origins.set(attr, self.origin(attr, origin))
                     setattr(
                         self, attr, Values._secure_value(option, attr, value))
                 else:
                     if value is None:
                         continue
 
-                    self._origins.set(attr, origin)
+                    self._origins.set(attr, self.origin(attr, origin))
                     self.ensure_value(
                         attr, Values._secure_value(option, attr, value))
 
