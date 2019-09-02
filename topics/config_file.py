@@ -170,7 +170,7 @@ class _IniConfigFile(_ConfigFile):
         self._parse_ini(content or self.read())
 
     def _parse_ini(self, content):
-        cfg = self._new_value(_ConfigFile.DEFAULT_CONFIG)
+        cfg = self._get_value(_ConfigFile.DEFAULT_CONFIG)
         for k, line in enumerate(content.split('\n')):
             strip = line.strip()
             if len(strip) == 0:
@@ -183,14 +183,14 @@ class _IniConfigFile(_ConfigFile):
             # [section]
             m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
             if m:
-                cfg = self._new_value(m.group('section'))
+                cfg = self._get_value(m.group('section'))
                 continue
 
             # [section "subsection"]
             m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\s+'
                          r'"(?P<subsection>[A-Za-z0-9\-]+)"\]', strip)
             if m:
-                cfg = self._new_value(
+                cfg = self._get_value(
                     '%s.%s' % (m.group('section'), m.group('subsection')))
 
             # option = value
@@ -217,7 +217,7 @@ class _JsonConfigFile(_ConfigFile):
         jresults = json.loads(content)
 
         for section, values in jresults.items():
-            cfg = self._new_value(section)
+            cfg = self._get_value(section)
 
             for name, value in values.items():
                 _setattr(cfg, name, value)
