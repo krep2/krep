@@ -17,54 +17,76 @@ def _ensure_attr(attr, reverse=False):
 
 
 class _Origins(object):
-    def __init__(self, defaults=None):
+    def __init__(self, defaults=None, origin=None):
+        self.origin = origin or 'undef'
         self.origins = dict()
         self.details = dict()
-        if defaults:
-            for attr in defaults:
-                self.origins[attr] = 'default'
+        if isinstance(defaults, Values):
+            if hasattr(defaults, '_origins'):
+                defaults = defaults._origins
+            else:
+                for attr in defaults.__dict__.keys():
+                    self.origins[attr] = origin or 'default'
+                raise
+
+        if isinstance(defaults, _Origins):
+            if origin is None:
+                self.origin = defaults.origin
+
+            for ori, value in defaults.origins.items():
+                self.origins[ori] = value
+            for det, value in defaults.details.items():
+                self.details[det] = value
 
     def set(self, key, origin):
         if origin:
-            if key in self.origins:
-                if key not in self.details:
+            if key in self.origins and self.origins[key]:
+                if self.origins[key] != 'mixed' and key not in self.details:
                     self.details[key] = list()
                     self.details[key].append(self.origins[key])
-                if origin not in self.details[key]:
+                if origin != 'mixed' and origin not in self.details[key]:
                     self.details[key].append(origin)
 
-            self.origins[key] = 'mixed'
-        else:
-            self.origins.pop(key, None)
+                self.origins[key] = 'mixed' \
+                    if len(self.details[key]) > 0 else origin
+            else:
+                self.origins[key] = origin
+
+    def unset(self, key):
+        self.origins.pop(key, None)
 
     def get(self, key):
-        return self.origins.get(key, 'undef')
+        return self.origins.get(key, self.origin)
 
     def detail(self, key):
         return self.details.get(key, '')
 
 
 class Values(optparse.Values):
-    def __init__(self, defaults=None, option=None):
+    def __init__(self, defaults=None, option=None, origin=None):
         if isinstance(defaults, Values):
             optparse.Values.__init__(self, defaults.__dict__)
-            self._origins = _Origins(defaults.__dict__)
+            self._origins = _Origins(defaults, origin=origin)
         elif isinstance(defaults, dict):
             defs = dict()
             for key, value in defaults.items():
                 defs[key] = Values._secure_value(option, key, value)
 
             optparse.Values.__init__(self, defs)
-            self._origins = _Origins(defs)
+            self._origins = _Origins(defs, origin=origin)
         else:
             optparse.Values.__init__(self)
-            self._origins = _Origins()
+            self._origins = _Origins(origin=origin)
 
-    def origin(self, attr):
+    def origin(self, attr, detail=False, default=None):
         ret = self._origins.get(attr)
-        details = self._origins.detail(attr)
-        if details:
-            ret += details
+        if ret is None:
+            return default
+
+        if detail:
+            details = self._origins.detail(attr)
+            if details:
+                ret += ' ' + str(details)
 
         return ret
 
