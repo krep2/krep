@@ -83,9 +83,9 @@ def _load_default_option():
 
     global _default_option  # pylint: disable=C0103,W0603
     if _default_option is None:
-        opts = Values()
-        opts.join(_loadconf('/etc/default/krepconfig'), origin='file')
-        opts.join(_loadconf(os.path.expanduser('~/.krepconfig')), origin='file')
+        opts = Values(origin='config')
+        opts.join(_loadconf('/etc/default/krepconfig'))
+        opts.join(_loadconf(os.path.expanduser('~/.krepconfig')))
 
         _default_option = opts
 
@@ -147,7 +147,7 @@ def run(name, opts, args, optparse=None,   # pylint: disable=R0913,R0914,R0915
             lopts = Values()
             lopts.join(opts, option=optparse)
 
-            lopts.join(ops, option=optparse, override=False, origin='cmdline')
+            lopts.join(ops, option=optparse, override=False, origin='optparse')
             optparse.join(lopts)
 
             # inject options
