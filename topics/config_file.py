@@ -47,14 +47,14 @@ class _ConfigFile(object):
 
         return val
 
-    def _new_value(self, name, vals=None, override=False):
+    def _new_value(self, name, vals=None, override=False, origin='file'):
         return self._add_value(
-            name, Values() if vals is None else vals, override)
+            name, Values(origin=origin) if vals is None else vals, override)
 
-    def _get_value(self, name):
+    def _get_value(self, name, origin='file'):
         vals = self.vals.get(name)
         if vals is None:
-            return self._new_value(name)
+            return self._new_value(name, origin=origin)
         elif isinstance(vals, list):
             return vals[-1]
         else:
@@ -170,7 +170,7 @@ class _IniConfigFile(_ConfigFile):
         self._parse_ini(content or self.read())
 
     def _parse_ini(self, content):
-        cfg = self._new_value(_ConfigFile.DEFAULT_CONFIG)
+        cfg = self._get_value(_ConfigFile.DEFAULT_CONFIG, origin='ini')
         for k, line in enumerate(content.split('\n')):
             strip = line.strip()
             if len(strip) == 0:
@@ -183,15 +183,16 @@ class _IniConfigFile(_ConfigFile):
             # [section]
             m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\]$', strip)
             if m:
-                cfg = self._new_value(m.group('section'))
+                cfg = self._get_value(m.group('section'), origin='ini')
                 continue
 
             # [section "subsection"]
             m = re.match(r'^\s*\[(?P<section>[A-Za-z0-9\-]+)\s+'
                          r'"(?P<subsection>[A-Za-z0-9\-]+)"\]', strip)
             if m:
-                cfg = self._new_value(
-                    '%s.%s' % (m.group('section'), m.group('subsection')))
+                cfg = self._get_value(
+                    '%s.%s' % (m.group('section'), m.group('subsection')),
+                    origin='ini')
 
             # option = value
             m = re.match(r'^\s*(?P<name>[A-Za-z0-9\-_]+)\s*=\s*'
@@ -217,7 +218,7 @@ class _JsonConfigFile(_ConfigFile):
         jresults = json.loads(content)
 
         for section, values in jresults.items():
-            cfg = self._new_value(section)
+            cfg = self._get_value(section, origin='json')
 
             for name, value in values.items():
                 _setattr(cfg, name, value)
@@ -386,7 +387,7 @@ class XmlConfigFile(_ConfigFile):
 
     def parse(self, node, pi=None):  # pylint: disable=R0914,W0613
         # it delegates only to handle global options
-        config = self._get_value(_ConfigFile.DEFAULT_CONFIG)
+        config = self._get_value(_ConfigFile.DEFAULT_CONFIG, origin='xml')
         if node.nodeName == 'global-option':
             self.parse_global(node, config)
         elif node.nodeName == 'global-options':
@@ -403,8 +404,9 @@ class XmlConfigFile(_ConfigFile):
         elif node.nodeName == 'include':
             name, xvals = self.parse_include(node)
             # record included file name
-            self._new_value(
-                '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals)
+            self._get_value(
+                '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals,
+                origin='xml')
 
     def get_var_attr(self, node, name, default=None):
         value = self.get_attr(node, name, default)
