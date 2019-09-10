@@ -404,7 +404,7 @@ class XmlConfigFile(_ConfigFile):
         elif node.nodeName == 'include':
             name, xvals = self.parse_include(node)
             # record included file name
-            self._get_value(
+            self._new_value(
                 '%s.%s' % (XmlConfigFile.FILE_PREFIX, name), xvals,
                 origin='xml')
 
