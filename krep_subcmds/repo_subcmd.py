@@ -341,6 +341,9 @@ this command.
                 upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
 
+        for hook in manifest.get_hooks():
+            builder.append(hook)
+
         builder.save()
 
     @staticmethod
@@ -396,6 +399,17 @@ this command.
                 groups=origins[path].groups,
                 upstream=origins[path].upstream,
                 copyfiles=project.copyfiles, linkfiles=project.linkfiles)
+
+        for hook in manifest.get_hooks():
+            if hook.in_project in maps:
+                hook.in_project = maps[hook.in_project]
+            else:
+                for project in projects:
+                    if project.source == hook.in_project:
+                        hook.in_project = project.uri
+                        break
+
+            builder.append(hook)
 
         builder.save()
 
