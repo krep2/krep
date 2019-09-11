@@ -88,6 +88,8 @@ class _XmlRepoHooks(object):
         _setattr(e, 'in-project', self.in_project)
         _setattr(e, 'enabled-list', self.enabled_list)
 
+        return e
+
 
 class _XmlProject(object):  # pylint: disable=R0902
     File = namedtuple('File', 'src,dest')
