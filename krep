@@ -45,6 +45,10 @@ Execute the specified sub-commands, which can be listed with the command
         dest='dryrun', action='store_true', default=False,
         help='try running the command without actual execution of commands')
     group.add_option(
+        '-d', '--debug',
+        dest='debug', action='store', metavar='ITEM,ITEM,...',
+        help='set to debug the function')
+    group.add_option(
         '-v', '--verbose',
         dest='verbose', action='count', default=0,
         help='set repeatedly to output debugging info')
@@ -61,7 +65,7 @@ Execute the specified sub-commands, which can be listed with the command
             '--inject-option',
             dest='inject_option', action='append',
             help='extra options passed to running sub-command with the '
-                 'format group:[--]option[=value]')
+                 'format group:[--][no-]option[=value]')
 
     return global_options
 

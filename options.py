@@ -86,6 +86,9 @@ class Values(optparse.Values):
     def join(self, values, option=None, override=True, origin=None):
         if values is not None:
             for attr in values.__dict__:
+                if attr and attr.startswith('_'):
+                    continue
+
                 nattr, value = None, getattr(values, attr)
                 if option and (
                         attr.startswith('no_') or attr.startswith('not_')):
@@ -337,9 +340,18 @@ class OptionParser(optparse.OptionParser):
 
         return [arg]
 
-    def _handle_opposite(self, args):
+    def _handle_options(self, args):
         """Extends to handle the oppsite options."""
         group = None
+
+        is_help = False
+        for arg in args:
+            if arg in ('-h', '--help'):
+                is_help = True
+                break
+
+        if is_help:
+            return ['-h']
 
         for arg in args or sys.argv[1:]:
             if arg.startswith('--no-') or arg.startswith('--not-'):
@@ -360,6 +372,8 @@ class OptionParser(optparse.OptionParser):
                 else:
                     raise OptionValueError("no such option %r" % arg)
 
+        return args
+
     def suppress_opt(self, opt, default=None):
         option = self.get_option_group(opt)
         if option:
@@ -373,7 +387,7 @@ class OptionParser(optparse.OptionParser):
     def parse_args(self, args=None, inject=False):
         """ Creates a pseduo group to hold the --no- options. """
         try:
-            self._handle_opposite(args)
+            args = self._handle_options(args)
         except AttributeError:
             pass
 

@@ -135,24 +135,26 @@ class SubCommand(object):
             item_list = list()
 
             if extra_items:
-                items = list()
-
+                items = dict()
+                length = 0
                 # re-arrange the extra list with a flat format
-                for opt, item in extra_items:
-                    if not isinstance(item, (list, tuple)):
-                        items.append((opt, item))
+                for opt in extra_items:
+                    if isinstance(opt, (list, tuple)):
+                        items[opt[0]] = opt[1]
+                        for extra, _ in opt[1]:
+                            length = max(length, len(extra))
                     else:
-                        items.append(opt)
-                        items.extend(item[:])
+                        item[opt] = None
 
-                length = max([len(it[0]) for it in items if len(it) == 2])
-                fmt = '  %%-%ds  %%s' % (length + 2)
-                for item in items:
-                    if len(item) == 2:
-                        item_list.append(fmt % (item[0], item[1]))
-                    else:
-                        item_list.append('')
-                        item_list.append(item)
+                fmt = '  %%-%ds%%s' % (length + 2)
+                for opt in sorted(items):
+                    item_list.append('')
+                    item_list.append(opt)
+
+                    item = items[opt]
+                    if isinstance(item, (list, tuple)):
+                        for extra, desc in item:
+                            item_list.append(fmt % (extra, desc))
 
             return '\n'.join(item_list)
 
