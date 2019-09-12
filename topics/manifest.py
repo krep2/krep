@@ -59,6 +59,7 @@ class _XmlDefault(object):
 
         return e
 
+
 class _XmlRemote(object):
     def __init__(self, name, alias, fetch, review, revision):
         self.name = name
@@ -76,6 +77,19 @@ class _XmlRemote(object):
         _setattr(e, 'revision', self.revision)
 
         return e
+
+class _XmlRepoHooks(object):
+    def __init__(self, in_project, enabled_list):
+        self.in_project = in_project
+        self.enabled_list = enabled_list
+
+    def xml(self, doc):
+        e = doc.createElement('repo-hooks')
+        _setattr(e, 'in-project', self.in_project)
+        _setattr(e, 'enabled-list', self.enabled_list)
+
+        return e
+
 
 class _XmlProject(object):  # pylint: disable=R0902
     File = namedtuple('File', 'src,dest')
@@ -99,33 +113,16 @@ class _XmlProject(object):  # pylint: disable=R0902
         if (rootdir is not None or not mirror) and self.path:
             _setattr(e, 'path', self.path.replace(rootdir or '', ''))
 
-        remote = None
-        if self.remote and remotes:
-            for item in remotes:
-                if self.remote == item.name:
-                    remote = item.name
-                    revision = item.revision
-                    break
+        revision = self.revision
+        if revision.startswith('%s/' % self.remote):
+            revision = revision[len(self.remote) + 1:]
+        if revision != default.revision and \
+                revision != remotes[self.remote].revision:
+            _setattr(e, 'revision', revision)
 
-        if not remote and self.revision:
-            for item in remotes:
-                if item.revision == self.revision:
-                    remote = item.name
-                    revision = self.revision
-                    break
+        if self.remote != default.remote:
+            _setattr(e, 'remote', self.remote)
 
-        if not remote:
-            remote = default.remote
-            revision = default.revision
-
-        if revision != self.revision:
-            rev = self.revision
-            if remote and self.revision.startswith('%s/' % remote):
-                rev = self.revision[len(remote) + 1:]
-            if rev != revision:
-              _setattr(e, 'revision', rev)
-        if remote and self.remote and self.remote != remote:
-            _setattr(e, 'remote', remote)
         _setattr(e, 'upstream', self.upstream)
         _setattr(e, 'groups', self.groups)
         for item in self.copyfiles:
@@ -176,6 +173,7 @@ be saved in XML file again with limited attributes.
         self._default = None
         self._remote = dict()
         self._projects = list()
+        self._hooks = list()
         self._load(filename)
 
     def _parse_remote(self, node):
@@ -201,12 +199,23 @@ be saved in XML file again with limited attributes.
 
         return default
 
-    def _parse_project(self, node):
+    def _parse_repo_hooks(self, node):
+        return _XmlRepoHooks(_attr(node, 'in-project'),
+                             _attr(node, 'enabled-list'))
+
+    def _parse_project(self, node, default, remotes):
+
+        remote = _attr(node, 'remote', default.remote)
+        if remote != default.remote:
+            revision = remotes[remote].revision
+        else:
+            revision = default.revision
+
         project = _XmlProject(
-            name=_attr(node, 'name', _attr2(node, 'in-project')),
+            name=_attr(node, 'name'),
             path=_attr2(node, 'path'),
-            revision=_attr2(node, 'revision'),
-            remote=_attr2(node, 'remote'),
+            revision=_attr(node, 'revision', revision),
+            remote=remote,
             groups=_attr2(node, 'groups'),
             rebase=_attr2(node, 'rebase'),
             upstream=_attr2(node, 'upstream'))
@@ -279,13 +288,16 @@ be saved in XML file again with limited attributes.
             self._default = _XmlDefault()
 
         for node in nodes:
-            if node.nodeName in ('project', 'repo-hooks'):
-                self._projects.append(self._parse_project(node))
+            if node.nodeName == 'project':
+                self._projects.append(
+                    self._parse_project(node, self._default, self._remote))
                 project = self._projects[-1]
                 if project.remote and project.remote not in self._remote:
                     raise ManifestException(
                         'Remote %s in project %s not defined' % (
                             project.remote, project.name))
+            elif node.nodeName == 'repo-hooks':
+                self._hooks.append(self._parse_repo_hooks(node))
 
         for node in nodes:
             if node.nodeName == 'remove-project':
@@ -299,23 +311,6 @@ be saved in XML file again with limited attributes.
         self._parse_manifest(nodes)
 
     def _build_projects(self, project_list):
-        def _get_revision(project):
-            revision = project.revision
-
-            if not revision and project.remote:
-                remote = self.get_remote(project.remote)
-                if remote:
-                    revision = remote.revision
-
-            if not revision:
-                revision = self._default.revision
-                if not revision:
-                    remote = self.get_remote(self._default.remote)
-                    if remote:
-                        revision = remote.revision
-
-            return revision
-
         projects = list()
         for project in project_list or list():
             if project.groups and project.groups.find('notdefault') > -1:
@@ -324,9 +319,9 @@ be saved in XML file again with limited attributes.
             projects.append(
                 _XmlProject(
                     name=project.name,
-                    remote=project.remote or self._default.remote,
+                    remote=project.remote,
                     path=project.path or project.name,
-                    revision=_get_revision(project),
+                    revision=project.revision,
                     groups=project.groups,
                     upstream=project.upstream))
             projects[-1].add_copy_files(project.copyfiles)
@@ -336,6 +331,9 @@ be saved in XML file again with limited attributes.
 
     def get_default(self):
         return self._default
+
+    def get_hooks(self):
+        return self._hooks
 
     def get_remote(self, remote):
         return self._remote.get(remote)
@@ -408,10 +406,10 @@ store the live manifest nodes into files.
         root = doc.createElement('manifest')
         doc.appendChild(root)
 
-        remotes = list()
+        remotes = dict()
         for node in self.list:
             if isinstance(node, _XmlRemote):
-                remotes.append(node)
+                remotes[node.name] = node
                 root.appendChild(node.xml(doc))
 
         root.appendChild(doc.createTextNode(''))
@@ -431,6 +429,10 @@ store the live manifest nodes into files.
             if isinstance(node, _XmlProject):
                 root.appendChild(
                     node.xml(doc, default, remotes, self.rootdir, self.mirror))
+
+        for node in self.list:
+            if isinstance(node, _XmlRepoHooks):
+                root.appendChild(node.xml(doc))
 
         return doc
 
