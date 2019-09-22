@@ -60,6 +60,10 @@ class _ConfigFile(object):
         else:
             return vals
 
+    def _remove_value(self, name):
+        if name in self.vals:
+            del self.vals[name]
+
     @staticmethod
     def _build_name(section=None, subsection=None):
         name = ''
