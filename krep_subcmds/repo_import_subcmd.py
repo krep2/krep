@@ -173,6 +173,8 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         for child in node.childNodes:
             if child.nodeName == 'project':
                 self._parse_project(child)
+            elif child.nodeName == 'remove-project':
+                self._parse_remove_project(child)
             elif child.nodeName == 'include':
                 self._parse_include(child)
             elif child.nodeName == 'meta-info':
@@ -337,6 +339,12 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 cfg.include or cfg.exclude or cfg.copyfile or cfg.linkfile):
             print('Warning: "%s" defined, all other values ignored' %
                   self.get_attr(node, 'name'))
+
+    def _parse_remove_project(self, node):
+        name = self.get_attr(node, 'name')
+        if name:
+            self._remove_value(
+              '%s.%s' % (RepoImportXmlConfigFile.LOCATION_PREFIX, name))
 # pylint: enable=E1101
 
 
