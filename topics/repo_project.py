@@ -21,6 +21,7 @@ class RepoProject(Project, RepoCommand):
         ('Repo options for repo sync:', (
             ('repo-sync:force-broken',
              'continue sync even if a project fails'),
+            ('repo-sync:force-sync', 'overwrite an existing git stuffs'),
             ('repo-sync:current-branch', 'fetch only current branch'),
             ('repo-sync:jobs', 'projects to fetch simultaneously'),
             ('repo-sync:no-clone-bundle',
@@ -70,8 +71,13 @@ class RepoProject(Project, RepoCommand):
 
         opts = self.options.extra_values(
             self.options.extra_option, 'repo-sync')
+
+        force_sync = self.options.force
         # pylint: disable=E1101
         if opts:
+            if opts.force_sync:
+                force_sync = True
+
             self.add_args(
                 '--current-branch', condition=opts.current_branch)
             self.add_args(
@@ -83,6 +89,8 @@ class RepoProject(Project, RepoCommand):
             self.add_args('--prune', condition=opts.prune)
             self.add_args(
                 '--no-clone-bundle', condition=opts.no_clone_bundle)
+
+        self.add_args('--force-sync', condition=force_sync)
 
         if opts.jobs:
             self.add_args(opts.jobs, before='-j')
