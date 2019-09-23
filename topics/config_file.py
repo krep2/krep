@@ -272,6 +272,8 @@ class XmlConfigFile(_ConfigFile):
             root = xml.dom.minidom.parse(filename)
             for node in root.childNodes:
                 self.parse(node, pi)
+        else:
+            raise Exception("%s can't be found" % filename)
 
     def set_var(self, var, value=None):
         if var in (XmlConfigFile.INCLUDED_FILE_NAMES,
