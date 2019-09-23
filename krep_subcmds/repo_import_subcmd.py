@@ -139,6 +139,13 @@ class RepoImportMeta(object):
 
         return str(ret)
 
+    def __iadd__(self, obj):
+        if isinstance(obj, RepoImportMeta):
+            for meta, val in obj.meta.items():
+                self.meta[meta] = val
+
+        return self
+
     def add(self, version, author=None, date=None, committer=None, cdate=None):
         self.meta[version]= RepoImportMeta.Rule(
             author=author, date=date, committer=committer, cdate=cdate)
@@ -163,22 +170,27 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
     )
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
-        if node.nodeName != 'locations':
+        if node.nodeName != 'locations' and node.nodeName != 'meta-info':
             return
 
         if not self.evaluate_if_node(node):
             return
 
         self.meta = RepoImportMeta()
-        for child in node.childNodes:
-            if child.nodeName == 'project':
-                self._parse_project(child)
-            elif child.nodeName == 'remove-project':
-                self._parse_remove_project(child)
-            elif child.nodeName == 'include':
-                self._parse_include(child)
-            elif child.nodeName == 'meta-info':
-                self._parse_meta(child, self.meta)
+        if node.nodeName == 'meta-info':
+            for child in node.childNodes:
+                if child.nodeName == 'meta':
+                    self._parse_meta(child, self.meta, recursive=False)
+        else:
+            for child in node.childNodes:
+                if child.nodeName == 'project':
+                    self._parse_project(child)
+                elif child.nodeName == 'remove-project':
+                    self._parse_remove_project(child)
+                elif child.nodeName == 'include':
+                    self._parse_include(child)
+                elif child.nodeName == 'meta-info':
+                    self._parse_meta(child, self.meta)
 
     def _parse_include(self, node):
         if not self.evaluate_if_node(node):
@@ -189,6 +201,10 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
         names = conf.get_names(RepoImportXmlConfigFile.LOCATION_PREFIX)
         for cname in names:
             self._new_value(cname, conf.get_values(cname))
+
+        # duplicate meta-info
+        if conf.meta:
+            self.meta += conf.meta
 
     def _parse_location(self, node, locations, name=None):
         if not self.evaluate_if_node(node):
@@ -207,7 +223,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
             locations.add(
                 location, start=start, end=end, till=till, project=project)
 
-    def _parse_meta(self, node, meta):
+    def _parse_meta(self, node, meta, recursive=True):
         if not self.evaluate_if_node(node):
             return
 
@@ -218,7 +234,7 @@ class RepoImportXmlConfigFile(KrepXmlConfigFile):
                 date=self.get_attr(node, 'date'),
                 committer=self.get_attr(node, 'committer'),
                 cdate=self.get_attr(node, 'committer-date'))
-        elif node.nodeName == 'meta-info':
+        elif recursive and node.nodeName == 'meta-info':
             for child in node.childNodes:
                 self._parse_meta(child, meta)
 
