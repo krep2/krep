@@ -314,12 +314,12 @@ matching.
             if name in items:
                 return items[name]
 
-            for pattern in self.orders[category]:
-                if pattern is not None and name:
-                    if not strict and re.search(pattern, name) is not None:
-                        return items[pattern]
-
             if not strict:
+                for pattern in self.orders[category]:
+                    if pattern is not None and name:
+                        if re.search(pattern, name) is not None:
+                            return items[pattern]
+
                 return items.get(None)
 
         return None
