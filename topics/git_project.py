@@ -39,8 +39,9 @@ def _secure_head_name(head):
 
 
 class GitProject(Project, GitCommand):
-    CATEGORY_TAGS = 'tag,revision'
+    CATEGORY_TAG_LIMITED = 'tag'
     CATEGORY_REVISION = 'revision'
+    CATEGORY_TAGS = '%s,%s' % (CATEGORY_TAG_LIMITED, CATEGORY_REVISION)
 
     extra_items = (
         ('Git options for git-clone:', (
