@@ -269,6 +269,15 @@ class GitProject(Project, GitCommand):
         if not logger:
             logger = Logger.get_logger()
 
+        if self.pattern.has_category(GitProject.CATEGORY_REVISION) and (
+                not self.pattern.match(GitProject.CATEGORY_REVISION,
+                                       self.source, name=self.source,
+                                       strict=True) or
+                not self.pattern.match(GitProject.CATEGORY_REVISION,
+                                       self.uri, name=self.uri, strict=True)):
+            logger.info('project is excluded to push heads')
+            return 0
+
         if patterns and not isinstance(patterns, (list, tuple)):
             patterns = [patterns]
 
@@ -391,6 +400,15 @@ class GitProject(Project, GitCommand):
                   force=False, options=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
+
+        if self.pattern.has_category(GitProject.CATEGORY_TAGS) and (
+                not self.pattern.match(GitProject.CATEGORY_TAG_LIMITED,
+                                       self.source, name=self.source,
+                                       strict=True) or
+                not self.pattern.match(GitProject.CATEGORY_TAG_LIMITED,
+                                       self.uri, name=self.uri, strict=True)):
+            logger.info('project is excluded to push tags')
+            return 0
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
