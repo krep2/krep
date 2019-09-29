@@ -14,6 +14,16 @@ class XmlError(KrepError):
     pass
 
 
+def _normalize_regex(val):
+    if val:
+        if val.startswith('^'):
+            val = val[1:]
+        if val.endswith('$'):
+            val = val[:-1]
+
+    return val
+
+
 def _secure_split(val, delimiter, num=0):
     ret = val.split(delimiter)
 
@@ -174,16 +184,17 @@ class PatternItem(object):
             if opposite:
                 pattern = pattern[1:]
 
+            npattern = _normalize_regex(pattern)
             for i in self.include:
                 if strict:
-                    if i == pattern:
+                    if _normalize_regex(i) == npattern:
                         return not opposite
                 elif re.search(i, pattern) is not None:
                     return not opposite
 
             for e in self.exclude:
                 if strict:
-                    if e == pattern:
+                    if _normalize_regex(e) == npattern:
                         return opposite
                 elif re.search(e, pattern) is not None:
                     return opposite
@@ -200,7 +211,8 @@ class PatternItem(object):
             for rep in self.subst:
                 ovalue = value
                 if strict:
-                    value = value.replace(rep.pattern, rep.subst)
+                    value = _normalize_regex(value).replace(
+                        rep.pattern, rep.subst)
                 else:
                     value = re.sub(rep.pattern, rep.subst, value)
 
