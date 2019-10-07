@@ -66,9 +66,11 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                 self.set_attr(
                     config, child.nodeName, self.get_var_attr(child, 'value'))
             elif child.nodeName == 'option':
-                name = self.get_var_attr(child, 'name')
+                opt = self.get_var_attr(child, 'name')
                 value = self.get_var_attr(child, 'value')
-                self.set_attr(config, name, value)
+                if opt == 'name':
+                    name = value
+                self.set_attr(config, opt, value)
             elif child.nodeName == 'hook':
                 self.parse_hook(child, config)
             elif child.nodeName == 'include':
@@ -87,7 +89,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
         if pi is not None:
             config.join(pi, override=False)
 
-        return config
+        return name, config
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
         if node.nodeName != 'projects':
@@ -103,17 +105,16 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                 source = self.get_attr(child, 'source')
                 if source:
                     for _ in self.foreach(source, child):
+                        name, config = self.parse_project(child, pi=pi)
                         self._add_value(
                             '%s.%s' % (
-                                BatchXmlConfigFile.PROJECT_PREFIX,
-                                self.get_attr(child, 'name')),
-                            self.parse_project(child, pi=pi))
+                                BatchXmlConfigFile.PROJECT_PREFIX, name),
+                            config)
                 else:
+                    name, config = self.parse_project(child, pi=pi)
                     self._add_value(
                         '%s.%s' % (
-                            BatchXmlConfigFile.PROJECT_PREFIX,
-                            self.get_attr(child, 'name')),
-                        self.parse_project(child, pi=pi))
+                            BatchXmlConfigFile.PROJECT_PREFIX, name), config)
             elif child.nodeName == 'hook':
                 self.parse_hook(child, default)
             else:
