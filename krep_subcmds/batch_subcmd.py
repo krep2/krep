@@ -45,7 +45,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                     config, 'hook-%s-%s' % (name, child.nodeName),
                     self.get_attr(child, 'value'))
 
-    def parse_project(self, node, pi=None, config=None):
+    def _parse_project(self, node, pi=None, config=None):
         name = self.get_var_attr(node, 'name')
         group = self.get_var_attr(node, 'group')
 
@@ -88,6 +88,17 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
             config.join(pi, override=False)
 
         return config
+
+    def parse_project(self, node, pi=None, config=None):
+        source = self.get_var_attr(node, 'source')
+        if source:
+            val = Values()
+            for _ in self.foreach(source, node):
+                val += self._parse_project(node, pi, config)
+
+            return val
+        else:
+            return self._parse_project(node, pi, config)
 
     def parse(self, node, pi=None):  # pylint: disable=R0914
         if node.nodeName != 'projects':
