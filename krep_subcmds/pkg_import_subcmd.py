@@ -394,7 +394,8 @@ The escaped variants are supported for the imported files including:
         name, pkgs, rets = None, dict(), list()
         for pkg in args:
             pkgname, revision = PkgImportSubcmd.split_name(
-                pkg, options.pkg_pattern, options.filter_out_chars)
+                os.path.basename(pkg), options.pkg_pattern,
+                options.filter_out_chars)
 
             if name and pkgname != name:
                 logger and logger.warn(
