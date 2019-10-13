@@ -39,7 +39,8 @@ class SubCommand(object):
 
     def options(self, optparse, banned=None, *args, **kws):  # pylint: disable=W0613
         """Handles the options for the subcommand."""
-        options = optparse.add_option_group('File options')
+        options = optparse.get_option_group('--working-dir') or \
+            optparse.add_option_group('Global file options')
         options.add_option(
             '--hook-dir',
             dest='hook_dir', action='store',
