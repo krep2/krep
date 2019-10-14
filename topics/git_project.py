@@ -39,9 +39,9 @@ def _secure_head_name(head):
 
 
 class GitProject(Project, GitCommand):
-    CATEGORY_TAG_LIMITED = 'tag'
+    CATEGORY_TAGS = 'tag'
     CATEGORY_REVISION = 'revision'
-    CATEGORY_TAGS = '%s,%s' % (CATEGORY_TAG_LIMITED, CATEGORY_REVISION)
+    CATEGORY_PROJECT = 'project'
 
     extra_items = (
         ('Git options for git-clone:', (
@@ -269,11 +269,11 @@ class GitProject(Project, GitCommand):
         if not logger:
             logger = Logger.get_logger()
 
-        if self.pattern.has_category(GitProject.CATEGORY_REVISION) and (
-                not self.pattern.match(GitProject.CATEGORY_REVISION,
+        if self.pattern.has_category(GitProject.CATEGORY_PROJECT) and (
+                not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.source, name=self.source,
                                        strict=True) or
-                not self.pattern.match(GitProject.CATEGORY_REVISION,
+                not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.uri, name=self.uri, strict=True)):
             logger.info('project is excluded to push heads')
             return 0
@@ -401,11 +401,11 @@ class GitProject(Project, GitCommand):
         if not logger:
             logger = Logger.get_logger()
 
-        if self.pattern.has_category(GitProject.CATEGORY_TAGS) and (
-                not self.pattern.match(GitProject.CATEGORY_TAG_LIMITED,
+        if self.pattern.has_category(GitProject.CATEGORY_PROJECT) and (
+                not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.source, name=self.source,
                                        strict=True) or
-                not self.pattern.match(GitProject.CATEGORY_TAG_LIMITED,
+                not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.uri, name=self.uri, strict=True)):
             logger.info('project is excluded to push tags')
             return 0
