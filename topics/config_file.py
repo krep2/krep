@@ -4,7 +4,7 @@ import os
 import re
 import xml.dom.minidom
 
-from error import ProcessingError
+from error import ProcessingError, RaiseExceptionIfAttributeNotFound
 from options import Values
 
 
@@ -415,7 +415,13 @@ class XmlConfigFile(_ConfigFile):
     def get_var_attr(self, node, name, default=None):
         value = self.get_attr(node, name, default)
         if value:
-            return self.escape_attr(value)[0]
+            val, nonexisted = self.escape_attr(value)
+            if nonexisted:
+                RaiseExceptionIfAttributeNotFound(
+                    Values.boolean(self.get_attr(node, 'skip-if-inexistence')),
+                    '"%s" is not existed' % name)
+
+            return None if nonexisted else val
         else:
             return value
 
