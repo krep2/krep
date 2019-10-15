@@ -23,6 +23,10 @@ class RepositoryNotFound(KrepError):
     """Indicate that the repository isn't existed."""
 
 
+class AttributeNotFoundError(KrepError):
+    """Indicate that the XML attribute isn't existed."""
+
+
 class RaiseExceptionIfOptionMissed(object):
     """Raise OptionMissedError if the option or options are missed."""
     def __init__(self, option, prompt):
@@ -30,6 +34,12 @@ class RaiseExceptionIfOptionMissed(object):
             raise OptionMissedError(prompt)
 
 
-TOPIC_ENTRY = 'KrepError, DownloadError, HookError, OptionMissedError, ' \
-              'ProcessingError, RepositoryNotFound, ' \
-              'RaiseExceptionIfOptionMissed'
+class RaiseExceptionIfAttributeNotFound(object):
+    def __init__(self, flag, prompt):
+        if flag:
+            raise AttributeNotFoundError(prompt)
+
+
+TOPIC_ENTRY = 'KrepError, AttributeNotFoundError, DownloadError, HookError, ' \
+              'OptionMissedError, ProcessingError, RepositoryNotFound, ' \
+              'RaiseExceptionIfAttributeNotFound, RaiseExceptionIfOptionMissed'
