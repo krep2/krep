@@ -70,7 +70,7 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
             pi.add(
                 p.value, exclude=(
                     exclude or node.nodeName == 'exclude-pattern'))
-        else:
+        elif p.value:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
                 name=p.name,
@@ -132,11 +132,13 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
             source = self.get_var_attr(node, 'source')
             if source:
                 for _ in self.foreach(source, node):
-                    pattern = self.parse_pattern_node(node)
-                    self.set_attr(config, 'pattern', str(pattern or ''))
+                    pi = self.parse_pattern_node(node, name=name)
+                    if pi:
+                        self.set_attr(config, 'pattern', str(pi))
             else:
-                pattern = self.parse_pattern_node(node)
-                self.set_attr(config, 'pattern', str(pattern or ''))
+                pi = self.parse_pattern_node(node, name=name)
+                if pi:
+                    self.set_attr(config, 'pattern', str(pi))
 
         return config
 
