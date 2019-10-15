@@ -83,7 +83,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
                       self.set_attr(config, 'pattern', val.pattern)
                   # pylint: enable=E1103
             else:
-                self.parse_patterns(child, config)
+                self.parse_patterns(child, config, name=name)
 
         config.join(self.get_default(), override=False)
         if pi is not None:
