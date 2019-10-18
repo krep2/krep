@@ -4,7 +4,7 @@ import os
 import re
 import xml.dom.minidom
 
-from error import ProcessingError
+from error import ProcessingError, RaiseExceptionIfAttributeNotFound
 from options import Values
 
 
@@ -59,6 +59,10 @@ class _ConfigFile(object):
             return vals[-1]
         else:
             return vals
+
+    def _remove_value(self, name):
+        if name in self.vals:
+            del self.vals[name]
 
     @staticmethod
     def _build_name(section=None, subsection=None):
@@ -268,6 +272,8 @@ class XmlConfigFile(_ConfigFile):
             root = xml.dom.minidom.parse(filename)
             for node in root.childNodes:
                 self.parse(node, pi)
+        else:
+            raise Exception("%s can't be found" % filename)
 
     def set_var(self, var, value=None):
         if var in (XmlConfigFile.INCLUDED_FILE_NAMES,
@@ -409,7 +415,13 @@ class XmlConfigFile(_ConfigFile):
     def get_var_attr(self, node, name, default=None):
         value = self.get_attr(node, name, default)
         if value:
-            return self.escape_attr(value)[0]
+            val, nonexisted = self.escape_attr(value)
+            if nonexisted:
+                RaiseExceptionIfAttributeNotFound(
+                    Values.boolean(self.get_attr(node, 'skip-if-inexistence')),
+                    '"%s" is not existed' % name)
+
+            return None if nonexisted else val
         else:
             return value
 

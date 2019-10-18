@@ -2,6 +2,7 @@
 from collections import namedtuple
 
 from config_file import XmlConfigFile
+from error import AttributeNotFoundError
 from options import Values
 from pattern import PatternItem, PatternReplaceItem
 
@@ -18,7 +19,8 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         '_XmlPattern', 'category,name,value,replacement,cont')
 
     def parse_pattern_node(
-            self, node, patterns=None, exclude=False, replacement=False):
+            self, node, patterns=None, name=None,
+            exclude=False, replacement=False):
         if node.nodeName not in PatternFile.KNOWN_PATTERN:
             return None
         elif not self.evaluate_if_node(node):
@@ -39,21 +41,24 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         is_exc = exclude or node.nodeName == 'exclude-pattern'
         is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
-        p = PatternFile._XmlPattern(
-            name=self.get_var_attr(node, 'name') if not is_exc else \
-                (None if not self.get_var_attr(node, 'value') else
-                 self.get_var_attr(node, 'name')),
-            category=self.get_var_attr(
-                node, 'category', patterns and patterns.category),
-            value=self.get_var_attr(node, 'name') or \
-                self.get_var_attr(node, 'value') \
-                if is_rep else self.get_var_attr(node, 'value') or \
-                self.get_var_attr(node, 'name'),
-            replacement=self.get_var_attr(node, 'replace') or \
-                self.get_var_attr(node, 'value') if is_rep else None,
-            cont=_ensure_bool(
-                self.get_var_attr(
-                    node, 'continue', patterns and patterns.cont)))
+        try:
+            p = PatternFile._XmlPattern(
+                name=(self.get_var_attr(node, 'name') if not is_exc else
+                      (None if not self.get_var_attr(node, 'value') else
+                      self.get_var_attr(node, 'name'))) or name,
+                category=self.get_var_attr(
+                    node, 'category', patterns and patterns.category),
+                value=self.get_var_attr(node, 'name') or \
+                    self.get_var_attr(node, 'value') \
+                    if is_rep else self.get_var_attr(node, 'value') or \
+                    self.get_var_attr(node, 'name'),
+                replacement=self.get_var_attr(node, 'replace') or \
+                    self.get_var_attr(node, 'value') if is_rep else None,
+                cont=_ensure_bool(
+                    self.get_var_attr(
+                        node, 'continue', patterns and patterns.cont)))
+        except AttributeNotFoundError:
+            return None
 
         if p.replacement is not None:
             if PatternItem.is_replace_str(p.replacement):
@@ -70,7 +75,7 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
             pi.add(
                 p.value, exclude=(
                     exclude or node.nodeName == 'exclude-pattern'))
-        else:
+        elif p.value:
             pi = PatternItem(
                 category=p.category, patterns=p.value,
                 name=p.name,
@@ -79,13 +84,13 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
 
         return pi
 
-    def parse_patterns_node(self, node):
+    def parse_patterns_node(self, node, name=None):
         patterns = list()
 
         if node.nodeName in PatternFile.KNOWN_PATTERNS and \
                 self.evaluate_if_node(node):
             parent = PatternFile._XmlPattern(
-                name=self.get_var_attr(node, 'name'),
+                name=self.get_var_attr(node, 'name') or name,
                 category=self.get_var_attr(node, 'category'),
                 value=None,
                 replacement=node.nodeName in (
@@ -96,7 +101,7 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
                 if child.nodeName in PatternFile.KNOWN_PATTERNS:
                     patterns.extend(self.parse_patterns_node(child))
                 elif child.nodeName in PatternFile.KNOWN_PATTERN:
-                    source = self.get_attr(child, 'source')
+                    source = self.get_var_attr(child, 'source')
                     if source:
                         for _ in self.foreach(source, child):
                             pi = self.parse_pattern_node(
@@ -115,7 +120,7 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
 
         return patterns
 
-    def parse_patterns(self, node, config=None):
+    def parse_patterns(self, node, config=None, name=None):
         if config is None:
             config = Values()
 
@@ -124,19 +129,21 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
 
         if node.nodeName in PatternFile.KNOWN_PATTERNS:
             self.set_attr(config, 'pattern', [])
-            patterns = self.parse_patterns_node(node)
+            patterns = self.parse_patterns_node(node, name=name)
             for pattern in patterns:
                 self.set_attr(config, 'pattern', str(pattern))
         elif node.nodeName in PatternFile.KNOWN_PATTERN:
             self.set_attr(config, 'pattern', [])
-            source = self.get_attr(node, 'source')
+            source = self.get_var_attr(node, 'source')
             if source:
                 for _ in self.foreach(source, node):
-                    pattern = self.parse_pattern_node(node)
-                    self.set_attr(config, 'pattern', str(pattern or ''))
+                    pi = self.parse_pattern_node(node, name=name)
+                    if pi:
+                        self.set_attr(config, 'pattern', str(pi))
             else:
-                pattern = self.parse_pattern_node(node)
-                self.set_attr(config, 'pattern', str(pattern or ''))
+                pi = self.parse_pattern_node(node, name=name)
+                if pi:
+                    self.set_attr(config, 'pattern', str(pi))
 
         return config
 
