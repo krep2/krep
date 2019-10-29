@@ -70,17 +70,20 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
                 pi.add(
                     subst=PatternReplaceItem(
                         p.value, p.replacement, p.cont == True))
-        elif not PatternItem.is_replace_str(p.value):
-            pi = PatternItem(category=p.category, name=p.name)
-            pi.add(
-                p.value, exclude=(
-                    exclude or node.nodeName == 'exclude-pattern'))
-        elif p.value:
-            pi = PatternItem(
-                category=p.category, patterns=p.value,
-                name=p.name,
-                exclude=exclude or node.nodeName == 'exclude-pattern',
-                cont=p.cont)
+        elif p.value is not None:
+            if not PatternItem.is_replace_str(p.value):
+                pi = PatternItem(category=p.category, name=p.name)
+                pi.add(
+                    p.value, exclude=(
+                        exclude or node.nodeName == 'exclude-pattern'))
+            else:
+                pi = PatternItem(
+                    category=p.category, patterns=p.value,
+                    name=p.name,
+                    exclude=exclude or node.nodeName == 'exclude-pattern',
+                    cont=p.cont)
+        else:
+            pi = None
 
         return pi
 
