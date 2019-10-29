@@ -13,7 +13,7 @@ class BatchXmlConfigFile(KrepXmlConfigFile):
 
     SUPPORTED_ELEMENTS = (
         'projects', 'project',
-        'args', 'option', 'hook'
+        'args', 'option', 'hook', 'pattern', 'patterns'
     )
 
     def parse_include(self, node):
