@@ -30,6 +30,10 @@ Execute the specified sub-commands, which can be listed with the command
         dest='working_dir', action='store', metavar='DIR', default=os.getcwd(),
         help='Set the working directory. default: %default')
     group.add_option(
+        '--hook-dir',
+        dest='hook_dir', action='store',
+        help='Indicates the directory with the preinstalled hooks')
+    group.add_option(
         '--current-dir',
         dest='current_dir', action='store', metavar='DIR', default=os.getcwd(),
         help=global_options.SUPPRESS_HELP)
