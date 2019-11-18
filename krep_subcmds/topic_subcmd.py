@@ -40,7 +40,7 @@ new external sub-commands. Try to define the variables if required.'''
                 else:
                     summary = summary[:57] + '...'
 
-            value['summary'] = summary or 'No description'
+            value['summary'] = summary or '<No description>'
             lines.append(topfmt % value)
 
         if len(lines) > 0:
