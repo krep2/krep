@@ -32,7 +32,7 @@ class RaiseExceptionIfAttributeNotFound(object):
             raise AttributeNotFoundError(prompt)
 
 
-TOPIC_ENTRY = 'KrepError, AttributeNotFoundError HookError, ' \
+TOPIC_ENTRY = 'KrepError, AttributeNotFoundError, HookError, ' \
               'OptionMissedError, ProcessingError, ' \
               'RaiseExceptionIfAttributeNotFound, RaiseExceptionIfOptionMissed'
 
