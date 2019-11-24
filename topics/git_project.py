@@ -402,7 +402,18 @@ class GitProject(Project, GitCommand):
             ret = self.push(self.remote, *cargs, **kws)
 
         if ret != 0:
-            logger.error('error to execute git push to %s', self.remote)
+            if len(prefs) > 1:
+                logger.error(
+                    '%s: failed to push heads, try one by one', self.remote)
+                for head in prefs:
+                    cargs = GitProject._push_args(list(), options.extra, head)
+                    ret = self.push(self.remote, *cargs, **kws)
+                    if ret != 0:
+                        logger.error(
+                            '%s: cannot push head "%s"', self.remote, head)
+            else:
+                logger.error(
+                    '%s: cannot push head "%s"', self.remote, prefs)
 
         return ret
 
@@ -523,8 +534,18 @@ class GitProject(Project, GitCommand):
             ret = self.push(self.remote, *cargs, **kws)
 
         if ret != 0 and trefs:
-            logger.error(
-                '%s: cannot push tag "%s"', self.remote, ','.join(trefs))
+            if len(trefs) > 1:
+                logger.error(
+                    '%s: failed to push tags, try one by one', self.remote)
+                for tag in trefs:
+                    cargs = GitProject._push_args(list(), options.extra, tag)
+                    ret = self.push(self.remote, *cargs, **kws)
+                    if ret != 0:
+                        logger.error(
+                            '%s: cannot push tag "%s"', self.remote, tag)
+            else:
+                logger.error(
+                    '%s: cannot push tags "%s"', self.remote, trefs)
 
         return ret
 
