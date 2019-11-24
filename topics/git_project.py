@@ -263,12 +263,13 @@ class GitProject(Project, GitCommand):
 
         return parameters
 
-    def push_heads(  # pylint: disable=R0915
+    def build_heads(  # pylint: disable=R0915
             self, branch=None, refs=None, patterns=None, options=None,
             force=False, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
+        prefs = list()
         if self.pattern.has_category(GitProject.CATEGORY_PROJECT) and (
                 not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.source, name=self.source,
@@ -276,7 +277,7 @@ class GitProject(Project, GitCommand):
                 not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.uri, name=self.uri, strict=True)):
             logger.info('project is excluded to push heads')
-            return 0
+            return prefs
 
         if patterns and not isinstance(patterns, (list, tuple)):
             patterns = [patterns]
@@ -296,15 +297,11 @@ class GitProject(Project, GitCommand):
                   or self.pattern.has_category(GitProject.CATEGORY_REVISION)
                   or self.pattern.can_replace(
                       GitProject.CATEGORY_REVISION, local_heads)):
-            cargs = GitProject._push_args(
-                list(), options.extra,
-                '%srefs/heads/*:refs/heads/%s*' % (
-                    '+' if force else '', refs),
-                *args)
+            prefs.append(
+                '%srefs/heads/*:refs/heads/%s*' % ('+' if force else '', refs))
 
-            return self.push(self.remote, *cargs, **kws)
+            return prefs
 
-        prefs = list()
         for origin in local_heads:
             head = _secure_head_name(origin)
 
@@ -387,6 +384,19 @@ class GitProject(Project, GitCommand):
                         '%s%s:%s' % (
                             '+' if force else '', local_ref, options.sha1tag))
 
+        return prefs
+
+    def push_heads(  # pylint: disable=R0915
+            self, branch=None, refs=None, patterns=None, options=None,
+            force=False, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
+
+        ret = 0
+        prefs = self.build_heads(
+            branch=branch, refs=refs, patterns=patterns, options=options,
+            force=force, logger=logger, *args, **kws)
+
         if prefs:
             cargs = GitProject._push_args(list(), options.extra, *prefs)
             ret = self.push(self.remote, *cargs, **kws)
@@ -396,11 +406,12 @@ class GitProject(Project, GitCommand):
 
         return ret
 
-    def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
+    def build_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
                   force=False, options=None, logger=None, *args, **kws):
         if not logger:
             logger = Logger.get_logger()
 
+        trefs = list()
         if self.pattern.has_category(GitProject.CATEGORY_PROJECT) and (
                 not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.source, name=self.source,
@@ -408,7 +419,7 @@ class GitProject(Project, GitCommand):
                 not self.pattern.match(GitProject.CATEGORY_PROJECT,
                                        self.uri, name=self.uri, strict=True)):
             logger.info('project is excluded to push tags')
-            return 0
+            return trefs
 
         refs = (refs and '%s/' % refs.rstrip('/')) or ''
         ret, remote_tags = self.get_remote_tags()
@@ -430,15 +441,11 @@ class GitProject(Project, GitCommand):
                 or self.pattern.has_category(GitProject.CATEGORY_TAGS)
                 or self.pattern.can_replace(
                     GitProject.CATEGORY_TAGS, local_tags.keys())):
-            cargs = GitProject._push_args(
-                list(), options.extra,
-                '%srefs/tags/*:refs/tags/%s*' % (
-                    '+' if force else '', refs),
-                *args)
+            trefs.append(
+                '%srefs/tags/*:refs/tags/%s*' % ('+' if force else '', refs))
 
-            return self.push(self.remote, *cargs, **kws)
+            return trefs
 
-        trefs = list()
         for origin, lsha1 in local_tags.items():
             tag = origin
 
@@ -498,6 +505,18 @@ class GitProject(Project, GitCommand):
 
             trefs.append('%srefs/tags/%s:%s' % (
                 '+' if force else '', origin, remote_tag))
+
+        return trefs
+
+    def push_tags(self, tags=None, refs=None, patterns=None,  # pylint: disable=R0915
+                  force=False, options=None, logger=None, *args, **kws):
+        if not logger:
+            logger = Logger.get_logger()
+
+        ret = 0
+        trefs = self.build_tags(
+            tags=tags, refs=refs, patterns=patterns, force=force,
+            options=options, logger=logger, *args, **kws)
 
         if trefs:
             cargs = GitProject._push_args(list(), options.extra, *trefs)
