@@ -323,7 +323,7 @@ class SubCommand(object):
 
                 return 0
             else:
-                SubCommand.get_logger().debug("Error: %s not existed", hook)
+                SubCommand.get_logger().debug("Warn: %s not existed", hook)
 
     def execute(self, options, *args, **kws):  # pylint: disable=W0613
         # set the logger name at the beggining
