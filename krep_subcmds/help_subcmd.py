@@ -21,6 +21,13 @@ The argument "all" indicats to list all sub-commands implicitly.'''
         print('The commands of krep are:')
         print('')
 
+        length = 15
+        for name, _ in self.commands.items():  # pylint: disable=E1101
+            if len(name) >= length:
+                length = len(name) + 2
+
+        fmt = '  %%-%ds%%s' % length
+
         lines = list()
         for name, cmd in self.commands.items():  # pylint: disable=E1101
             try:
@@ -31,7 +38,7 @@ The argument "all" indicats to list all sub-commands implicitly.'''
             if name in getattr(cmd, 'ALIASES', list()):
                 summary = 'Alias of "%s"' % getattr(cmd, 'COMMAND', cmd.NAME)
 
-            lines.append('  %-15s%s' % (name, summary))
+            lines.append(fmt % (name, summary))
 
         def sort_help(linea, lineb):
             def _is_help_command(line):
