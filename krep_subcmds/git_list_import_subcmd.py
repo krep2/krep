@@ -57,7 +57,9 @@ repository will be requested to create with the description."""
             'pre-push', options, dryrun=options.dryrun)
 
         if options.repo_create:
-            gerrit.create_project(remote, description=False, options=options)
+            gerrit.create_project(
+                remote, description=False, initial_commit=False,
+                options=options)
 
         optgp = options.extra_values(options.extra_option, 'git-push')
 
