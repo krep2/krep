@@ -72,6 +72,9 @@ class GerritCmd(Command):
         logger = Logger.get_logger('Gerrit')
 
         project = project.strip()
+        if project.endswith('.git'):
+            project = project[:-4]
+
         optcp = options and options.extra_values(
             options.extra_option, 'gerrit-cp')
         if project not in self.ls_projects():
