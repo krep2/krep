@@ -39,6 +39,12 @@ repository will be requested to create with the description."""
             dest='file', action='store',
             help='Set the file list to import')
 
+        options = optparse.add_option_group('Debug options')
+        options.add_option(
+            '--dump',
+            dest='dump', action='store_true',
+            help='Dump the provided project list')
+
     def push(self, name, remotes, gerrit, options):
         remote = remotes.get(name, name)
 
@@ -135,6 +141,17 @@ repository will be requested to create with the description."""
         if len(args):
             for arg in args:
                 projects[arg] = secure_remote(arg)
+
+        if options.dump:
+            names = list(projects.keys())
+            for name in sorted(names):
+                remote = projects.get(name)
+                if secure_remote(name) == remote:
+                    print name
+                else:
+                    print '%s -> %s' % (name, remote)
+
+            return 0
 
         return self.run_with_thread(  # pylint: disable=E1101
             options.job, list(projects.keys()), self.push, projects,
