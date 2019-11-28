@@ -22,7 +22,7 @@ The argument "all" indicats to list all sub-commands implicitly.'''
         print('')
 
         length = 15
-        for name, _ in self.commands.items():  # pylint: disable=E1101
+        for name in self.commands.keys():  # pylint: disable=E1101
             if len(name) >= length:
                 length = len(name) + 2
 
