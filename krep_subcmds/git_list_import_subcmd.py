@@ -6,6 +6,13 @@ from topics import FileUtils, GitProject, SubCommandWithThread, Gerrit, \
     RaiseExceptionIfOptionMissed
 
 
+def secure_path(path):
+    if path and path.endswith('/'):
+        path = path[:-1]
+
+    return path
+
+
 def secure_remote(remote):
     if remote and remote.endswith('.git'):
         return remote[:-4]
@@ -129,18 +136,21 @@ repository will be requested to create with the description."""
             options.file or len(args), 'file list (--file) is not set')
 
         projects = dict()
+
+        def add_project(name, remote=None):
+            project[secure_path(name)] = secure_remote(remote or name)
+
         if options.file:
             with open(options.file, 'r') as fp:
                 for li in fp:
                     fields = li.strip().split(' -> ')
                     if len(fields) > 1:
-                        projects[fields[0]] = secure_remote(fields[1])
+                        add_project(fields[0], fields[1])
                     else:
-                        projects[fields[0]] = secure_remote(fields[0])
+                        add_project(fields[0])
 
-        if len(args):
-            for arg in args:
-                projects[arg] = secure_remote(arg)
+        for arg in args:
+            add_project(arg)
 
         if options.dump:
             names = list(projects.keys())
