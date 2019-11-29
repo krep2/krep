@@ -14,6 +14,7 @@ def secure_path(path):
 
 
 def secure_remote(remote):
+    remote = secure_path(remote)
     if remote and remote.endswith('.git'):
         return remote[:-4]
     else:
