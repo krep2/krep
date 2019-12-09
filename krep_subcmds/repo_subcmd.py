@@ -258,15 +258,10 @@ this command.
         RepoSubcmd.do_hook(  # pylint: disable=E1101
             'pre-push', options, dryrun=options.dryrun)
 
-        pattern = RepoSubcmd.get_patterns(options)  # pylint: disable=E1101
         optgp = options.extra_values(options.extra_option, 'git-push')
 
         # push the heads
-        matched = pattern.match('revision', project_name)
-        if matched:
-            matched = pattern.match('revision', project.source)
-
-        if matched and RepoSubcmd.override_value(  # pylint: disable=E1101
+        if RepoSubcmd.override_value(  # pylint: disable=E1101
                 options.heads, options.all):
             optp = Values.build(
                 extra=optgp,
@@ -290,11 +285,7 @@ this command.
                 logger.error('failed to push heads')
 
         # push the tags
-        matched = pattern.match('tag', project_name)
-        if matched:
-            matched = pattern.match('tag', project.source)
-
-        if matched and RepoSubcmd.override_value(  # pylint: disable=E1101
+        if RepoSubcmd.override_value(  # pylint: disable=E1101
                 options.tags, options.all):
             optp = Values.build(
                 extra=optgp,
