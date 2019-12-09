@@ -41,22 +41,22 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         is_exc = exclude or node.nodeName == 'exclude-pattern'
         is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
+
+        xname = self.get_var_attr(node, 'name')
+        xvalue = self.get_var_attr(node, 'value')
+        xreplace = self.get_var_attr(node, 'replace')
+        xcont = self.get_var_attr(node, 'continue', patterns and patterns.cont)
+        xcategory = self.get_var_attr(
+            node, 'category', patterns and patterns.category)
+
         try:
             p = PatternFile._XmlPattern(
-                name=(self.get_var_attr(node, 'name') if not is_exc else
-                      (None if not self.get_var_attr(node, 'value') else
-                      self.get_var_attr(node, 'name'))) or name,
-                category=self.get_var_attr(
-                    node, 'category', patterns and patterns.category),
-                value=self.get_var_attr(node, 'name') or \
-                    self.get_var_attr(node, 'value') \
-                    if is_rep else self.get_var_attr(node, 'value') or \
-                    self.get_var_attr(node, 'name'),
-                replacement=self.get_var_attr(node, 'replace') or \
-                    self.get_var_attr(node, 'value') if is_rep else None,
-                cont=_ensure_bool(
-                    self.get_var_attr(
-                        node, 'continue', patterns and patterns.cont)))
+                name=(xname if not is_exc else (
+                        None if not xvalue else xname)) or name,
+                category=xcategory,
+                value=xname or xvalue if is_rep else xvalue or xname,
+                replacement=xreplace or xvalue if is_rep else None,
+                cont=_ensure_bool(xcont))
         except AttributeNotFoundError:
             return None
 
@@ -73,15 +73,11 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         elif p.value is not None:
             if not PatternItem.is_replace_str(p.value):
                 pi = PatternItem(category=p.category, name=p.name)
-                pi.add(
-                    p.value, exclude=(
-                        exclude or node.nodeName == 'exclude-pattern'))
+                pi.add(p.value, exclude=is_exc)
             else:
                 pi = PatternItem(
                     category=p.category, patterns=p.value,
-                    name=p.name,
-                    exclude=exclude or node.nodeName == 'exclude-pattern',
-                    cont=p.cont)
+                    name=p.name, exclude=is_exc, cont=p.cont)
         else:
             pi = None
 
