@@ -158,9 +158,9 @@ repository will be requested to create with the description."""
             for name in sorted(names):
                 remote = projects.get(name)
                 if secure_remote(name) == remote:
-                    print name
+                    print(name)
                 else:
-                    print '%s -> %s' % (name, remote)
+                    print('%s -> %s' % (name, remote))
 
             return 0
 
