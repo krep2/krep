@@ -45,13 +45,13 @@ repository will be requested to create with the description."""
         options.add_option(
             '--file', '--import-file',
             dest='file', action='store',
-            help='Set the file list to import')
+            help='set the file list to import')
 
         options = optparse.add_option_group('Debug options')
         options.add_option(
             '--dump',
             dest='dump', action='store_true',
-            help='Dump the provided project list')
+            help='dump the provided project list')
 
     def push(self, name, remotes, gerrit, options):
         remote = remotes.get(name, name)

@@ -93,54 +93,54 @@ Supports to wash out the a text file or text files inside a directory.
                 options.add_option(
                     '--washed',
                     dest='washed', action='store_true', default=False,
-                    help='Wash out files with activated washing options')
+                    help='wash out files with activated washing options')
             options.add_option(
                 '--keep-time',
                 dest='keep_time', action='store_true', default=True,
-                help='Keep the washed file timestamp')
+                help='keep the washed file timestamp')
             options.add_option(
                 '--keep-owner',
                 dest='keep_owner', action='store_true', default=True,
-                help='Keep the washed file onwer')
+                help='keep the washed file onwer')
             options.add_option(
                 '--keep-file-mode',
                 dest='keep_file_mode', action='store_true', default=True,
-                help='Keep the washed file mode')
+                help='keep the washed file mode')
             options.add_option(
                 '--read-only',
                 dest='read_only', action='store_true', default=False,
-                help='Wash even the file attribute is read-only')
+                help='wash even the file attribute is read-only')
             options.add_option(
                 '--exclude-files',
                 dest='excluded_files', action='append',
-                help='Set the files excluded to wash')
+                help='set the files excluded to wash')
 
         # Washer line options
         options = optparse.add_option_group('Washer line options')
         options.add_option(
             '-E', '--eol',
             dest='eol', action='store',
-            help='Set to set EOL to DOS/MAC/UNIX format')
+            help='set to set EOL to DOS/MAC/UNIX format')
         options.add_option(
             '-L', '--skip-leading-tabs',
             dest='skip_leading_tabs', action='store_true', default=False,
-            help='Skip to convert the leading tabs')
+            help='skip to convert the leading tabs')
         options.add_option(
             '-B', '--tab-to-space',
             dest='tab_to_space', action='store_true', default=False,
-            help='Convert tab to spaces')
+            help='convert tab to spaces')
         options.add_option(
             '-S', '--space-to-tab',
             dest='space_to_tab', action='store_true', default=False,
-            help='Convert spaces to tab')
+            help='convert spaces to tab')
         options.add_option(
             '-Z', '--tab-size',
             dest='tab_size', action='store', type='int', default=4,
-            help='Set the tab size to expand tab as space')
+            help='set the tab size to expand tab as space')
         options.add_option(
             '-M', '--trim-trailing-space',
             dest='trim_trailing_space', action='store_true', default=False,
-            help='Set to trim the trailing spaces')
+            help='set to trim the trailing spaces')
 
     @staticmethod
     def default_pattern(optparse):

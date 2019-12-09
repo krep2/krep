@@ -280,14 +280,14 @@ matching.
         options.add_option(
             '--pattern-file',
             dest='pattern_file', action='store',
-            help='Set the pattern file in XML format for patterns')
+            help='set the pattern file in XML format for patterns')
 
         options = optparse.get_option_group('--force') or \
             optparse.add_option_group('Global other options')
         options.add_option(
             '-p', '--pattern',
             dest='pattern', action='append',
-            help='Set the patterns for the command')
+            help='set the patterns for the command')
 
     def add_alias(self, aliases):
         for alias in aliases or list():

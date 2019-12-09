@@ -148,21 +148,21 @@ The format of the plain-text configuration file can refer to the topic
         options.add_option(
             '-f', '--file', '--batch-file',
             dest='batch_file', action='append', metavar='FILE',
-            help='Set the batch config file')
+            help='set the batch config file')
         options.add_option(
             '-u', '--group',
             dest='group', metavar='GROUP1,GROUP2,...',
-            help='Set the handling groups')
+            help='set the handling groups')
         options.add_option(
             '--list',
             dest='list', action='store_true',
-            help='List the selected projects')
+            help='list the selected projects')
 
         options = optparse.add_option_group('Error handling options')
         options.add_option(
             '--ierror', '--ignore-errors',
             dest='ignore_errors', action='store_true',
-            help='Ignore the running error and continue for next command')
+            help='ignore the running error and continue for next command')
 
     def support_inject(self):  # pylint: disable=W0613
         return True

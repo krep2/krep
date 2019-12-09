@@ -388,32 +388,32 @@ be used to define the wash-out and generate the final commit.
         options.add_option(
             '--label', '--tag', '--revision',
             dest='tag', action='store',
-            help='Import version for the import')
+            help='import version for the import')
 
         options = optparse.get_option_group('-a') or \
             optparse.add_option_group('Import options')
         options.add_option(
             '--keep-order', '--keep-file-order', '--skip-file-sort',
             dest='keep_order', action='store_true',
-            help='Keep the order of input files or directories without sort')
+            help='keep the order of input files or directories without sort')
 
         options = optparse.add_option_group('Version options')
         options.add_option(
             '--project',
             dest='project', action='store',
-            help='Set the project to match import directories')
+            help='set the project to match import directories')
         options.add_option(
             '--start', '--vstart',
             dest='start', action='store',
-            help='Limit the start version from the import directories')
+            help='limit the start version from the import directories')
         options.add_option(
             '--end', '--vend',
             dest='end', action='store',
-            help='Limit the end version from the import directories')
+            help='limit the end version from the import directories')
         options.add_option(
             '--till', '--vtill',
             dest='till', action='store',
-            help='Limit the start version from the import directories')
+            help='limit the start version from the import directories')
 
     def get_name(self, options):
         return options.name or '[-]'

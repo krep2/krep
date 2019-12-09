@@ -33,20 +33,20 @@ implicitly."""
         options.add_option(
             '--gerrit', '--enable-gerrit',
             dest='gerrit', action='store_true', default=True,
-            help='Disable gerrit server, default is to enable gerrit')
+            help='disable gerrit server, default is to enable gerrit')
         options.add_option(
             '--remote', '--server', '--gerrit-server',
             dest='remote', action='store',
-            help='Set gerrit url for the repository management')
+            help='set gerrit url for the repository management')
         options.add_option(
             '--repo-create',
             dest='repo_create', action='store_true', default=False,
-            help='Create the repository by default: %default')
+            help='create the repository by default: %default')
         # Not to set the default for no-option
         options.add_option(
             '--description', '--repo-description',
             dest='description', action='store',
-            help='Set the repository description in gerrit when creating the '
+            help='set the repository description in gerrit when creating the '
                  'new repository. If not set, the default string will be '
                  'used. "--no-description" could suppress the description')
 

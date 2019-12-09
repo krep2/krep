@@ -276,11 +276,11 @@ The escaped variants are supported for the imported files including:
             options.add_option(
                 '-b', '--branch',
                 dest="branch", action='store', metavar='BRANCH',
-                help='Set the branch')
+                help='set the branch')
             options.add_option(
                 '-n', '--name', '--project-name',
                 dest="name", action='store', metavar='NAME',
-                help='Set the project name. If it\'s not set, the name will '
+                help='set the project name. If it\'s not set, the name will '
                      'be generated from the git name')
 
         options = optparse.get_option_group('-a') or \
@@ -288,22 +288,22 @@ The escaped variants are supported for the imported files including:
         options.add_option(
             '--init-path', '--init-import-path',
             dest='init_path', action='store',
-            help='Set the initialized path with the provided path or '
+            help='set the initialized path with the provided path or '
                  'extracted package')
         options.add_option(
             '-l', '--local',
             dest='local', action='store_true',
-            help='Set locally not to push the stuffs')
+            help='set locally not to push the stuffs')
         options.add_option(
             '--keep-order', '--keep-file-order', '--skip-file-sort',
             dest='keep_order', action='store_true',
-            help='Keep the order of input files or directories without sort')
+            help='keep the order of input files or directories without sort')
 
         options = optparse.add_option_group('File options')
         options.add_option(
             '--auto-detect', '--skip-single-directory',
             dest='auto_detect', action='store_true',
-            help='Ignore the root directory from the uncompressed package')
+            help='ignore the root directory from the uncompressed package')
         options.add_option(
             '--vpref', '--version-prefix',
             dest='version_prefix', action='store',
@@ -314,7 +314,7 @@ The escaped variants are supported for the imported files including:
         options.add_option(
             '--temp-directory', '--temporary-directory',
             dest='temp_directory', action='store',
-            help='Temporary directory for immediate storage')
+            help='set temporary directory for immediate storage')
         options.add_option(
             '--ppattern', '--pkg-pattern',
             dest='pkg_pattern', action='append', metavar='PATTERN',
@@ -327,22 +327,22 @@ The escaped variants are supported for the imported files including:
         options.add_option(
             '--message-template',
             dest='message_template', action='store',
-            help='Set the message template with the value from option '
+            help='set the message template with the value from option '
                  '"--ppattern"')
         options.add_option(
             '--enable-escape',
             dest='enable_escape', action='store_true',
-            help='Escape the messages with the known items like %sha1, '
+            help='escape the messages with the known items like %sha1, '
                  '%md5, %file, %size, etc')
         options.add_option(
             '--version-template',
             dest='version_template', action='store',
-            help='Set the tag template with the value from option '
+            help='set the tag template with the value from option '
                  '"--ppattern"')
         options.add_option(
             '--use-commit-file',
             dest='use_commit_file', action='store_true',
-            help='Use the file like the imported file as the commit message')
+            help='use the file like the imported file as the commit message')
 
         options = optparse.add_option_group('Filter options')
         options.add_option(
@@ -368,7 +368,7 @@ The escaped variants are supported for the imported files including:
         options.add_option(
             '--show-order',
             dest='show_order', action='store_true',
-            help='Show the import order for the listed files')
+            help='show the import order for the listed files')
 
     def get_name(self, options):
         return options.name or '[-]'

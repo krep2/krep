@@ -37,22 +37,22 @@ replaced by GIT_URL."""
         options.add_option(
             '--git', '--git-url',
             dest='git', action='store', metavar='GIT_URL',
-            help='Set the git repository url to download and import')
+            help='set the git repository url to download and import')
         options.add_option(
             '--rev', '--revision', '--branch',
             dest='revision', action='store',
-            help='Set the initial revisions to download')
+            help='set the initial revisions to download')
         options = optparse.get_option_group('--all') or \
             optparse.add_option_group('Git options')
         options.add_option(
             '-n', '--name', '--project-name',
             dest='name', action='store', metavar='NAME',
-            help='Set the project name or local url. If it\'s not set, the '
+            help='set the project name or local url. If it\'s not set, the '
                  'name will be generated from the git name.')
         options.add_option(
             '--bare',
             dest='bare', action='store_true',
-            help='Clone the bare repository')
+            help='clone the bare repository')
 
     def get_name(self, options):
         # use options.name with a higher priority if it's set

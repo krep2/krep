@@ -46,11 +46,11 @@ this command.
         options.add_option(
             '-u', '--manifest-url',
             dest='manifest', metavar='URL',
-            help='Set the git-repo manifest url')
+            help='set the git-repo manifest url')
         options.add_option(
             '-b', '--branch', '--manifest-branch',
             dest='manifest_branch', metavar='REVISION',
-            help='Set the project branch or revision')
+            help='set the project branch or revision')
         options.add_option(
             '-m', '--manifest-name',
             dest='manifest_name', metavar='NAME.xml',
@@ -70,34 +70,34 @@ this command.
             options.add_option(
                 '--sha1-tag',
                 dest='sha1_tag', action='store', metavar='TAG',
-                help='Push named tag for the SHA-1 to the remote. It works '
+                help='push named tag for the SHA-1 to the remote. It works '
                      'without the option "--all"')
 
             options = optparse.add_option_group('Debug options')
             options.add_option(
                 '--dump-projects',
                 dest='dump_projects', action='store_true',
-                help='Print the info of imported project')
+                help='print the info of imported project')
             options.add_option(
                 '--print-new-projects',
                 dest='print_new_projects', action='store_true',
-                help='Print the new projects which isn\'t managed by Gerrit')
+                help='print the new projects which isn\'t managed by Gerrit')
 
             options = optparse.add_option_group('Other options')
             options.add_option(
                 '--include-init-manifest',
                 dest='include_init_manifest', action='store_true',
-                help='Include .repo/manifests if mirror didn\'t contain it')
+                help='include .repo/manifests if mirror didn\'t contain it')
 
             options = optparse.add_option_group('Extra action options')
             options.add_option(
                 '--convert-manifest-file',
                 dest='convert_manifest_file', action='store_true',
-                help='Do convert the manifest file with the manifest map file')
+                help='convert the manifest file with the manifest map file')
             options.add_option(
                 '--ignore-new-project',
                 dest='ignore_new_project', action='store_true',
-                help='Ignore new projects and do import the git-repo project')
+                help='ignore new projects and do import the git-repo project')
 
             options = optparse.get_option_group('--hook-dir') or \
                 optparse.add_option_group('File options')
@@ -105,15 +105,15 @@ this command.
                 '--manifest-xml-file',
                 dest='manifest_xml_file', action='store', metavar='MANIFEST',
                 default='.repo/manifest.xml',
-                help='Set the manifest XML file to parse')
+                help='set the manifest XML file to parse')
             options.add_option(
                 '--output-xml-file',
                 dest='output_xml_file', action='store', metavar='FILE',
-                help='Set the output XML filename')
+                help='set the output XML filename')
             options.add_option(
                 '--map-file',
                 dest='map_file', action='store', metavar='MAP_FILE',
-                help='Set the manifest map file with patterns')
+                help='set the manifest map file with patterns')
 
     @staticmethod
     def get_manifest(options, manifest=None, mirror=False):
