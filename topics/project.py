@@ -27,6 +27,24 @@ class Project(object):  # pylint: disable=R0902
         if remote:
             self.remote = remote
 
+    def __eq__(self, obj):
+        if isinstance(obj, Project):
+            return self.uri == obj.uri and \
+                   self.path == obj.path and \
+                   self.revision == obj.revision and \
+                   self.remote == obj.remote and \
+                   self.soure == obj.source and \
+                   self.args == obj.args and \
+                   self.kws == self.kws
+
+        return False
+
+    def __lt__(self, obj):
+        if isinstance(obj, Project):
+            return self.uri < obj.uri or self.path < obj.path
+        else:
+            return False
+
     def __getattr__(self, attr):
         return self.kws.get(attr)
 
