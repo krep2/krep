@@ -42,14 +42,14 @@ class PatternFile(XmlConfigFile):  # pylint: disable=R0903
         is_rep = replacement or \
             node.nodeName in ('rp-pattern', 'replace-pattern')
 
-        xname = self.get_var_attr(node, 'name')
-        xvalue = self.get_var_attr(node, 'value')
-        xreplace = self.get_var_attr(node, 'replace')
-        xcont = self.get_var_attr(node, 'continue', patterns and patterns.cont)
-        xcategory = self.get_var_attr(
-            node, 'category', patterns and patterns.category)
-
         try:
+            xname = self.get_var_attr(node, 'name')
+            xvalue = self.get_var_attr(node, 'value')
+            xreplace = self.get_var_attr(node, 'replace')
+            xcont = self.get_var_attr(node, 'continue', patterns and patterns.cont)
+            xcategory = self.get_var_attr(
+                node, 'category', patterns and patterns.category)
+
             p = PatternFile._XmlPattern(
                 name=(xname if not is_exc else (
                         None if not xvalue else xname)) or name,
