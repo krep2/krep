@@ -359,7 +359,7 @@ class SubCommandWithThread(SubCommand):
             sem = threading.Semaphore(jobs)
             event = threading.Event()
 
-            for task in tasks:
+            for task in sorted(tasks):
                 if event.isSet():
                     break
 
@@ -377,7 +377,7 @@ class SubCommandWithThread(SubCommand):
                 self.get_logger().error('Exited due to errors')
                 ret = False
         else:
-            for task in tasks:
+            for task in sorted(tasks):
                 ret = func(task, *args) and ret
 
         return ret
