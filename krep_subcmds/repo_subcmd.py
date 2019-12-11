@@ -523,4 +523,5 @@ this command.
             return
 
         return self.run_with_thread(  # pylint: disable=E1101
-            options.job, projects, RepoSubcmd.push, gerrit, options, remote)
+            options.job, sorted(projects), RepoSubcmd.push, gerrit,
+            options, remote)
