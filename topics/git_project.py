@@ -413,7 +413,7 @@ class GitProject(Project, GitCommand):
                             '%s: cannot push head "%s"', self.remote, head)
             else:
                 logger.error(
-                    '%s: cannot push head "%s"', self.remote, prefs)
+                    '%s: cannot push head "%s"', self.remote, prefs[0])
 
         return ret
 
@@ -545,7 +545,7 @@ class GitProject(Project, GitCommand):
                             '%s: cannot push tag "%s"', self.remote, tag)
             else:
                 logger.error(
-                    '%s: cannot push tags "%s"', self.remote, trefs)
+                    '%s: cannot push tags "%s"', self.remote, trefs[0])
 
         return ret
 
